@@ -22,6 +22,8 @@ lm_src_dir=/home/ouzj02/data_0907/librispeech_lm
 #   for part in dev-clean test-clean dev-other test-other train-clean-100 train-clean-360 train-other-500; do
 #     local/download_and_untar.sh $data $data_url $part
 #   done
+#   # download the LM resources
+#   local/download_lm.sh $lm_url data/local/lm
 # fi
 
 if [ $stage -le 1 ]; then
