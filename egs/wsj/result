@@ -1,0 +1,12 @@
+grep WER exp/decode_*/lattice_*/wer_* | utils/best_wer.sh
+
+#13M 6layer-BLSTM results
+# sp   unit      dev93   eval92
+# N    phone     6.24%   3.90%
+# Y    phone     6.23%   3.79%
+# N    char      8.62%   5.19%
+# Y    char      8.22%   5.32%
+
+#16M VGG+6layer-BLSTM results
+# sp   unit      dev93   eval92
+# Y    phone     5.7%    3.2%
