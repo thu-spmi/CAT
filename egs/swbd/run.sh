@@ -8,7 +8,7 @@
            ## This relates to the queue.
 . ./path.sh
 
-stage=71
+stage=1
 dir=`pwd -P`
 
 swbd=/home/ouzj02/data_0907/data/LDC97S62
