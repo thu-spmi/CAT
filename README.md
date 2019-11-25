@@ -1,5 +1,5 @@
 # CAT: Crf-based Asr Toolkit
-**CAT provides a complete workflow for CRF-based end-to-end speech recognition.**
+**CAT provides a complete workflow for CRF-based data-efficient end-to-end speech recognition.**
 
 * [Overview](#Overview)
 * [Key Features](#Key-Features)
