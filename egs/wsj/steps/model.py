@@ -137,6 +137,22 @@ class LSTMrowCONV(torch.nn.Module)
         xs_pad = self.Lookahead(xs_pad)
         return xs_pad, ilens
 
+    
+class TDNN(torch.nn.Module):
+    def __init__(self, input_dim, output_dim, half_context=1):
+        super(TDNN, self).__init__()
+        self.input_dim = input_dim
+        self.output_dim = output_dim
+        self.half_context = half_context
+        self.conv = torch.nn.Conv1d(self.input_dim, self.output_dim, 2*half_context+1, padding=half_context)
+
+    def forward(self, features, input_lengths):
+        tdnn_in = features.transpose(1,2)
+        tdnn_out = self.conv(tdnn_in)
+        output = F.relu(tdnn_out)
+        return output.transpose(1,2)
+    
+    
 class TDNN_LSTM(torch.nn.Module):
     def __init__(self, idim,  hdim, n_layers, dropout):
         super(TDNN_LSTM, self).__init__()
