@@ -137,4 +137,51 @@ class LSTMrowCONV(torch.nn.Module)
         xs_pad = self.Lookahead(xs_pad)
         return xs_pad, ilens
 
+    
+class TDNN(torch.nn.Module):
+    def __init__(self, input_dim, output_dim, half_context=1):
+        super(TDNN, self).__init__()
+        self.input_dim = input_dim
+        self.output_dim = output_dim
+        self.half_context = half_context
+        self.conv = torch.nn.Conv1d(self.input_dim, self.output_dim, 2*half_context+1, padding=half_context)
 
+    def forward(self, features, input_lengths):
+        tdnn_in = features.transpose(1,2)
+        tdnn_out = self.conv(tdnn_in)
+        output = F.relu(tdnn_out)
+        return output.transpose(1,2)
+    
+    
+class TDNN_LSTM(torch.nn.Module):
+    def __init__(self, idim,  hdim, n_layers, dropout):
+        super(TDNN_LSTM, self).__init__()
+        setattr(self, "tdnn0" , TDNN(idim, hdim))
+        for i in six.moves.range(n_layers):
+            setattr(self, "tdnn%d-1" % i, TDNN(hdim, hdim))
+            setattr(self, "tdnn%d-2" % i, TDNN(hdim, hdim))
+            setattr(self, "lstm%d" % i, torch.nn.LSTM(hdim,hdim, num_layers=1, bidirectional=False, batch_first=True))
+            setattr(self, "dropout%d" % i, torch.nn.Dropout(dropout))
+        self.n_layers = n_layers
+
+    def forward(self, xs_pad, ilens):
+        # logging.info(self.__class__.__name__ + ' input lengths: ' + str(ilens))
+        tdnn = getattr(self, 'tdnn0')
+        xs_pad = tdnn(xs_pad, ilens.cuda())
+
+        for layer in six.moves.range(self.n_layers):
+            tdnn = getattr(self, 'tdnn' + str(layer)+'-1')
+            xs_pad = tdnn(xs_pad, ilens.cuda())
+            tdnn = getattr(self, 'tdnn' + str(layer)+'-2')
+            xs_pad = tdnn(xs_pad, ilens.cuda())
+
+            unilstm = getattr(self, 'lstm' + str(layer))
+            unilstm.flatten_parameters()
+            
+            packed_input = torch.nn.utils.rnn.pack_padded_sequence(xs_pad, ilens, batch_first=True)
+            packed_output, _ = unilstm(packed_input, None)
+            xs_pad, _ = torch.nn.utils.rnn.pad_packed_sequence(packed_output, batch_first=True)
+
+            cur_dropout = getattr(self, 'dropout'+str(layer))
+            xs_pad = cur_dropout(xs_pad)
+        return xs_pad, ilens
