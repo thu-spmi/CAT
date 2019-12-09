@@ -72,15 +72,9 @@ int main(int argc, char* argv[]) {
         std::cout << utt[i] << " ";
         std::cout << std::setprecision(8) << -pathWeight(ofst) << std::endl;
     }
+    delete phone_lm;
     delete linearFST;
     delete ofst;
 
-    // for (size_t i = 0; i < vec.size(); i++) {
-    //     std::cout << utt[i] << " ";
-    //     for (size_t j = 0; j < vec[i].size(); j++) {
-    //         std::cout << vec[i][j] << " ";
-    //     }
-    //     std::cout << std::endl;
-    // }
-    // return 0;
+    return 0;
 }
