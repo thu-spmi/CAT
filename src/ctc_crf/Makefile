@@ -13,9 +13,14 @@ GPUCTC:
 GPUDEN:
 	mkdir -p gpu_den/build
 	cd gpu_den/build && cmake -Dopenfst_dir:STRING=${openfst_dir} ..
-	cd gpu_den/build && make	
+	cd gpu_den/build && make
+PATHWEIGHT:
+	mkdir -p path_weight/build
+	cd path_weight/build && cmake -D openfst_dir:STRING=${openfst_dir} ..
+	cd path_weight/build && make
 CTCCRF: GPUCTC GPUDEN
 	python setup.py
+# python setup_1_0.py install for python3 and torch 1.0+
 clean:
 	rm -rf gpu_ctc/build
 	rm -rf gpu_den/build
