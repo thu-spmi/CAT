@@ -51,7 +51,7 @@ Please cite CAT using:
 
 **Step 1.** Copy `src/kaldi-patch/latgen-faster.cc` to `kaldi src/bin`, and compile.
 
-**Step 2.** `cd src/ctc_crf`, change the path to openfst in `Makefile` to your local path and run the commands below:
+**Step 2.** `cd src/ctc_crf`, and run the commands below:
 
 ```
 make OPENFST=/path/to/your/openfst
