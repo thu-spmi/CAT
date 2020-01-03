@@ -12,7 +12,7 @@ GPUCTC:
 	cd gpu_ctc/build && make	
 GPUDEN:
 	mkdir -p gpu_den/build
-	cd gpu_den/build && cmake -Dopenfst_dir:STRING=${openfst_dir} ..
+	cd gpu_den/build && cmake -D openfst_dir:STRING=${openfst_dir} ..
 	cd gpu_den/build && make
 PATHWEIGHT:
 	mkdir -p path_weight/build
