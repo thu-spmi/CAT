@@ -51,16 +51,15 @@ Please cite CAT using:
 
 **Step 1.** Copy `src/kaldi-patch/latgen-faster.cc` to `kaldi src/bin`, and compile.
 
-**Step 2.** `cd src/ctc_crfc`, change the path to openfst in `Makefile` to your local path and run the commands below:
+**Step 2.** `cd src/ctc_crf`, change the path to openfst in `Makefile` to your local path and run the commands below:
 
 ```
-make
+make OPENFST=/path/to/your/openfst
 ```
 
+For pytorch version 1.0+, use `python setup_1_0.py install` in the `ctc_crf/Makefile`.
 
-**Step 3.** `python setup.py` in `src/ctc_crf`. For pytorch version 1.0+, `python setup_1_0.py install`.
-
-**Step 4.** Change the path to kaldi  in `egs/wsj/path.sh` to your local path, taking WSJ experiment as an example.
+**Step 3.** Change the path to kaldi  in `egs/wsj/path.sh` to your local path, taking WSJ experiment as an example.
 
 ## Toolkit Workflow
 
