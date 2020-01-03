@@ -2,7 +2,7 @@
 # Apache 2.0.
 # CTC-CRF Makefile
 
-openfst_dir := /opt/scouce/kaldi/tools/openfst-1.6.2
+openfst_dir=$(OPENFST)
 
 .PHONY: GPUCTC GPUDEN CTCCRF
 all: CTCCRF
