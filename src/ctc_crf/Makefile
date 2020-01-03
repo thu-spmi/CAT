@@ -4,7 +4,7 @@
 
 openfst_dir := /opt/scouce/kaldi/tools/openfst-1.6.2
 
-.PHONY: GPUCTC GPUDEN CTCCRF clean
+.PHONY: GPUCTC GPUDEN CTCCRF
 all: CTCCRF
 GPUCTC:
 	mkdir -p gpu_ctc/build
@@ -21,7 +21,3 @@ PATHWEIGHT:
 CTCCRF: GPUCTC GPUDEN
 	python setup.py
 # python setup_1_0.py install for python3 and torch 1.0+
-clean:
-	rm -rf gpu_ctc/build
-	rm -rf gpu_den/build
-	rm -rf ctc_crf_base
