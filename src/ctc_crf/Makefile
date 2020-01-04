@@ -4,7 +4,7 @@
 
 openfst_dir=$(OPENFST)
 
-.PHONY: GPUCTC GPUDEN CTCCRF
+.PHONY: GPUCTC GPUDEN PATHWEIGHT CTCCRF
 all: CTCCRF
 GPUCTC:
 	mkdir -p gpu_ctc/build
