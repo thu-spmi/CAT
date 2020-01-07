@@ -2,6 +2,7 @@ import numpy as np
 import h5py
 import torch
 from torch.utils.data import Dataset, DataLoader
+import sys
 
 class SpeechDataset(Dataset):
     def __init__(self, h5py_path):
@@ -29,7 +30,7 @@ class SpeechDatasetMem(Dataset):
         self.data_batch = []
         for key in keys:
           dataset = hdf5_file[key]
-          mat = dataset.value
+          mat = dataset[()]
           label = dataset.attrs['label']
           weight = dataset.attrs['weight']
           self.data_batch.append([torch.FloatTensor(mat), torch.IntTensor(label), torch.FloatTensor(weight)])
@@ -56,12 +57,18 @@ class PadCollate:
         # batch: list of (mat, label, weight)
         # return: logits, input_lengths, label_padded, label_lengths, weights
         input_lengths = map(lambda x: x[0].size(0), batch)
+        if sys.version > '3':
+            input_lengths = list(input_lengths)
         max_input_length = max(input_lengths)
         label_lengths = map(lambda x: x[1].size(0), batch)
+        if sys.version > '3':
+            label_lengths = list(label_lengths)
         max_label_length = max(label_lengths)
-
         input_batch = map(lambda x:pad_tensor(x[0], max_input_length, 0), batch)
         label_batch = map(lambda x:pad_tensor(x[1], max_label_length, 0), batch)
+        if sys.version > '3':
+            input_batch = list(input_batch)
+            label_batch = list(label_batch) 
         logits = torch.stack(input_batch, dim=0)
         label_padded = torch.stack(label_batch, dim=0)
         input_lengths = torch.IntTensor(input_lengths)
