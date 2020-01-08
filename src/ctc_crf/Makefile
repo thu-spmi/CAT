@@ -2,9 +2,9 @@
 # Apache 2.0.
 # CTC-CRF Makefile
 
-openfst_dir := /opt/scouce/kaldi/tools/openfst-1.6.2
+openfst_dir=$(OPENFST)
 
-.PHONY: GPUCTC GPUDEN CTCCRF clean
+.PHONY: GPUCTC GPUDEN PATHWEIGHT CTCCRF
 all: CTCCRF
 GPUCTC:
 	mkdir -p gpu_ctc/build
@@ -12,11 +12,12 @@ GPUCTC:
 	cd gpu_ctc/build && make	
 GPUDEN:
 	mkdir -p gpu_den/build
-	cd gpu_den/build && cmake -Dopenfst_dir:STRING=${openfst_dir} ..
-	cd gpu_den/build && make	
-CTCCRF: GPUCTC GPUDEN
+	cd gpu_den/build && cmake -D openfst_dir:STRING=${openfst_dir} ..
+	cd gpu_den/build && make
+PATHWEIGHT:
+	mkdir -p path_weight/build
+	cd path_weight/build && cmake -D openfst_dir:STRING=${openfst_dir} ..
+	cd path_weight/build && make
+CTCCRF: GPUCTC GPUDEN PATHWEIGHT
 	python setup.py
-clean:
-	rm -rf gpu_ctc/build
-	rm -rf gpu_den/build
-	rm -rf ctc_crf_base
+# python setup_1_0.py install for python3 and torch 1.0+

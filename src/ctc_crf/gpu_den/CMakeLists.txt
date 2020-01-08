@@ -4,8 +4,8 @@ project(crf_den)
 set(openfst_dir "fstdir" CACHE STRING "fst directory")
 message(${openfst_dir})
 
-include_directories(/home/ouzj02/ankeyu/kaldi-5.3/tools/openfst-1.6.5/include)
-link_libraries(/home/ouzj02/ankeyu/kaldi-5.3/tools/openfst-1.6.5/lib/libfst.so)
+include_directories(${openfst_dir}/include)
+link_libraries(${openfst_dir}/lib/libfst.so)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 --std=c++11")
 
 FIND_PACKAGE(CUDA 6.5)

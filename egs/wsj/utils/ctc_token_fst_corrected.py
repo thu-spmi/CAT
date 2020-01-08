@@ -26,7 +26,7 @@ if __name__ == "__main__":
     phone = sp[0]
     if phone == '<eps>' or phone == '<blk>':
       continue
-    if '#' in phone:
+    if phone.startswith('#'):
       disambig_count += 1
     else:
       phone_count += 1
