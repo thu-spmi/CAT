@@ -47,9 +47,12 @@ if __name__ == "__main__":
     model.cuda()
     n_jobs = args.nj
     writers = []
-
+    write_mode = 'w'
+    if sys.version > '3':
+        write_mode = 'wb'
+        
     for i in range(n_jobs):
-        writers.append(open('{}/decode.{}.ark'.format(args.output_dir, i+1), 'w'))
+        writers.append(open('{}/decode.{}.ark'.format(args.output_dir, i+1), write_mode))
 
     with open(args.input_scp) as f:
         lines = f.readlines()
