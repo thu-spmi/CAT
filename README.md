@@ -45,7 +45,7 @@ Please cite CAT using:
 * kaldi
 * pytorch 0.4+
 * openfst
-* python 2.7
+* python 2.7+ or python3
 
 ## Installation
 
