@@ -145,15 +145,16 @@ fi
 
 if [ $stage -le 8 ]; then
   for set in test_clean test_other dev_clean dev_other; do
+    nj=20
     lm=tgmed
     rescore_dir=exp/decode_${set}/lattice_${lm}
     mkdir -p $rescore_dir
-    ./local/lmrescore.sh --cmd "$cmd" data/lang_phn_{tgsmall,$lm} data/$set exp/decode_${set}/lattice_{tgsmall,$lm} || exit 1;
+    ./local/lmrescore.sh --cmd "$cmd" data/lang_phn_{tgsmall,$lm} data/$set exp/decode_${set}/lattice_{tgsmall,$lm} $nj || exit 1;
 
     for lm in tglarge fglarge; do
       rescore_dir=exp/decode_${set}/lattice_${lm}
       mkdir -p $rescore_dir
-      ./local/lmrescore_const_arpa.sh --cmd "$cmd" data/lang_phn_{tgsmall,$lm} data/$set exp/decode_${set}/lattice_{tgsmall,$lm} || exit 1;
+      ./local/lmrescore_const_arpa.sh --cmd "$cmd" data/lang_phn_{tgsmall,$lm} data/$set exp/decode_${set}/lattice_{tgsmall,$lm} $nj || exit 1;
     done
   done
 fi
