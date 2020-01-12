@@ -7,7 +7,6 @@ from ctc_crf import CTC_CRF_LOSS
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import numpy as np
 import torch.nn.functional as F
 from torch.autograd import Variable
 import numpy as np
@@ -72,11 +71,15 @@ def train():
     parser.add_argument("--hdim",type=int,default=512)
     parser.add_argument("--layers",type=int,default=6)
     parser.add_argument("--dropout",type=int,default=0.5)
+    parser.add_argument("--batch_size",type=int,default=256)
     parser.add_argument("--feature_size",type=int,default=120)
     parser.add_argument("--data_path")
+    parser.add_argument("--lr", type=float,default=0.001)
+    parser.add_argument("--stop_lr", type=float,default=0.00001)
+    parser.add_argument("--reg_weight", type=float,default=0.01)
     args = parser.parse_args()
     
-    batch_size = 256
+    batch_size = args.batch_size
     
     model = Model(args.feature_size, args.hdim, args.output_unit, args.layers, args.dropout,args.lamb)
     device = torch.device("cuda:0")
@@ -85,7 +88,7 @@ def train():
         model = nn.DataParallel(model)
     model.to(device)
 
-    lr = 0.001
+    lr = args.lr
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
     tr_dataset = SpeechDatasetMem(args.data_path+"/data/hdf5/tr.hdf5")
@@ -152,7 +155,7 @@ def train():
             print("cv loss does not improve, decay the learning rate from {} to {}".format(lr, lr / 10.0))
             adjust_lr(optimizer, lr / 10.0)
             lr = lr / 10.0
-            if (lr < 0.00001):
+            if (lr < args.stop_lr):
                 print("lr is too slow, finish training")
                 break
 
