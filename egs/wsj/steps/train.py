@@ -33,7 +33,7 @@ os.system("mkdir -p models")
 class Model(nn.Module):
     def __init__(self, idim, hdim,  K, n_layers, dropout, lamb):
         super(Model, self).__init__()
-        self.net = BLSTM(idim,  hdim, n_layers, dropout=0.5)
+        self.net = BLSTM(idim,  hdim, n_layers, dropout=dropout)
         self.linear = nn.Linear(hdim*2, K)
         self.loss_fn = CTC_CRF_LOSS( lamb=lamb )
 
@@ -83,8 +83,7 @@ def train():
     model = Model(args.feature_size, args.hdim, args.output_unit, args.layers, args.dropout,args.lamb)
     device = torch.device("cuda:0")
     model.cuda()
-    if torch.cuda.device_count() > 1:
-        model = nn.DataParallel(model)
+    model = nn.DataParallel(model)
     model.to(device)
 
     lr = args.lr
