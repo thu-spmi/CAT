@@ -161,6 +161,7 @@ if [ $stage -le 7 ]; then
 fi
 
 if [ $stage -le 8 ]; then
-   local/lmrescore_const_arpa.sh --cmd "$cmd" data/lang_phn_sw1_{tg,fsh_fg} data/eval2000 exp/decode_eval2000/lattice_sw1_{tg,fsh_fg} || exit 1;
+   nj=20
+   local/lmrescore_const_arpa.sh --cmd "$cmd" data/lang_phn_sw1_{tg,fsh_fg} data/eval2000 exp/decode_eval2000/lattice_sw1_{tg,fsh_fg} $nj || exit 1;
 fi
 

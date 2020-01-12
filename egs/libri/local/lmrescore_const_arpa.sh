@@ -16,10 +16,10 @@ echo "$0 $@"  # Print the command line for logging
 
 . ./utils/parse_options.sh
 
-if [ $# != 5 ]; then
+if [ $# != 6 ]; then
    echo "Does language model rescoring of lattices (remove old LM, add new LM)"
    echo "Usage: $0 [options] <old-lang-dir> <new-lang-dir> \\"
-   echo "                   <data-dir> <input-decode-dir> <output-decode-dir>"
+   echo "                   <data-dir> <input-decode-dir> <output-decode-dir> <nj>" 
    echo "options: [--cmd (run.pl|queue.pl [queue opts])]"
    exit 1;
 fi
@@ -31,6 +31,7 @@ newlang=$2
 data=$3
 indir=$4
 outdir=$5
+nj=$6
 
 oldlm=$oldlang/G.fst
 newlm=$newlang/G.carpa
@@ -48,10 +49,6 @@ fi
 oldlmcommand="fstproject --project_output=true $oldlm |"
 
 mkdir -p $outdir/log
-# nj=`cat $indir/num_jobs` || exit 1;
-# cp $indir/num_jobs $outdir
-
-nj=20
 
 if [ $stage -le 1 ]; then
   $cmd JOB=1:$nj $outdir/log/rescorelm.JOB.log \

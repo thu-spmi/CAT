@@ -329,7 +329,7 @@ def read_mat_scp(file_or_fd):
   fd = open_or_fd(file_or_fd)
   try:
     for line in fd:
-      print "line", line
+      print ("line", line)
       (key,rxfile) = line.decode().split(' ')
       mat = read_mat(rxfile)
       yield key, mat

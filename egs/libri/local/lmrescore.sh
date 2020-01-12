@@ -15,9 +15,9 @@ echo "$0 $@"  # Print the command line for logging
 
 . ./utils/parse_options.sh
 
-if [ $# != 5 ]; then
+if [ $# != 6 ]; then
    echo "Do language model rescoring of lattices (remove old LM, add new LM)"
-   echo "Usage: steps/lmrescore.sh [options] <old-lang-dir> <new-lang-dir> <data-dir> <input-decode-dir> <output-decode-dir>"
+   echo "Usage: steps/lmrescore.sh [options] <old-lang-dir> <new-lang-dir> <data-dir> <input-decode-dir> <output-decode-dir> <nj>"
    echo "Ooptions:"
    echo " --cmd   <cmd-string>       # How to run commands (e.g. run.pl, queue.pl)"
    echo " --mode  (1|2|3|4|5)        # Mode of LM rescoring to use (default: 4)."
@@ -36,6 +36,7 @@ newlang=$2
 data=$3
 indir=$4
 outdir=$5
+nj=$6
 
 oldlm=$oldlang/G.fst
 newlm=$newlang/G.fst
@@ -63,15 +64,6 @@ if [ "$mode" == 4 ]; then
   fstprint $newlang/L_disambig.fst | awk '{if($4 != '$phi'){print;}}' | fstcompile | \
     fstdeterminizestar | fstrmsymbols $newlang/phones/disambig.int >$outdir/Ldet.fst || exit 1;
 fi
-
-# nj=`cat $indir/num_jobs` || exit 1;
-nj=20
-# cp $indir/num_jobs $outdir
-
-
-#for lat in $indir/lat.*.gz; do
-#  number=`basename $lat | cut -d. -f2`;
-#  newlat=$outdir/`basename $lat`
 
 case "$mode" in
   1) # 1 is inexact, it's the original way of doing it.
