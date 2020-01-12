@@ -23,7 +23,6 @@ import argparse
 sys.path.append('../../src/ctc_crf')
 import ctc_crf_base
 
-
 os.environ['CUDA_VISIBLE_DEVICES'] = '0,1,2,3'
 TARGET_GPUS = [0, 1, 2,3]
 gpus = torch.IntTensor(TARGET_GPUS)
@@ -134,19 +133,25 @@ def train():
         # cv stage
         model.eval()
         cv_losses = []
+        cv_losses_sum = []
+        count = 0
+        
         for i, minibatch in enumerate(cv_dataloader):
             print("cv epoch: {}, step: {}".format(epoch, i))
             logits, input_lengths, labels_padded, label_lengths, path_weights = minibatch
             if (logits.size(0) < 16):
                 continue
             loss = model(logits, labels_padded, input_lengths, label_lengths)
+            loss_size = loss.size(0)
+            count = count + loss_size
             partial_loss = torch.mean(loss.cpu())
             weight = torch.mean(path_weights)
             real_loss = partial_loss - weight
-            cv_losses.append(real_loss.item())
+            real_loss_sum = real_loss * loss_size
+            cv_losses_sum.append(real_loss_sum.item())
             print("cv_real_loss: {}".format(real_loss.item()))
 
-        cv_loss = np.mean(np.asarray(cv_losses))
+        cv_loss = np.sum(np.asarray(cv_losses_sum))/count
         print("mean_cv_loss: {}".format(cv_loss))
         if epoch < args.min_epoch or cv_loss <= prev_cv_loss:
             torch.save(model.module.state_dict(),args.data_path+ "/models/best_model")
