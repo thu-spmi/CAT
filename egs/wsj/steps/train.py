@@ -7,7 +7,6 @@ from ctc_crf import CTC_CRF_LOSS
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import numpy as np
 import torch.nn.functional as F
 from torch.autograd import Variable
 import numpy as np
@@ -24,7 +23,6 @@ import argparse
 sys.path.append('../../src/ctc_crf')
 import ctc_crf_base
 
-
 os.environ['CUDA_VISIBLE_DEVICES'] = '0,1,2,3'
 TARGET_GPUS = [0, 1, 2,3]
 gpus = torch.IntTensor(TARGET_GPUS)
@@ -35,7 +33,7 @@ os.system("mkdir -p models")
 class Model(nn.Module):
     def __init__(self, idim, hdim,  K, n_layers, dropout, lamb):
         super(Model, self).__init__()
-        self.net = BLSTM(idim,  hdim, n_layers, dropout=0.5)
+        self.net = BLSTM(idim,  hdim, n_layers, dropout=dropout)
         self.linear = nn.Linear(hdim*2, K)
         self.loss_fn = CTC_CRF_LOSS( lamb=lamb )
 
@@ -72,20 +70,23 @@ def train():
     parser.add_argument("--hdim",type=int,default=512)
     parser.add_argument("--layers",type=int,default=6)
     parser.add_argument("--dropout",type=int,default=0.5)
+    parser.add_argument("--batch_size",type=int,default=256)
     parser.add_argument("--feature_size",type=int,default=120)
     parser.add_argument("--data_path")
+    parser.add_argument("--lr", type=float,default=0.001)
+    parser.add_argument("--stop_lr", type=float,default=0.00001)
+    parser.add_argument("--reg_weight", type=float,default=0.01)
     args = parser.parse_args()
     
-    batch_size = 256
+    batch_size = args.batch_size
     
     model = Model(args.feature_size, args.hdim, args.output_unit, args.layers, args.dropout,args.lamb)
     device = torch.device("cuda:0")
     model.cuda()
-    if torch.cuda.device_count() > 1:
-        model = nn.DataParallel(model)
+    model = nn.DataParallel(model)
     model.to(device)
 
-    lr = 0.001
+    lr = args.lr
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
     tr_dataset = SpeechDatasetMem(args.data_path+"/data/hdf5/tr.hdf5")
@@ -131,19 +132,25 @@ def train():
         # cv stage
         model.eval()
         cv_losses = []
+        cv_losses_sum = []
+        count = 0
+        
         for i, minibatch in enumerate(cv_dataloader):
             print("cv epoch: {}, step: {}".format(epoch, i))
             logits, input_lengths, labels_padded, label_lengths, path_weights = minibatch
             if (logits.size(0) < 16):
                 continue
             loss = model(logits, labels_padded, input_lengths, label_lengths)
+            loss_size = loss.size(0)
+            count = count + loss_size
             partial_loss = torch.mean(loss.cpu())
             weight = torch.mean(path_weights)
             real_loss = partial_loss - weight
-            cv_losses.append(real_loss.item())
+            real_loss_sum = real_loss * loss_size
+            cv_losses_sum.append(real_loss_sum.item())
             print("cv_real_loss: {}".format(real_loss.item()))
 
-        cv_loss = np.mean(np.asarray(cv_losses))
+        cv_loss = np.sum(np.asarray(cv_losses_sum))/count
         print("mean_cv_loss: {}".format(cv_loss))
         if epoch < args.min_epoch or cv_loss <= prev_cv_loss:
             torch.save(model.module.state_dict(),args.data_path+ "/models/best_model")
@@ -152,7 +159,7 @@ def train():
             print("cv loss does not improve, decay the learning rate from {} to {}".format(lr, lr / 10.0))
             adjust_lr(optimizer, lr / 10.0)
             lr = lr / 10.0
-            if (lr < 0.00001):
+            if (lr < args.stop_lr):
                 print("lr is too slow, finish training")
                 break
 
