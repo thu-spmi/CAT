@@ -134,7 +134,7 @@ if [ $stage -le 7 ]; then
     data=data/$set
     mkdir -p $lat_dir
     $cmd JOB=1:20 $ark_dir/log/decode.JOB.log \
-      latgen-faster --max-mem=200000000 --min-active=7000 --max-active=200 --beam=17.0 --lattice-beam=8.0 \
+      latgen-faster --max-mem=200000000 --min-active=200 --max-active=7000 --beam=17.0 --lattice-beam=8.0 \
       --minimize=false --acoustic-scale=1.0 --allow-partial=true --word-symbol-table=$graphdir/words.txt \
       $graphdir/TLG.fst "ark:$ark_dir/decode.JOB.ark" "ark:|gzip -c > $lat_dir/lat.JOB.gz" || exit 1
     ./local/score.sh $scoring_opts --cmd "$cmd" $data $graphdir $lat_dir
