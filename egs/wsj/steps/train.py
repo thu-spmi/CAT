@@ -67,7 +67,7 @@ def train():
     parser.add_argument("--lamb", type=float,default=0.1)
     parser.add_argument("--hdim",type=int,default=512)
     parser.add_argument("--layers",type=int,default=6)
-    parser.add_argument("--dropout",type=int,default=0.5)
+    parser.add_argument("--dropout",type=float,default=0.5)
     parser.add_argument("--batch_size",type=int,default=256)
     parser.add_argument("--feature_size",type=int,default=120)
     parser.add_argument("--data_path")
