@@ -15,11 +15,9 @@ import os
 import sys
 import argparse
 from torch.autograd import Function
-import gc
 from torch.utils.data import Dataset, DataLoader
 from model import BLSTM
 from dataset import SpeechDataset, SpeechDatasetMem, PadCollate
-import argparse
 sys.path.append('../../src/ctc_crf')
 import ctc_crf_base
 
@@ -69,7 +67,7 @@ def train():
     parser.add_argument("--lamb", type=float,default=0.1)
     parser.add_argument("--hdim",type=int,default=512)
     parser.add_argument("--layers",type=int,default=6)
-    parser.add_argument("--dropout",type=int,default=0.5)
+    parser.add_argument("--dropout",type=float,default=0.5)
     parser.add_argument("--batch_size",type=int,default=256)
     parser.add_argument("--feature_size",type=int,default=120)
     parser.add_argument("--data_path")
@@ -103,12 +101,10 @@ def train():
         # training stage
         torch.save(model.module.state_dict(), args.data_path+"/models/best_model")
         epoch += 1
-        gc.collect()
+
         for i, minibatch in enumerate(tr_dataloader):
             print("training epoch: {}, step: {}".format(epoch, i))
             logits, input_lengths, labels_padded, label_lengths, path_weights = minibatch
-            if (logits.size(0) < 16):
-                continue
 
             sys.stdout.flush()
             model.zero_grad()
@@ -138,8 +134,7 @@ def train():
         for i, minibatch in enumerate(cv_dataloader):
             print("cv epoch: {}, step: {}".format(epoch, i))
             logits, input_lengths, labels_padded, label_lengths, path_weights = minibatch
-            if (logits.size(0) < 16):
-                continue
+
             loss = model(logits, labels_padded, input_lengths, label_lengths)
             loss_size = loss.size(0)
             count = count + loss_size
