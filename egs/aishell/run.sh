@@ -112,17 +112,18 @@ if [ $stage -le 6 ]; then
     python steps/train.py --output_unit=218 --lamb=0.01 --data_path=$dir
 fi
 
+nj=20
+
 if [ $stage -le 7 ]; then
   for set in test; do
     mkdir -p exp/decode_$set/ark
-    python steps/calculate_logits.py  --nj=20 --input_scp=data/test_data/${set}.scp --output_unit=218 --data_path=$dir --output_dir=exp/decode_$set/ark
+    python steps/calculate_logits.py  --nj=$nj --input_scp=data/test_data/${set}.scp --output_unit=218 --data_path=$dir --output_dir=exp/decode_$set/ark
   done
 fi  
 
 if [ $stage -le 8 ]; then  
   # now for decode
   acwt=1.0
-  nj=20
   for set in test; do
       bash local/decode.sh $acwt $set $nj
   done
