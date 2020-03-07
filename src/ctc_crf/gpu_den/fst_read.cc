@@ -22,7 +22,7 @@ void ReadFst(const char * fst_name,
     // assume that they are proper initialized
     StdVectorFst *fst = StdVectorFst::Read(fst_name);
     num_states = fst->NumStates(); 
-    int DEN_NUM_STATES = num_states;
+    DEN_NUM_STATES = num_states;
 
     num_arcs = 0;
     for (StateIterator<StdVectorFst> siter(*fst); !siter.Done(); siter.Next()) {
