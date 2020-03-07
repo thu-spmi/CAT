@@ -469,8 +469,6 @@ void compute_beta_and_grad(float *beta,
     int device = 0;
     CHECK_CUDA(cudaGetDevice(&device));
     int gid= DEVICE_HASH[device];
-    // set grad_storage
-    copy_grad<<<batch_size, CU_BLOCK_DIM, 0, stream>>>(grad_storage, grad_net, alpha_lld, input_lengths, batch_size, logits_size, T, 0);
 
     beta_last_kernel<<<batch_size, CU_BLOCK_DIM, 0, stream>>>(beta, beta_size, batch_size, input_lengths, END_WEIGHT[gid]);
     for (int t = T-1; t >= 0; t--) {
