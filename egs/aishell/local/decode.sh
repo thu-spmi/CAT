@@ -1,6 +1,5 @@
 # Begin configuration section.
-stage=2
-nj=10 # number of decoding jobs.  If --transform-dir set, must match that number!
+stage=1
 cmd=run.pl
 beam=17.0
 max_active=7000
@@ -18,6 +17,7 @@ echo "$0 $@"  # Print the command line for logging
 
 acwt=$1  # Just a default value, used for adaptation and beam-pruning.
 dataset=$2
+nj=$3
 
 data=data/test
 ark_dir=exp/decode_${dataset}/ark
