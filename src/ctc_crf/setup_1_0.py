@@ -20,10 +20,10 @@ den_dir = os.path.realpath("./gpu_den/build")
 ctc_dir = os.path.realpath("./gpu_ctc/build")
 
 if __name__ == "__main__":
-    setup(name='ctc_crf_base_1_0',
+    setup(name='ctc_crf_base',
         ext_modules=[
             CppExtension(
-              name='ctc_crf_base_1_0',
+              name='ctc_crf_base',
               language='c++',
               with_cuda=True,
               headers=headers,
