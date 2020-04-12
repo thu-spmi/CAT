@@ -131,7 +131,7 @@ if [ $stage -le 8 ]; then
 
   for set in dev93 eval92; do
     mkdir -p exp/decode_${set}/lattice_bd_fgconst
-    ./local/lmrescore_const_arpa.sh --cmd "$deccode_cmd" data/lang_phn_test_bd_{tgpr,fgconst} data/test_${set} exp/decode_${set}/lattice_bd_{tgpr,fgconst} $nj || exit 1;
+    ./local/lmrescore_const_arpa.sh --cmd "$decode_cmd" data/lang_phn_test_bd_{tgpr,fgconst} data/test_${set} exp/decode_${set}/lattice_bd_{tgpr,fgconst} $nj || exit 1;
     mkdir -p exp/decode_${set}/lattice_tg
     ./local/lmrescore.sh --cmd "$decode_cmd" data/lang_phn_test_{tgpr,tg} data/test_${set} exp/decode_${set}/lattice_{tgpr,tg} $nj || exit 1;
 done
