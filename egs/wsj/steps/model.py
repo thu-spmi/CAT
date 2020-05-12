@@ -127,7 +127,7 @@ class Lookahead(nn.Module):
         return x
 
 
-class LSTMrowCONV(torch.nn.Module)
+class LSTMrowCONV(torch.nn.Module):
     def __init__(self, idim,  hdim, n_layers, dropout):
         super(LSTMrowCONV, self).__init__()
         self.LSTM = LSTM(idim, hdim, n_layers, dropout)
