@@ -191,3 +191,31 @@ class TDNN_LSTM(torch.nn.Module):
             cur_dropout = getattr(self, 'dropout'+str(layer))
             xs_pad = cur_dropout(xs_pad)
         return xs_pad, ilens
+
+    
+class BLSTMN(torch.nn.Module):
+    def __init__(self, idim, hdim, n_layers, dropout):
+        super(BLSTMN, self).__init__()
+        for i in six.moves.range(n_layers):
+            if i == 0:
+                inputdim = idim
+            else:
+                inputdim = hdim * 2
+            setattr(self, "lstm%d" % i, torch.nn.LSTM(inputdim, hdim,num_layers=1, bidirectional=True, batch_first=True))
+            setattr(self, "bn%d" % i, bns.BatchnormSync(hdim*2, eps=1e-5, affine=True))
+            setattr(self, "dropout%d" % i, torch.nn.Dropout(dropout))
+        self.n_layers = n_layers
+        self.hdim = hdim
+
+    def forward(self, xs_pad, ilens):
+        for layer in six.moves.range(self.n_layers):
+            lstm = getattr(self, 'lstm' + str(layer))
+            lstm.flatten_parameters()
+            packed_input = torch.nn.utils.rnn.pack_padded_sequence(xs_pad, ilens,batch_first=True)           
+            packed_output, _ = lstm(packed_input, None)
+            xs_pad, _ = torch.nn.utils.rnn.pad_packed_sequence(packed_output, batch_first=True)
+            cur_bn = getattr(self, 'bn'+str(layer))
+            xs_pad = (cur_bn(xs_pad.transpose(1,2), ilens.cuda())).transpose(1,2)
+            cur_dropout = getattr(self, 'dropout'+str(layer))
+            xs_pad = cur_dropout(xs_pad)
+        return xs_pad, ilens  # x: utt list of frame x dim
