@@ -1,4 +1,4 @@
-#!/usr/bin/python3 
+#!/usr/bin/env python3
 '''
 Copyright 2018-2019 Tsinghua University, Author: Hu Juntao (hujuntao_123@outlook.com)
 Apache 2.0.
@@ -14,7 +14,7 @@ import sys
 from setuptools import setup
 from torch.utils.cpp_extension import BuildExtension, CppExtension, CUDAExtension
 
-extra_compile_args = ['-std=c++11', '-fPIC','-I/usr/local/cuda/include']
+extra_compile_args = ['-std=c++14', '-fPIC','-I/usr/local/cuda/include']
 headers = ['binding_1_0.h']
 den_dir = os.path.realpath("./gpu_den/build")
 ctc_dir = os.path.realpath("./gpu_ctc/build")
