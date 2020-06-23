@@ -34,7 +34,6 @@ fi
 
 if [ $stage -le 2 ]; then
   echo "FBank Feature Generation"
-  # Split the whole training data into training (95%) and cross-validation (5%) sets
   utils/data/perturb_data_dir_speed_3way.sh data/train data/train_sp
   utils/data/perturb_data_dir_speed_3way.sh data/dev data/dev_sp
   echo " preparing directory for speed-perturbed data done"
