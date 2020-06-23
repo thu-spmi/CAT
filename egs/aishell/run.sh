@@ -113,7 +113,7 @@ if [ $stage -le 5 ]; then
   copy-feats "$feats_test" "ark,scp:data/test_data/test.ark,data/test_data/test.scp"
 fi
 
-dir=exp/tdnn_lstm
+dir=exp/blstm
 output_unit=$(awk '{if ($1 == "#0")print $2 - 1 ;}' data/lang_phn/tokens.txt)
 
 if [ $stage -le 6 ]; then
@@ -126,7 +126,7 @@ nj=20
 if [ $stage -le 7 ]; then
   for set in test; do
     CUDA_VISIBLE_DEVICES=0 \
-    ctc-crf/decode.sh --cmd "$decode_cmd" --nj 20 --acwt 1.0 --calculate-logits-opts "--arch=TDNN_LSTM --layers=3" \
+    ctc-crf/decode.sh --cmd "$decode_cmd" --nj 20 --acwt 1.0 --calculate-logits-opts "--arch=BLSTM" \
       data/lang_phn_test data/$set data/${set}_data/test.scp $dir/decode
   done
 fi
