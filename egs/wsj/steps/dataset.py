@@ -8,8 +8,7 @@ class SpeechDataset(Dataset):
     def __init__(self, h5py_path):
         self.h5py_path = h5py_path
         hdf5_file = h5py.File(h5py_path, 'r')
-        self.keys = hdf5_file.keys()
-        hdf5_file.close()
+        self.keys = list(hdf5_file.keys())
         
     def __len__(self):
         return len(self.keys)
