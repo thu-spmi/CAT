@@ -57,3 +57,20 @@
       ②训练集、验证集的text_number转化是否有误？weight计算是否正常？若有，检查数据准备步骤是否有误。
 
       其他......
+      
+9. **如何开发新的egs?**
+
+	开发一个新的egs，主要涉及到数据准备，神经网络训练的代码可以复用。数据准备方面，如果与训练集、测试集划分、特征提取、预处理有关的代码，可参考KALDI。WFST构建（包括T、L、G的生成与组合）的代码，可参考EESEN。CAT中的aishell和swbd可分别作为中英文数据集开发的蓝本。
+
+10. **如何获得可复现的实验结果？**
+
+	需要固定随机数种子。一个实验里可能用到的随机数有很多，例如：
+	torch.manual_seed(123) 
+	torch.cuda.manual_seed(123) 
+	np.ranom.seed(123) 
+	random.seed(123) 
+	torch.backends.cudnn.deterministic=True
+
+11. **中文数据集，测试时的字数目与实际字数目不匹配？**
+
+      需检查字符编码是否一致。
