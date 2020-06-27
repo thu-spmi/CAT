@@ -155,7 +155,7 @@ def train():
             adjust_lr(optimizer, lr / 10.0)
             lr = lr / 10.0
             if (lr < args.stop_lr):
-                print("lr is too slow, finish training")
+                print("learning rate is too small, finish training")
                 break
 
         model.train()
