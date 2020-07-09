@@ -73,7 +73,7 @@ if [ $stage -le 0 ]; then
 fi
 
 if [ $stage -le 1 ]; then
-  $cmd JOB=1:$nj $ark_dir/log/decode.JOB.log \
+  $cmd JOB=1:$nj $logits/log/decode.JOB.log \
     latgen-faster --max-mem=$max_mem --min-active=$min_active --max-active=$max_active --beam=$beam --lattice-beam=$lattice_beam \
     --minimize=$minimize --acoustic-scale=$acwt --allow-partial=true --word-symbol-table=$graph/words.txt \
     $TLG_dir/TLG.fst "ark:$logits/decode.JOB.ark" "ark:|gzip -c > $dir/lat.JOB.gz" || exit 1

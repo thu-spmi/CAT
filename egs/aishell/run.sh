@@ -126,7 +126,7 @@ nj=20
 if [ $stage -le 7 ]; then
   for set in test; do
     CUDA_VISIBLE_DEVICES=0 \
-    ctc-crf/decode.sh --cmd "$decode_cmd" --nj 20 --acwt 1.0 --calculate-logits-opts "--arch=BLSTM" \
+    ctc-crf/decode.sh --cmd "$decode_cmd" --nj 20 --acwt 1.0 \
       data/lang_phn_test data/$set data/${set}_data/test.scp $dir/decode
   done
 fi

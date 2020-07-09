@@ -124,7 +124,7 @@ if [ $stage -le 6 ]; then
     copy-feats "$feats_test" "ark,scp:data/all_ark/${set}.ark,data/all_ark/${set}.scp"
 
     CUDA_VISIBLE_DEVICES=0 \
-    ctc-crf/decode.sh --cmd "$decode_cmd" --nj 20 --acwt 1.0 --calculate-logits-opts "--arch=BLSTMN" \
+    ctc-crf/decode.sh --cmd "$decode_cmd" --nj 20 --acwt 1.0 \
       data/lang_phn_test $data_test data/all_ark/${set}.scp $dir/decode_${set}
   done
 fi

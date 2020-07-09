@@ -4,15 +4,17 @@ FROM pytorch/pytorch:1.5-cuda10.1-cudnn7-devel
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y \
     cmake wget flac build-essential git subversion automake \
-    autoconf unzip sox gfortran libtool python2.7
+    autoconf unzip sox gfortran libtool python2.7 dos2unix
 RUN ln -sf /bin/bash /bin/sh
 
-RUN pip install mkl-include h5py && \
+RUN pip install mkl-include h5py tensorboard && \
     git clone --depth 1 https://github.com/kaldi-asr/kaldi.git /opt/kaldi && \
     cd /opt/kaldi/tools && \
     make -j $(nproc) && \
+    ./extras/install_kaldi_lm.sh && \
     cd /opt/kaldi/src && \
-    ./configure --shared --use-cuda --mkl-root=/opt/conda --mkl-libdir=/opt/conda/lib && \
+    ./configure --debug-level=0 --shared --use-cuda --mkl-root=/opt/conda --mkl-libdir=/opt/conda/lib && \
+    sed 's:-O1:-O2:g' kaldi.mk \
     make depend -j $(nproc) && \
     make -j $(nproc)
 
@@ -31,7 +33,7 @@ WORKDIR /opt/CAT/src/ctc_crf
 RUN OPENFST=/opt/kaldi/tools/openfst make GPUCTC GPUDEN PATHWEIGHT
 RUN python setup_1_0.py install
 
-# Clear the APT cache
-RUN apt-get clean
+# Cleanup
+RUN apt-get clean && rm /opt/kaldi/src/*/*.o
 
 WORKDIR /workspace
