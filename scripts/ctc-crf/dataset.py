@@ -68,7 +68,7 @@ class PadCollate:
         label_batch = map(lambda x:pad_tensor(x[1], max_label_length, 0), batch)
         if sys.version > '3':
             input_batch = list(input_batch)
-            label_batch = list(label_batch) 
+            label_batch = list(label_batch)
         logits = torch.stack(input_batch, dim=0)
         label_padded = torch.stack(label_batch, dim=0)
         input_lengths = torch.IntTensor(input_lengths)
