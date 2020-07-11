@@ -20,6 +20,7 @@ from torch.utils.data import Dataset, DataLoader
 from model import BLSTM, LSTM, VGGBLSTM, VGGLSTM, LSTMrowCONV, TDNN_LSTM, BLSTMN
 from dataset import SpeechDataset, SpeechDatasetMem, PadCollate
 import ctc_crf_base
+from torch.utils.tensorboard import SummaryWriter
 
 TARGET_GPUS = list(map(int, os.environ['CUDA_VISIBLE_DEVICES'].split(",")))
 gpus = torch.IntTensor(TARGET_GPUS)
@@ -89,7 +90,8 @@ def train():
     parser.add_argument("--reg_weight", type=float, default=0.01)
     args = parser.parse_args()
 
-    os.makedirs(args.dir, exist_ok=True)
+    os.makedirs(args.dir + '/board', exist_ok=True)
+    writer = SummaryWriter(args.dir +'/board')
     # save configuration
     with open(args.dir + '/config.json', "w") as fout:
         config = {
@@ -117,6 +119,7 @@ def train():
         tr_dataset,
         batch_size=args.batch_size,
         shuffle=True,
+        pin_memory=True,
         num_workers=0,
         collate_fn=PadCollate())
 
@@ -125,6 +128,7 @@ def train():
         cv_dataset,
         batch_size=args.batch_size,
         shuffle=False,
+        pin_memory=True,
         num_workers=0,
         collate_fn=PadCollate())
 
@@ -154,9 +158,9 @@ def train():
 
             optimizer.step()
             t2 = timeit.default_timer()
-            print("time: {}, tr_real_loss: {}, lr: {}".format(
-                t2 - prev_t, real_loss.item(),
-                optimizer.param_groups[0]['lr']))
+            writer.add_scalar('training loss',
+                            real_loss.item(),
+                            (epoch-1) * len(tr_dataloader) + i)
             prev_t = t2
 
         # save model
@@ -183,7 +187,7 @@ def train():
             print("cv_real_loss: {}".format(real_loss.item()))
 
         cv_loss = np.sum(np.asarray(cv_losses_sum)) / count
-        print("mean_cv_loss: {}".format(cv_loss))
+        writer.add_scalar('mean_cv_loss',cv_loss,epoch)
         if epoch < args.min_epoch or cv_loss <= prev_cv_loss:
             torch.save(model.module.state_dict(), args.dir + "/best_model")
             prev_cv_loss = cv_loss
