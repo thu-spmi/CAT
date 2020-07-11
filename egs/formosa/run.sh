@@ -6,7 +6,7 @@
 # For more detail, please check:
 # 1. Formosa Speech in the Wild (FSW) project (https://sites.google.com/speech.ntut.edu.tw/fsw/home/corpus)
 # 2. Formosa Speech Recognition Challenge (FSW) 2018 (https://sites.google.com/speech.ntut.edu.tw/fsw/home/challenge)
-stage=-2
+stage=-3
 num_jobs=20
 
 train_dir=NER-Trs-Vol1/Train
@@ -24,9 +24,17 @@ set -eo pipefail
 
 # configure number of jobs running in parallel, you should adjust these numbers according to your machines
 # data preparation
-if [ $stage -le -2 ]; then
+if [ $stage -le -3 ]; then
   echo "$0: Data Preparation"
   local/prepare_data.sh || exit 1;
+
+  echo "$0: Lexicon Preparation"
+  local/prepare_dict.sh || exit 1;
+
+  echo "$0: Phone Sets, questions, L compilation Preparation"
+  rm -rf data/lang
+  utils/prepare_lang.sh --position-dependent-phones false data/local/dict \
+      "<SIL>" data/local/lang data/lang || exit 1;
 
   echo "$0: Prepare phone dictionary"
   rm -rf data/lang_phn
@@ -42,33 +50,66 @@ if [ $stage -le -2 ]; then
 
   echo "$0: Compile the language-model FST and the final decoding graph TLG.fst"
   local/format_lm.sh data/local/lm data/lang_phn data/lang_phn_test || exit 1;
-
 fi
 
-# Now make Fbank features.
-# fbankdir should be some place with a largish disk where you
-# want to store MFCC features.
-fbankdir=fbank
-
-if [ $stage -le -1 ]; then
-  utils/data/perturb_data_dir_speed_3way.sh data/train data/train_sp
-  echo "$0: making fbanks"
-  for x in train_sp test eval; do
-    steps/make_fbank.sh --cmd "$train_cmd" --nj $num_jobs data/$x exp/make_fbank/$x $mfccdir || exit 1;
-    steps/compute_cmvn_stats.sh data/$x exp/make_fbank/$x $mfccdir || exit 1;
+if [ $stage -le -2 ]; then
+  echo "$0: making mfccs"
+  for x in train; do
+    steps/make_mfcc_pitch.sh --cmd "$train_cmd" --nj $num_jobs data/$x || exit 1;
+    steps/compute_cmvn_stats.sh data/$x || exit 1;
     utils/fix_data_dir.sh data/$x || exit 1;
   done
+  echo "$0: train mono model"
+  utils/subset_data_dir.sh --shortest data/train 3000 data/train_mono
+
+  steps/train_mono.sh --boost-silence 1.25 --cmd "$train_cmd" --nj $num_jobs \
+    data/train_mono data/lang exp/mono || exit 1;
+
+  # Get alignments from monophone system.
+  steps/align_si.sh --boost-silence 1.25 --cmd "$train_cmd" --nj $num_jobs \
+    data/train data/lang exp/mono exp/mono_ali || exit 1;
+
+  echo "$0: train tri1 model"
+  steps/train_deltas.sh --boost-silence 1.25 --cmd "$train_cmd" \
+   2500 20000 data/train data/lang exp/mono_ali exp/tri1 || exit 1;
+
+  # align tri1
+  steps/align_si.sh --cmd "$train_cmd" --nj $num_jobs \
+    data/train data/lang exp/tri1 exp/tri1_ali || exit 1;
+
+  echo "$-: train tri2 model"
+  # Train tri3a, which is LDA+MLLT,
+  steps/train_lda_mllt.sh --cmd "$train_cmd" \
+   2500 20000 data/train data/lang exp/tri1_ali exp/tri2a || exit 1;
+
+  steps/cleanup/segment_long_utterances.sh --cmd "$train_cmd" \
+    --num-neighbors-to-search 0 --nj $num_jobs \
+    exp/tri2a data/lang data/train data/train_reseg \
+    exp/segment_long_utts_train || exit 1;
+
+  utils/fix_data_dir.sh data/train_reseg || exit 1;
 fi
 
-data_tr=data/train_sp
-data_cv=data/test
+if [ $stage -le -1 ]; then
+  utils/data/perturb_data_dir_speed_3way.sh data/train_reseg data/train_sp || exit 1;
+  echo "$0: making hires-mfcc"
+  for x in train_sp test eval; do
+    steps/make_mfcc.sh --cmd "$train_cmd" --nj $num_jobs --mfcc-config conf/mfcc_hires.conf data/$x || exit 1;
+    steps/compute_cmvn_stats.sh data/$x || exit 1;
+    utils/fix_data_dir.sh data/$x || exit 1;
+  done
+  utils/subset_data_dir_tr_cv.sh --cv-spk-percent 5 data/train_sp data/tr data/cv
+fi
+
+data_tr=data/tr
+data_cv=data/cv
 if [ $stage -le 0 ]; then
-  ctc-crf/prep_ctc_trans.py data/lang_phn/lexicon_numbers.txt $data_tr/text "<UNK>" > $data_tr/text_number
-  ctc-crf/prep_ctc_trans.py data/lang_phn/lexicon_numbers.txt $data_cv/text "<UNK>" > $data_cv/text_number
+  ctc-crf/prep_ctc_trans.py data/lang_phn/lexicon_numbers.txt $data_tr/text "<SIL>" > $data_tr/text_number
+  ctc-crf/prep_ctc_trans.py data/lang_phn/lexicon_numbers.txt $data_cv/text "<SIL>" > $data_cv/text_number
   echo "convert text_number finished"
 
   # prepare denominator
-  ctc-crf/prep_ctc_trans.py data/lang_phn/lexicon_numbers.txt data/train/text "<UNK>" > data/train/text_number
+  ctc-crf/prep_ctc_trans.py data/lang_phn/lexicon_numbers.txt data/train/text "<SIL>" > data/train/text_number
   cat data/train/text_number | sort -k 2 | uniq -f 1 > data/train/unique_text_number
   mkdir -p data/den_meta
   chain-est-phone-lm ark:data/train/unique_text_number data/den_meta/phone_lm.fst
@@ -99,29 +140,31 @@ if [ $stage -le 1 ]; then
   python3 ctc-crf/convert_to_hdf5.py $ark_dir/tr.scp $data_tr/text_number $data_tr/weight data/hdf5/tr.hdf5
 fi
 
-data_test=data/eval
 if [ $stage -le 2 ]; then
-  feats_test="ark,s,cs:apply-cmvn --norm-vars=true --utt2spk=ark:$data_test/utt2spk scp:$data_test/cmvn.scp scp:$data_test/feats.scp ark:- \
+  feats_test="ark,s,cs:apply-cmvn --norm-vars=true --utt2spk=ark:data/test/utt2spk scp:data/test/cmvn.scp scp:data/test/feats.scp ark:- \
+      | add-deltas ark:- ark:- | subsample-feats --n=3 ark:- ark:- |"
+  feats_eval="ark,s,cs:apply-cmvn --norm-vars=true --utt2spk=ark:data/eval/utt2spk scp:data/eval/cmvn.scp scp:data/eval/feats.scp ark:- \
       | add-deltas ark:- ark:- | subsample-feats --n=3 ark:- ark:- |"
   ark_dir=data/all_ark
   copy-feats "$feats_test" "ark,scp:$ark_dir/test.ark,$ark_dir/test.scp" || exit 1
+  copy-feats "$feats_eval" "ark,scp:$ark_dir/eval.ark,$ark_dir/eval.scp" || exit 1
 fi
-
+exit 0;
 dir=exp/blstm
 output_unit=$(awk '{if ($1 == "#0")print $2 - 1 ;}' data/lang_phn/tokens.txt)
 
 if [ $stage -le 3 ]; then
     echo "nn training."
-    python3 ctc-crf/train.py --arch=BLSTM --batch_size=4 --lr 1e-5 --output_unit=$output_unit --lamb=0.01 --data_path data/hdf5 $dir
+    python3 ctc-crf/train.py --hdim=80 --min_epoch=6 --arch=BLSTM --batch_size=180 --output_unit=$output_unit --lamb=0.01 --data_path data/hdf5 $dir
 fi
 
 if [ $stage -le 4 ]; then
   CUDA_VISIBLE_DEVICES=0 \
-  ctc-crf/decode.sh --config conf/decode.config --cmd "$decode_cmd" --nj $num_jobs --acwt 1.0 --calculate-logits-opts "--arch=BLSTM" \
-    data/lang_phn_test data/test $ark_dir/cv.scp $dir/decode_test
+  ctc-crf/decode.sh --config conf/decode.config --cmd "$decode_cmd" --nj $num_jobs --acwt 1.0 \
+    data/lang_phn_test data/test $ark_dir/test.scp $dir/decode_test
   CUDA_VISIBLE_DEVICES=0 \
-  ctc-crf/decode.sh --config conf/decode.config --cmd "$decode_cmd" --nj $num_jobs --acwt 1.0 --calculate-logits-opts "--arch=BLSTM" \
-    data/lang_phn_test data/eval $ark_dir/test.scp $dir/decode_eval
+  ctc-crf/decode.sh --config conf/decode.config --cmd "$decode_cmd" --nj $num_jobs --acwt 1.0 \
+    data/lang_phn_test data/eval $ark_dir/eval.scp $dir/decode_eval
 fi
 
 # getting results (see RESULTS file)
