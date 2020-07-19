@@ -85,9 +85,8 @@ def train():
     parser.add_argument("--batch_size", type=int, default=256)
     parser.add_argument("--feature_size", type=int, default=120)
     parser.add_argument("--data_path")
-    parser.add_argument("--lr", type=float, default=0.001)
-    parser.add_argument("--stop_lr", type=float, default=0.00001)
-    parser.add_argument("--reg_weight", type=float, default=0.01)
+    parser.add_argument("--lr", type=float,default=0.001)
+    parser.add_argument("--stop_lr", type=float,default=0.00001)
     args = parser.parse_args()
 
     os.makedirs(args.dir + '/board', exist_ok=True)
