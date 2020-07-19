@@ -155,7 +155,17 @@ output_unit=$(awk '{if ($1 == "#0")print $2 - 1 ;}' data/lang_phn/tokens.txt)
 if [ $stage -le 3 ]; then
     echo "nn training."
     # takes 12gb ram on gpu and 23gb ram on mainboard.
-    python3 ctc-crf/train.py --lr=0.00001 --hdim=1024 --layers=3 --min_epoch=1 --arch=TDNN_LSTM --batch_size=20 --output_unit=$output_unit --lamb=1.0 --data_path data/hdf5 $dir
+    python3 ctc-crf/train.py \
+      --lr=0.00001 \
+      --hdim=1024 \
+      --layers=3 \
+      --min_epoch=1 \
+      --arch=TDNN_LSTM \
+      --batch_size=20 \
+      --output_unit=$output_unit \
+      --lamb=1.0 \
+      --data_path=data/hdf5 \
+      $dir
 fi
 
 if [ $stage -le 4 ]; then
