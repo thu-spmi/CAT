@@ -5,7 +5,7 @@ from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 import numpy as np
 import math
 from maskedbatchnorm1d import MaskedBatchNorm1d
-
+import six
 
 def pad_list(xs, pad_value):
     n_batch = len(xs)

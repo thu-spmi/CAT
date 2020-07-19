@@ -10,6 +10,7 @@ stage=0
 nj=4
 beam=17.0
 acwt=1.0
+post_decode_acwt=10.0
 max_active=7000
 min_active=200
 max_mem=200000000 # approx. limit to memory consumption during minimization in bytes
@@ -72,11 +73,17 @@ if [ $stage -le 0 ]; then
     --output_dir=$logits
 fi
 
+if [ "$post_decode_acwt" == 1.0 ]; then
+  lat_wspecifier="ark:|gzip -c >$dir/lat.JOB.gz"
+else
+  lat_wspecifier="ark:|lattice-scale --acoustic-scale=$post_decode_acwt ark:- ark:- | gzip -c >$dir/lat.JOB.gz"
+fi
+
 if [ $stage -le 1 ]; then
-  $cmd JOB=1:$nj $logits/log/decode.JOB.log \
+  $cmd JOB=1:$nj $dir/log/decode.JOB.log \
     latgen-faster --max-mem=$max_mem --min-active=$min_active --max-active=$max_active --beam=$beam --lattice-beam=$lattice_beam \
     --minimize=$minimize --acoustic-scale=$acwt --allow-partial=true --word-symbol-table=$graph/words.txt \
-    $TLG_dir/TLG.fst "ark:$logits/decode.JOB.ark" "ark:|gzip -c > $dir/lat.JOB.gz" || exit 1
+    $TLG_dir/TLG.fst "ark:$logits/decode.JOB.ark" "$lat_wspecifier" || exit 1
 fi
 
 if [ $stage -le 2 ]; then

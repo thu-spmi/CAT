@@ -98,11 +98,10 @@ if [ $stage -le -1 ]; then
     steps/compute_cmvn_stats.sh data/$x || exit 1;
     utils/fix_data_dir.sh data/$x || exit 1;
   done
-  utils/subset_data_dir_tr_cv.sh --cv-spk-percent 5 data/train_sp data/tr data/cv
 fi
 
-data_tr=data/tr
-data_cv=data/cv
+data_tr=data/train_sp
+data_cv=data/test
 if [ $stage -le 0 ]; then
   ctc-crf/prep_ctc_trans.py data/lang_phn/lexicon_numbers.txt $data_tr/text "<SIL>" > $data_tr/text_number
   ctc-crf/prep_ctc_trans.py data/lang_phn/lexicon_numbers.txt $data_cv/text "<SIL>" > $data_cv/text_number
@@ -149,21 +148,22 @@ if [ $stage -le 2 ]; then
   copy-feats "$feats_test" "ark,scp:$ark_dir/test.ark,$ark_dir/test.scp" || exit 1
   copy-feats "$feats_eval" "ark,scp:$ark_dir/eval.ark,$ark_dir/eval.scp" || exit 1
 fi
-exit 0;
-dir=exp/blstm
+
+dir=exp/tdnnlstm
 output_unit=$(awk '{if ($1 == "#0")print $2 - 1 ;}' data/lang_phn/tokens.txt)
 
 if [ $stage -le 3 ]; then
     echo "nn training."
-    python3 ctc-crf/train.py --hdim=80 --min_epoch=6 --arch=BLSTM --batch_size=180 --output_unit=$output_unit --lamb=0.01 --data_path data/hdf5 $dir
+    # takes 12gb ram on gpu and 23gb ram on mainboard.
+    python3 ctc-crf/train.py --lr=0.00001 --hdim=1024 --layers=3 --min_epoch=1 --arch=TDNN_LSTM --batch_size=20 --output_unit=$output_unit --lamb=1.0 --data_path data/hdf5 $dir
 fi
 
 if [ $stage -le 4 ]; then
   CUDA_VISIBLE_DEVICES=0 \
-  ctc-crf/decode.sh --config conf/decode.config --cmd "$decode_cmd" --nj $num_jobs --acwt 1.0 \
+  ctc-crf/decode.sh --config conf/decode.config --cmd "$decode_cmd" --nj $num_jobs \
     data/lang_phn_test data/test $ark_dir/test.scp $dir/decode_test
   CUDA_VISIBLE_DEVICES=0 \
-  ctc-crf/decode.sh --config conf/decode.config --cmd "$decode_cmd" --nj $num_jobs --acwt 1.0 \
+  ctc-crf/decode.sh --config conf/decode.config --cmd "$decode_cmd" --nj $num_jobs \
     data/lang_phn_test data/eval $ark_dir/eval.scp $dir/decode_eval
 fi
 
@@ -172,13 +172,13 @@ if [ $stage -le 5 ]; then
   echo "$0: extract the results"
   for test_set in test eval; do
   echo "WER: $test_set"
-  for x in exp/*/decode_${test_set}*; do [ -d $x ] && grep WER $x/wer_* | utils/best_wer.sh; done 2>/dev/null
-  for x in exp/*/*/decode_${test_set}*; do [ -d $x ] && grep WER $x/wer_* | utils/best_wer.sh; done 2>/dev/null
+  for x in exp/*/decode_*${test_set}*; do [ -d $x ] && grep WER $x/wer_* | utils/best_wer.sh; done 2>/dev/null
+  for x in exp/*/*/decode_*${test_set}*; do [ -d $x ] && grep WER $x/wer_* | utils/best_wer.sh; done 2>/dev/null
   echo
 
   echo "CER: $test_set"
-  for x in exp/*/decode_${test_set}*; do [ -d $x ] && grep WER $x/cer_* | utils/best_wer.sh; done 2>/dev/null
-  for x in exp/*/*/decode_${test_set}*; do [ -d $x ] && grep WER $x/cer_* | utils/best_wer.sh; done 2>/dev/null
+  for x in exp/*/decode_*${test_set}*; do [ -d $x ] && grep WER $x/cer_* | utils/best_wer.sh; done 2>/dev/null
+  for x in exp/*/*/decode_*${test_set}*; do [ -d $x ] && grep WER $x/cer_* | utils/best_wer.sh; done 2>/dev/null
   echo
   done
 fi
