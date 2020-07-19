@@ -29,7 +29,7 @@ if [ $stage -le 1 ]; then
   ctc-crf/ctc_compile_dict_token.sh data/local/dict_phn_larger data/local/lang_phn_larger_tmp data/lang_phn_larger || exit 1;
 
   # Compile the language-model FST and the final decoding graph TLG.fst
-  local/wsj_format_local_lms.sh --lang-suffix "_phn" 
+  local/wsj_format_local_lms.sh --lang-suffix "_phn"
   local/wsj_decode_graph.sh data/lang_phn || exit 1;
 fi
 
@@ -106,33 +106,41 @@ if [ $stage -le 5 ]; then
   copy-feats "$feats_eval92" "ark,scp:data/test_data/eval92.ark,data/test_data/eval92.scp"
 fi
 
+dir=exp/blstm
 if [ $stage -le 6 ]; then
-  python ctc-crf/train.py --min_epoch=8 --output_unit=72 --lamb=0.01 --data_path=$dir
+  python3 ctc-crf/train.py \
+    --min_epoch=8 --output_unit=72 --lamb=0.01 --data_path=data/hdf5 \
+    $dir
 fi
 
 if [ $stage -le 7 ]; then
-
  for set in dev93 eval92; do
-     mkdir -p exp/decode_$set/ark
-     ark_dir=exp/decode_$set/ark
-     CUDA_VISIBLE_DEVICES=0 python ctc-crf/calculate_logits.py --nj=20 --input_scp=data/test_data/${set}.scp --output_unit=72 --data_path=$dir --output_dir=$ark_dir
+     ark_dir=$dir/logits/${set}
+     mkdir -p $ark_dir
+     CUDA_VISIBLE_DEVICES=0 python3 ctc-crf/calculate_logits.py \
+       --nj=20 --input_scp=data/test_data/${set}.scp \
+       --config=$dir/config.json --model=$dir/best_model --output_dir=$ark_dir
  done
 fi
 
 if [ $stage -le 8 ]; then
-  acwt=1.0
   nj=20
   for set in dev93 eval92; do
      for lmtype in tgpr bd_tgpr; do
-         bash local/decode.sh $acwt $set  $nj ${lmtype}
+        # reuse logits
+        mkdir -p $dir/decode_${set}_${lmtype}
+        ln -s $(readlink -f $dir/logits/${set}) $dir/decode_${set}_${lmtype}/logits
+        ctc-crf/decode.sh --stage 1 \
+          --cmd "$decode_cmd" --nj $nj --acwt 1.0 \
+          data/lang_phn_test_${lmtype} data/test_${set} data/test_data/${set}.scp $dir/decode_${set}_${lmtype}
      done
   done
 
 
   for set in dev93 eval92; do
-    mkdir -p exp/decode_${set}/lattice_bd_fgconst
-    ./local/lmrescore_const_arpa.sh --cmd "$decode_cmd" data/lang_phn_test_bd_{tgpr,fgconst} data/test_${set} exp/decode_${set}/lattice_bd_{tgpr,fgconst} $nj || exit 1;
-    mkdir -p exp/decode_${set}/lattice_tg
-    ./local/lmrescore.sh --cmd "$decode_cmd" data/lang_phn_test_{tgpr,tg} data/test_${set} exp/decode_${set}/lattice_{tgpr,tg} $nj || exit 1;
-done
+    mkdir -p $dir/decode_${set}/lattice_bd_fgconst
+    steps/lmrescore_const_arpa.sh --cmd "$decode_cmd" data/lang_phn_test_bd_{tgpr,fgconst} data/test_${set} exp/decode_${set}/lattice_bd_{tgpr,fgconst} || exit 1;
+    mkdir -p $dir/exp/decode_${set}/lattice_tg
+    steps/lmrescore.sh --cmd "$decode_cmd" data/lang_phn_test_{tgpr,tg} data/test_${set} exp/decode_${set}/lattice_{tgpr,tg} || exit 1;
+  done
 fi
