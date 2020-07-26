@@ -142,7 +142,7 @@ fi
 
 if [ $stage -le 7 ]; then
   nj=20
-  mkdir $dir/decode_${set}/lattice_sw1_tg
+  mkdir $dir/decode_eval2000/lattice_sw1_tg
   ctc-crf/decode.sh --stage 0 \
       --cmd "$decode_cmd" --nj $nj --acwt 1.0 \
       data/lang_phn_sw1_tg data/eval2000 data/test_data/eval2000.scp $dir/decode_eval2000/lattice_sw1_tg
