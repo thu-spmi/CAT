@@ -26,7 +26,7 @@ if [ $stage -le 1 ]; then
   local/eval2000_data_prep.sh $eval2000_dirs
 
   # Compile the lexicon and token FSTs
-  utils/ctc_compile_dict_token.sh data/local/dict_phn data/local/lang_phn_tmp data/lang_phn || exit 1;
+  ctc-crf/ctc_compile_dict_token.sh data/local/dict_phn data/local/lang_phn_tmp data/lang_phn || exit 1;
 
   # Train and compile LMs.
   local/swbd1_train_lms.sh data/local/train/text data/local/dict_phn/lexicon.txt data/local/lm $fisher_dirs || exit 1;
@@ -93,12 +93,12 @@ data_tr=data/train_nodup_sp
 data_cv=data/train_dev_sp
 
 if [ $stage -le 3 ]; then
-  utils/prep_ctc_trans.py data/lang_phn/lexicon_numbers.txt $data_tr/text "<unk>" > $data_tr/text_number
-  utils/prep_ctc_trans.py data/lang_phn/lexicon_numbers.txt $data_cv/text "<unk>" > $data_cv/text_number
+  ctc-crf/prep_ctc_trans.py data/lang_phn/lexicon_numbers.txt $data_tr/text "<unk>" > $data_tr/text_number
+  ctc-crf/prep_ctc_trans.py data/lang_phn/lexicon_numbers.txt $data_cv/text "<unk>" > $data_cv/text_number
   echo "convert text_number finished"
  
   # prepare denominator
-  utils/prep_ctc_trans.py data/lang_phn/lexicon_numbers.txt data/train_nodup/text "<unk>" > data/train_nodup/text_number
+  ctc-crf/prep_ctc_trans.py data/lang_phn/lexicon_numbers.txt data/train_nodup/text "<unk>" > data/train_nodup/text_number
   cat data/train_nodup/text_number | sort -k 2 | uniq -f 1 > data/train_nodup/unique_text_number
   mkdir -p data/den_meta
   chain-est-phone-lm ark:data/train_nodup/unique_text_number data/den_meta/phone_lm.fst
@@ -106,8 +106,8 @@ if [ $stage -le 3 ]; then
   fstcompose data/den_meta/T_den.fst data/den_meta/phone_lm.fst > data/den_meta/den_lm.fst
   echo "prepare denominator finished"
  
-  ../../src/ctc_crf/path_weight/build/path_weight $data_tr/text_number data/den_meta/phone_lm.fst > $data_tr/weight
-  ../../src/ctc_crf/path_weight/build/path_weight $data_cv/text_number data/den_meta/phone_lm.fst > $data_cv/weight
+  path_weight $data_tr/text_number data/den_meta/phone_lm.fst > $data_tr/weight
+  path_weight $data_cv/text_number data/den_meta/phone_lm.fst > $data_cv/weight
   echo "prepare weight finished"
 fi 
 
@@ -121,12 +121,12 @@ if [ $stage -le 4 ]; then
   copy-feats "$feats_cv" "ark,scp:data/all_ark/cv.ark,data/all_ark/cv.scp"
 
   mkdir -p data/hdf5
-  python utils/convert_to_hdf5.py data/all_ark/cv.scp $data_cv/text_number $data_cv/weight data/hdf5/cv.hdf5 || exit 1
-  python utils/convert_to_hdf5.py data/all_ark/tr.scp $data_tr/text_number $data_tr/weight data/hdf5/tr.hdf5 || exit 1
+  python ctc-crf/convert_to_hdf5.py data/all_ark/cv.scp $data_cv/text_number $data_cv/weight data/hdf5/cv.hdf5 || exit 1
+  python ctc-crf/convert_to_hdf5.py data/all_ark/tr.scp $data_tr/text_number $data_tr/weight data/hdf5/tr.hdf5 || exit 1
 fi
 
 if [ $stage -le 5 ]; then
-  python steps/train.py --output_unit=46 --lamb=0.01 --data_path=$dir
+  python ctc-crf/train.py --output_unit=46 --lamb=0.01 --data_path=data/hdf5 $dir
 fi
 
 data_eval2000=data/eval2000
@@ -138,30 +138,16 @@ if [ $stage -le 6 ]; then
 
   mkdir data/test_data
   copy-feats "$feats_eval2000"   ark,scp:data/test_data/eval2000.ark,data/test_data/eval2000.scp
-  
-  for set in eval2000; do
-    mkdir -p exp/decode_$set/ark
-    python steps/calculate_logits.py --nj=20 --input_scp=data/test_data/${set}.scp --output_unit=46 --data_path=$dir --output_dir=$ark_dir
-  done
 fi
-
-graphdir=data/lang_phn_sw1_tg
-lat_dir=exp/decode_eval2000/lattice_sw1_tg
-scoring_opts=
-
-mkdir -p $lat_dir
 
 if [ $stage -le 7 ]; then
-  $cmd JOB=1:20 $ark_dir/log/decode.JOB.log \
-    latgen-faster --max-mem=200000000 --min-active=200 --max-active=7000 --beam=17.0 --lattice-beam=8.0 \
-    --minimize=false --acoustic-scale=1.0 --allow-partial=true --word-symbol-table=$graphdir/words.txt \
-    $graphdir/TLG.fst "ark:$ark_dir/decode.JOB.ark" "ark:|gzip -c > $lat_dir/lat.JOB.gz" || exit 1
-  local/score_sclite.sh $scoring_opts --cmd "$cmd" $data_eval2000 $graphdir $lat_dir
-  echo "score confidence and timing with sclite"
-fi
-
-if [ $stage -le 8 ]; then
-   nj=20
-   local/lmrescore_const_arpa.sh --cmd "$cmd" data/lang_phn_sw1_{tg,fsh_fg} data/eval2000 exp/decode_eval2000/lattice_sw1_{tg,fsh_fg} $nj || exit 1;
+  nj=20
+  for set in eval2000; do
+    mkdir $dir/decode_${set}/lattice_sw1_tg
+    ctc-crf/decode.sh --stage 0 \
+        --cmd "$decode_cmd" --nj $nj --acwt 1.0 \
+        data/lang_phn_sw1_tg data/${set} data/test_data/${set}.scp $dir/decode_${set}/lattice_sw1_tg
+  done
+  steps/lmrescore_const_arpa.sh --cmd "$cmd" data/lang_phn_sw1_{tg,fsh_fg} data/eval2000 exp/decode_eval2000/lattice_sw1_{tg,fsh_fg}  || exit 1;
 fi
 
