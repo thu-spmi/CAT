@@ -12,8 +12,8 @@ dir=`pwd -P`
 . ./cmd.sh
 . ./path.sh
 
-data=/home/ouzj02/data_0907/librispeech
-lm_src_dir=/home/ouzj02/data_0907/librispeech_lm
+data=/data/librispeech
+lm_src_dir=/data/librispeech_lm
 
 . ./cmd.sh
 . ./path.sh
