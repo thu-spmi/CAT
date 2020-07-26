@@ -8,8 +8,8 @@
            ## This relates to the queue.
 . ./path.sh
 stage=1
-wsj0=/home/ouzj02/data_0907/csr_1
-wsj1=/home/ouzj02/data_0907/csr_2_comp
+wsj0=/data/csr_1
+wsj1=/data/csr_2_comp
 
 . utils/parse_options.sh
 dir=`pwd -P`
