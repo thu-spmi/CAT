@@ -11,9 +11,9 @@
 stage=1
 dir=`pwd -P`
 
-swbd=/home/ouzj02/data_0907/data/LDC97S62
-fisher_dirs="/home/ouzj02/data_0907/data/LDC2004T19/fe_03_p1_tran/ /home/ouzj02/data_0907/data/LDC2005T19/fe_03_p2_tran/"
-eval2000_dirs="/home/ouzj02/data_0907/data/LDC2002S09/hub5e_00 /home/ouzj02/data_0907/data/LDC2002T43"
+swbd=/data/LDC97S62
+fisher_dirs="/data/LDC2004T19/fe_03_p1_tran/ /data/LDC2005T19/fe_03_p2_tran/"
+eval2000_dirs="/data/LDC2002S09/hub5e_00 /data/LDC2002T43"
 
 
 if [ $stage -le 1 ]; then
