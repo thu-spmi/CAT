@@ -4,7 +4,7 @@ for x in exp/decode_*/lattice_*; do
   cat $x/wer_* | utils/best_wer.sh 2>/dev/null
 done
 
-#13M 6layer-BLSTM results
+#13M 6layer-BLSTM results, lamb=0.1, hdim=320, lr=0.001
 # sp   unit     dev-clean  dev-other  test-clean  test-other
 # N    phone    3.87%      10.28%     4.09%       10.65%
 # N    char     4.26%      12.11%     4.67%       12.49%
