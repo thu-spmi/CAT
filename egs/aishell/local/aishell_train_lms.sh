@@ -5,16 +5,18 @@
 
 
 #text=data/local/train/text
-#lexicon=data/local/dict/lexicon.txt 
+#lexicon=data/local/dict/lexicon.txt
 text=$1
 lexicon=$2
 dir=$3
+[ -f ./path.sh ] && . ./path.sh
+
 for f in "$text" "$lexicon"; do
   [ ! -f $x ] && echo "$0: No such file $f" && exit 1;
 done
 
 # This script takes no arguments.  It assumes you have already run
-# swbd_p1_data_prep.sh.  
+# swbd_p1_data_prep.sh.
 # It takes as input the files
 #data/local/train/text
 #data/local/dict/lexicon.txt
@@ -22,29 +24,24 @@ done
 mkdir -p $dir
 export LC_ALL=C # You'll get errors about things being not sorted, if you
 # have a different locale.
-export PATH=$PATH:`pwd`/../../tools/kaldi_lm
 ( # First make sure the kaldi_lm toolkit is installed.
- cd ../../tools || exit 1;
- if [ -d kaldi_lm ]; then
+ if [ -d $KALDI_ROOT/tools/kaldi_lm ]; then
    echo Not installing the kaldi_lm toolkit since it is already there.
  else
+   pushd $KALDI_ROOT/tools
    echo Downloading and installing the kaldi_lm tools
-   if [ ! -f kaldi_lm.tar.gz ]; then
-     wget http://www.danielpovey.com/files/kaldi/kaldi_lm.tar.gz || exit 1;
-   fi
-   tar -xvzf kaldi_lm.tar.gz || exit 1;
-   cd kaldi_lm
-   make || exit 1;
+   ./extras/install_kaldi_lm.sh || exit 1;
    echo Done making the kaldi_lm tools
+   popd
  fi
 ) || exit 1;
-
+. $KALDI_ROOT/tools/env.sh
 mkdir -p $dir
 
 
 cleantext=$dir/text.no_oov
 
-cat $text | awk -v lex=$lexicon 'BEGIN{while((getline<lex) >0){ seen[$1]=1; } } 
+cat $text | awk -v lex=$lexicon 'BEGIN{while((getline<lex) >0){ seen[$1]=1; } }
   {for(n=1; n<=NF;n++) {  if (seen[$n]) { printf("%s ", $n); } else {printf("<UNK> ");} } printf("\n");}' \
   > $cleantext || exit 1;
 
@@ -75,7 +72,7 @@ train_lm.sh --arpa --lmtype 3gram-mincount $dir || exit 1;
 # Perplexity over 128254.000000 words is 90.446690
 
 # note: output is
-# data/local/lm/3gram-mincount/lm_unpruned.gz 
+# data/local/lm/3gram-mincount/lm_unpruned.gz
 
 exit 0
 

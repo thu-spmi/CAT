@@ -1,0 +1,8 @@
+WER:
+%WER 29.96 [ 31354 / 104648, 3102 ins, 6756 del, 21496 sub ] exp/tdnnlstm/decode_eval/wer_8_1.0
+%WER 24.75 [ 37368 / 150978, 4793 ins, 8899 del, 23676 sub ] exp/tdnnlstm/decode_test/wer_9_0.5
+
+CER: 
+%WER 19.53 [ 33388 / 170997, 1365 ins, 7035 del, 24988 sub ] exp/tdnnlstm/decode_eval/cer_8_0.5
+%WER 17.72 [ 41745 / 235567, 3291 ins, 10503 del, 27951 sub ] exp/tdnnlstm/decode_test/cer_9_0.0
+
