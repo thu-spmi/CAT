@@ -14,8 +14,8 @@
 stage=1
 data=$(readlink -f data)
 data_url=www.openslr.org/resources/33
-aishell_wav=/home/ouzj02/data_0907/data_aishell/wav
-aishell_trans=/home/ouzj02/data_0907/data_aishell/transcript
+aishell_wav=/data/data_aishell/wav
+aishell_trans=/data/data_aishell/transcript
 # End configuration section
 . utils/parse_options.sh
 
