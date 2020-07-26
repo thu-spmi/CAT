@@ -1,12 +1,12 @@
 grep Sum exp/decode_eval2000/lattice_sw1_fsh_fg/score_*/eval2000.ctm.filt.sys | utils/best_wer.sh
 
-#13M 6layer-BLSTM results
+#13M 6layer-BLSTM results, lamb=0.1, hdim=320, lr=0.001
 # sp   unit      SW      CH
 # N    phone     11.0%   21.0%
 # Y    phone     10.3%   19.7%
 # N    char      12.7%   24.0%
 # Y    char      11.4%   21.7%
 
-#16M VGG+6layer-BLSTM results
+#16M VGG+6layer-BLSTM results, lamb=0.1, hdim=320, lr=0.001
 # sp   unit      SW      CH
 # Y    phone     9.9%    19.4%
