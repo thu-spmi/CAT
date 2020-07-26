@@ -61,6 +61,9 @@ For pytorch version 1.0+, use `python setup_1_0.py install` in the `ctc_crf/Make
 
 **Step 3.** Change the path to kaldi  in `egs/wsj/path.sh` to your local path, taking WSJ experiment as an example.
 
+## Installation with Docker
+* see [docker](https://github.com/thu-spmi/CAT/blob/master/docker/README.md) for details.
+
 ## Toolkit Workflow
 
 We may have different state topologies in the CRF-based ASR framework. In the following, we take phone-based WSJ experiment as an example to illustrate the **step-by-step workflow** of running [CTC-CRF](http://oa.ee.tsinghua.edu.cn/~ouzhijian/pdf/ctc-crf.pdf) (namely CRF with CTC topology), which has achieved superior benchmarking performance. Character-based workflow is similar. Scripts from other toolkits are acknowledged.
