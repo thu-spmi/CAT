@@ -38,7 +38,6 @@ Please cite CAT using:
 
 4. **Evaluation results on major benchmarks such as Switchboard and Aishell show that CAT obtains the state-of-the-art results among existing end-to-end models with less parameters, and is competitive compared with the hybrid DNN-HMM models.**
 
-5. **Towards flexibility, we show that i-vector based speaker-adapted recognition and latency control mechanism can be explored easily and effectively in CAT.**
 
 ## Dependencies
 
