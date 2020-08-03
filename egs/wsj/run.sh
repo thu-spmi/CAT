@@ -105,7 +105,7 @@ if [ $stage -le 5 ]; then
   copy-feats "$feats_eval92" "ark,scp:data/test_data/eval92.ark,data/test_data/eval92.scp"
 fi
 
-arch=blstm
+arch=BLSTM
 dir=exp/$arch
 
 if [ $stage -le 6 ]; then
