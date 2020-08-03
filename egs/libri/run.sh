@@ -8,7 +8,7 @@
 data_url=www.openslr.org/resources/12
 lm_url=www.openslr.org/resources/11
 stage=1
-dir=`pwd -P`
+
 . ./cmd.sh
 . ./path.sh
 
@@ -106,12 +106,13 @@ if [ $stage -le 4 ]; then
   python3 ctc-crf/convert_to_hdf5.py data/all_ark/tr.scp $data_tr/text_number $data_tr/weight data/hdf5/tr.hdf5
 fi
 
-dir=exp/blstmn
+arch=BLSTM
+dir=exp/$arch
 output_unit=$(awk '{if ($1 == "#0")print $2 - 1 ;}' data/lang_phn/tokens.txt)
 
 if [ $stage -le 5 ]; then
     echo "nn training."
-    python3 ctc-crf/train.py --arch=BLSTM --output_unit=$output_unit --lamb=0.1 --data_path data/hdf5 $dir
+    python3 ctc-crf/train.py --arch=$arch --output_unit=$output_unit --lamb=0.1 --data_path data/hdf5 $dir
 fi
 
 graphdir=data/lang_phn_tgsmall
