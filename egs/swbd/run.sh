@@ -148,6 +148,6 @@ if [ $stage -le 7 ]; then
   ctc-crf/decode.sh --stage 0 \
       --cmd "$decode_cmd" --nj $nj --acwt 1.0 \
       data/lang_phn_sw1_tg data/eval2000 data/test_data/eval2000.scp $dir/decode_eval2000_sw1_tg
-  steps/lmrescore_const_arpa.sh --cmd "$cmd" data/lang_phn_sw1_{tg,fsh_fg} data/eval2000 exp/decode_eval2000_{tg,fsh_fg}  || exit 1;
+  steps/lmrescore_const_arpa.sh --cmd "$cmd" data/lang_phn_sw1_{tg,fsh_fg} data/eval2000 $dir/decode_eval2000_{tg,fsh_fg}  || exit 1;
 fi
 
