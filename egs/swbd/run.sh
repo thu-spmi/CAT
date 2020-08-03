@@ -124,7 +124,7 @@ if [ $stage -le 4 ]; then
   python ctc-crf/convert_to_hdf5.py data/all_ark/tr.scp $data_tr/text_number $data_tr/weight data/hdf5/tr.hdf5 || exit 1
 fi
 
-arch=blstm
+arch=BLSTM
 dir=exp/$arch
 
 if [ $stage -le 5 ]; then
