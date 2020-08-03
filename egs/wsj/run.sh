@@ -12,7 +12,6 @@ wsj0=/data/csr_1
 wsj1=/data/csr_2_comp
 
 . utils/parse_options.sh
-dir=`pwd -P`
 
 if [ $stage -le 1 ]; then
   echo "Data Preparation and FST Construction"
@@ -106,10 +105,12 @@ if [ $stage -le 5 ]; then
   copy-feats "$feats_eval92" "ark,scp:data/test_data/eval92.ark,data/test_data/eval92.scp"
 fi
 
-dir=exp/blstm
+arch=blstm
+dir=exp/$arch
+
 if [ $stage -le 6 ]; then
   python3 ctc-crf/train.py \
-    --min_epoch=8 --output_unit=72 --lamb=0.01 --data_path=data/hdf5 \
+    --min_epoch=8 --output_unit=72 --arch=$arch --lamb=0.01 --data_path=data/hdf5 \
     $dir
 fi
 
