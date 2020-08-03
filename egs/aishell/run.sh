@@ -113,12 +113,13 @@ if [ $stage -le 5 ]; then
   copy-feats "$feats_test" "ark,scp:data/test_data/test.ark,data/test_data/test.scp"
 fi
 
-dir=exp/blstm
+arch=BLSTM
+dir=exp/$arch
 output_unit=$(awk '{if ($1 == "#0")print $2 - 1 ;}' data/lang_phn/tokens.txt)
 
 if [ $stage -le 6 ]; then
     echo "nn training."
-    python3 ctc-crf/train.py --arch=BLSTM --output_unit=$output_unit --lamb=0.01 --data_path $data/hdf5 $dir
+    python3 ctc-crf/train.py --arch=$arch --output_unit=$output_unit --lamb=0.01 --data_path $data/hdf5 $dir
 fi
 
 nj=20
