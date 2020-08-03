@@ -9,7 +9,6 @@
 . ./path.sh
 
 stage=1
-dir=`pwd -P`
 
 swbd=/data/LDC97S62
 fisher_dirs="/data/LDC2004T19/fe_03_p1_tran/ /data/LDC2005T19/fe_03_p2_tran/"
@@ -125,8 +124,11 @@ if [ $stage -le 4 ]; then
   python ctc-crf/convert_to_hdf5.py data/all_ark/tr.scp $data_tr/text_number $data_tr/weight data/hdf5/tr.hdf5 || exit 1
 fi
 
+arch=blstm
+dir=exp/$arch
+
 if [ $stage -le 5 ]; then
-  python ctc-crf/train.py --output_unit=46 --lamb=0.01 --data_path=data/hdf5 $dir
+  python ctc-crf/train.py --output_unit=46 --arch=$arch --lamb=0.01 --data_path=data/hdf5 $dir
 fi
 
 data_eval2000=data/eval2000
@@ -142,10 +144,10 @@ fi
 
 if [ $stage -le 7 ]; then
   nj=20
-  mkdir $dir/decode_eval2000/lattice_sw1_tg
+  mkdir $dir/decode_eval2000_sw1_tg
   ctc-crf/decode.sh --stage 0 \
       --cmd "$decode_cmd" --nj $nj --acwt 1.0 \
-      data/lang_phn_sw1_tg data/eval2000 data/test_data/eval2000.scp $dir/decode_eval2000/lattice_sw1_tg
-  steps/lmrescore_const_arpa.sh --cmd "$cmd" data/lang_phn_sw1_{tg,fsh_fg} data/eval2000 exp/decode_eval2000/lattice_sw1_{tg,fsh_fg}  || exit 1;
+      data/lang_phn_sw1_tg data/eval2000 data/test_data/eval2000.scp $dir/decode_eval2000_sw1_tg
+  steps/lmrescore_const_arpa.sh --cmd "$cmd" data/lang_phn_sw1_{tg,fsh_fg} data/eval2000 exp/decode_eval2000_{tg,fsh_fg}  || exit 1;
 fi
 
