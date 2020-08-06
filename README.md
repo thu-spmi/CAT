@@ -9,7 +9,7 @@
 
 ## Overview
 
-Recent ASR Toolkits based on DNN-HMM hybrid systems like [Kaldi](http://kaldi-asr.org/) and [RASR](http://www-i6.informatik.rwth-aachen.de/rwth-asr/) achieve the state-of-the-art performance in terms of recognition accuracy, usually measured by word error rate (WER) or character error rate (CER). In contrast, end-to-end systems[^e2e] (like [Eesen](https://github.com/yajiemiao/eesen) and [Espnet](https://github.com/espnet/espnet)) put simplicity of the training pipeline at a higher priority and usually are data-hungry. There is still a pronounced gap between attention end-to-end models and hybrid models in terms of recognition accuracy.
+Deep neural networks (DNNs) of various architectures have become dominantly used in automatic speech recognition (ASR), which roughly can be classified into two approaches - the DNN-HMM hybrid and the end-to-end (E2E) approaches. DNN-HMM hybrid systems like [Kaldi](http://kaldi-asr.org/) and [RASR](http://www-i6.informatik.rwth-aachen.de/rwth-asr/) achieve the state-of-the-art performance in terms of recognition accuracy, usually measured by word error rate (WER) or character error rate (CER). End-to-end systems[^e2e] (like [Eesen](https://github.com/yajiemiao/eesen) and [Espnet](https://github.com/espnet/espnet)) put simplicity of the training pipeline at a higher priority and usually are data-hungry. When comparing the hybrid and E2E approaches (modularity versus a single neural network, separate optimization versus joint optimization), it is worthwhile to note the pros and cons of each approach, as described in [2].
 
 CAT aims at combining the advantages of the two kinds of ASR systems. CAT advocates discriminative training in the framework of [conditional random field](https://en.wikipedia.org/wiki/Conditional_random_field) (CRF), particularly with but not limited to [connectionist temporal classification]() (CTC) inspired state topology.
 
@@ -19,9 +19,11 @@ The recently developed [CTC-CRF](http://oa.ee.tsinghua.edu.cn/~ouzhijian/pdf/ctc
 
 Please cite CAT using:
 
-* Hongyu Xiang, Zhijian Ou. CRF-based Single-stage Acoustic Modeling with CTC Topology. ICASSP, Brighton, UK, 2019. [pdf](http://oa.ee.tsinghua.edu.cn/~ouzhijian/pdf/ctc-crf.pdf)
+[1] Hongyu Xiang, Zhijian Ou. CRF-based Single-stage Acoustic Modeling with CTC Topology. ICASSP, 2019. [pdf](http://oa.ee.tsinghua.edu.cn/~ouzhijian/pdf/ctc-crf.pdf)
 
-* Keyu An, Hongyu Xiang. Zhijian Ou. CRF-based ASR Toolkit. arXiv, 2019. [pdf](https://arxiv.org/abs/1911.08747)
+[2] Keyu An, Hongyu Xiang. Zhijian Ou. CRF-based ASR Toolkit. arXiv, 2019. [pdf](https://arxiv.org/abs/1911.08747) (More descriptions about the toolkit implementation)
+
+[3] Keyu An, Hongyu Xiang. Zhijian Ou. CAT: A CTC-CRF based ASR Toolkit Bridging the Hybrid and the End-to-end Approaches towards Data Efficiency and Low Latency. INTERSPEECH, 2020. [pdf](http://oa.ee.tsinghua.edu.cn/~ouzhijian/pdf/is2020_CAT.pdf)
 
 ## Key Features
 
@@ -99,11 +101,11 @@ units.txt : used to generate T.fst (a WFST representation of the CTC topology) l
 lexicon.txt : used to generate L.fst (a WFST representation of the lexicon) later.
 ```
 
-**3) `utils/ctc_compile_dict_token.sh`** from Eesen
+**3) `scripts/ctc-crf/ctc_compile_dict_token.sh`** from Eesen
 
 Compile `T.fst` and `L.fst`.
 
-Note that Eesen `T.fst` (created by `utils/ctc_token_fst.py` in Eesen) makes mistakes, as described in the [CTC-CRF paper](http://oa.ee.tsinghua.edu.cn/~ouzhijian/pdf/ctc-crf.pdf). We correct it by a new `utils/ctc_token_fst_corrected.py`, which is called by `ctc_compile_dict_token.sh` to create the correct `T.fst`.
+Note that Eesen `T.fst` (created by `utils/ctc_token_fst.py` in Eesen) makes mistakes, as described in the [CTC-CRF paper](http://oa.ee.tsinghua.edu.cn/~ouzhijian/pdf/ctc-crf.pdf). We correct it by a new `scripts/ctc-crf/ctc_token_fst_corrected.py`, which is called by `ctc_compile_dict_token.sh` to create the correct `T.fst`.
 
 **4) `local/wsj_format_local_lms.sh`** from Kaldi
 
@@ -138,9 +140,9 @@ Compute the mean and variance of features for feature normalization.
 
 ### Denominator LM preparation
 
-**1) `utils/prep_ctc_trans.py`** from Eesen
+**1) `scripts/ctc-crf/prep_ctc_trans.py`** from Eesen
 
-The training transcripts are saved in `text` file. Based on lexicon, convert word sequences  in `text` file to  label sequences and place in `text_number` file. For example,
+The training transcripts are saved in `text` file. Based on lexicon, convert word sequences  in `text` file to label sequences and place in `text_number` file. For example,
 
 ```
 IT GAVE ME THE FEELING I WAS PART OF A LARGE INDUSTRY 
@@ -158,7 +160,7 @@ Sort the training transcripts in `text_number` file according to head labels in 
 
 Based on `unique_text_number` file, train a phone-based language model `phone_lm.fst` and place in folder `data/den_meta`.
 
-**3) `utils/ctc_token_fst_corrected.py`**
+**3) `scripts/ctc-crf/ctc_token_fst_corrected.py`**
 
 Create the correct `T_den.fst`.
 
