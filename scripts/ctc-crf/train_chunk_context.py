@@ -29,21 +29,22 @@ import ctc_crf_base
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '0,1,2,3'
 TARGET_GPUS = [0, 1, 2, 3]
-
 gpus = torch.IntTensor(TARGET_GPUS)
-ctc_crf_base.init_env('data/den_meta/den_lm.fst', gpus)
-os.system("mkdir -p models_chunk_twin_context")
 
 header = ['epoch', 'time', 'lr', 'held-out loss']
 
 
 def train():
     args = parse_args()
-    logger = init_logging(
-        "chunk_model", "{}/train.log".format("models_chunk_twin_context"))
+   
     args_msg = ['  %s: %s' % (name, value)
                 for (name, value) in vars(args).items()]
     logger.info('args:\n' + '\n'.join(args_msg))
+
+    ckpt_path = "models_chunk_twin_context"
+    os.system("mkdir -p {}".format(ckpt_path))
+    logger = init_logging(
+        "chunk_model", "{}/train.log".format(ckpt_path))
 
     csv_file = open(args.csv_file, 'w', newline='')
     csv_writer = csv.writer(csv_file)
@@ -52,9 +53,9 @@ def train():
     batch_size = args.batch_size
     device = torch.device("cuda:0")
 
-    default_chunk_size = 40
-    jitter_range = 10
     reg_weight = args.reg_weight
+
+    ctc_crf_base.init_env(args.den_lm_fst_path, gpus)
 
     model = CAT_Chunk_Model(args.feature_size, args.hdim, args.output_unit,
                             args.dropout, args.lamb, reg_weight)
@@ -93,17 +94,20 @@ def train():
         epoch += 1
         gc.collect()
 
-        cate_list = range(0, 40, 1)
         if epoch > 2:
-            cate_list = list(cate_list)
-            random.shuffle(cate_list)
+            cate_list = args.cate_list
+        else:
+            cate_list = range(1, args.cate, 1)
+
         for cate in cate_list:
             pkl_path = args.tr_data_path + "/" + str(cate)+".pkl"
             if not os.path.exists(pkl_path):
                 continue
             tr_dataset = SpeechDatasetMemPickel(pkl_path)
-            jitter = random.randint(-jitter_range, jitter_range)
-            chunk_size = default_chunk_size + jitter
+
+            jitter = random.randint(-args.jitter_range, args.jitter_range)
+            chunk_size = args.default_chunk_size + jitter
+
             tr_dataloader = DataLoader(tr_dataset, batch_size=batch_size,
                                        shuffle=True, num_workers=0, collate_fn=PadCollateChunk(chunk_size))
 
@@ -115,13 +119,13 @@ def train():
         cv_losses_sum = []
         cv_cls_losses_sum = []
         count = 0
-        for cate in range(19, -1, -1):
+        for cate in args.cate_list:
             pkl_path = args.dev_data_path + "/"+str(cate)+".pkl"
             if not os.path.exists(pkl_path):
                 continue
             cv_dataset = SpeechDatasetMemPickel(pkl_path)
             cv_dataloader = DataLoader(cv_dataset, batch_size=batch_size, shuffle=False,
-                                       num_workers=0, collate_fn=PadCollateChunk(default_chunk_size))
+                                       num_workers=0, collate_fn=PadCollateChunk(args.default_chunk_size))
             validate_count = validate_chunk_model(model, reg_model, cv_dataloader, epoch,
                                                   cv_losses_sum, cv_cls_losses_sum, args, logger)
             count += validate_count
@@ -134,7 +138,7 @@ def train():
             'optimizer': optimizer.state_dict(),
             'lr': lr,
             'epoch': epoch
-        }, epoch < args.min_epoch or cv_loss <= prev_cv_loss, "models_chunk_twin_context", "model.epoch.{}".format(epoch))
+        }, epoch < args.min_epoch or cv_loss <= prev_cv_loss, ckpt_path, "model.epoch.{}".format(epoch))
 
         csv_row = [epoch, (timeit.default_timer() -
                            prev_epoch_time)/60, lr, cv_loss]

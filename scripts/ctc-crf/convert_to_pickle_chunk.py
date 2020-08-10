@@ -23,6 +23,7 @@ if __name__ == "__main__":
     parser.add_argument("scp", type=str)
     parser.add_argument("label", type=str)
     parser.add_argument("weight", type=str)
+    parser.add_argument("chunk_size", type=int, default=40)
     parser.add_argument("pickle_path", type=str)
 
     args = parser.parse_args()
@@ -56,7 +57,7 @@ if __name__ == "__main__":
                 #print('{} is too short'.format(key))
                 continue
             
-            cate = str(math.ceil(feature.shape[0]/40))+'.pkl'
+            cate = str(math.ceil(feature.shape[0]/args.chunk_size))+'.pkl'
             if cate in dataset_dict:
                 dataset_dict[cate].append([key, value, label, weight])
             else:

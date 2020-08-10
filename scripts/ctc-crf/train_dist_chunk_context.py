@@ -98,7 +98,7 @@ def main_worker(gpu, ngpus_per_node, args):
         if epoch > 2:
             cate_list = args.cate_list
         else:
-            cate_list = range(3, args.cate, 1)
+            cate_list = range(1, args.cate, 1)
         for cate in cate_list:
             pkl_path = args.tr_data_path + "/" + str(cate)+".pkl"
             if not os.path.exists(pkl_path):
@@ -138,7 +138,7 @@ def main_worker(gpu, ngpus_per_node, args):
             cv_dataloader = DataLoader(cv_dataset, batch_size=batch_size, shuffle=False,
                                        num_workers=0, collate_fn=PadCollateChunk(args.default_chunk_size), drop_last=True)
             validate_count = validate_chunk_model(model, reg_model, cv_dataloader, epoch,
-            validate_count = 1
+                                 cv_losses_sum, cv_cls_losses_sum, args, logger)
             count += validate_count
 
         cv_loss = np.sum(np.asarray(cv_losses_sum))/count

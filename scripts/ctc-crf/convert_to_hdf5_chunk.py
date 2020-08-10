@@ -18,6 +18,7 @@ if __name__ == "__main__":
     parser.add_argument("scp", type=str)
     parser.add_argument("label", type=str)
     parser.add_argument("weight", type=str)
+    parser.add_argument("chunk_size", type=int, default=40)
     parser.add_argument("hdf5", type=str)
     args = parser.parse_args()
 
@@ -48,7 +49,7 @@ if __name__ == "__main__":
             if feature.shape[0] < ctc_len(label):
                 print('{} is too short'.format(key))
                 continue
-            cate = str(math.ceil(feature.shape[0]/40))+'.hdf5'
+            cate = str(math.ceil(feature.shape[0]/args.chunk_size))+'.hdf5'
             current_dir = os.path.join(args.hdf5,cate)
             h5_file = h5py.File(current_dir, 'a')
             dset = h5_file.create_dataset(key, data=feature)

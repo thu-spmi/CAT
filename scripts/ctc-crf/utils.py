@@ -216,6 +216,8 @@ def parse_args():
     parser.add_argument("--data_loader_workers", type=int, default=16)
     parser.add_argument("--reg_weight", type=float, default=0.01)
     parser.add_argument("--stop_lr", type=float, default=0.00001)
+    parser.add_argument("--batch_size",  type=int, default=32,
+                        help='batch size for non distribute training')
     parser.add_argument("--tr_data_path", type=str, help="training data path")
     parser.add_argument("--dev_data_path", type=str,
                         help="validation data path")

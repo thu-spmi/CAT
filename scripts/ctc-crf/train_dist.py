@@ -98,7 +98,6 @@ def main_worker(gpu, ngpus_per_node, args):
         gc.collect()
         train(model, tr_dataloader, optimizer, epoch, args, logger)
         cv_loss = validate(model, cv_dataloader, epoch, args, logger)
-        cv_loss = 0.1
         # save model
         if args.rank == 0:
             save_ckpt({
