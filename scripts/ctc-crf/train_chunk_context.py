@@ -95,7 +95,8 @@ def train():
         gc.collect()
 
         if epoch > 2:
-            cate_list = args.cate_list
+            cate_list = list(range(1, args.cate, 1))
+            random.shuffle(cate_list)
         else:
             cate_list = range(1, args.cate, 1)
 
@@ -119,7 +120,8 @@ def train():
         cv_losses_sum = []
         cv_cls_losses_sum = []
         count = 0
-        for cate in args.cate_list:
+        cate_list = range(1, args.cate, 1)
+        for cate in cate_list:
             pkl_path = args.dev_data_path + "/"+str(cate)+".pkl"
             if not os.path.exists(pkl_path):
                 continue

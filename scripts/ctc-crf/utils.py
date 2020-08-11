@@ -264,7 +264,4 @@ def parse_args():
     args.csv_file = args.model + ".csv"
     args.figure_file = args.model + ".png"
 
-    cate_list = list(range(0, args.cate, 1))
-    random.shuffle(cate_list)
-    args.cate_list = cate_list
     return args
