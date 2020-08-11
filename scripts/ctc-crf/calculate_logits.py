@@ -45,7 +45,7 @@ if __name__ == "__main__":
     parser.add_argument("--output_unit", type=int)
     parser.add_argument("--hdim", type=int, default=512)
     parser.add_argument("--layers", type=int, default=6)
-    parser.add_argument("--dropout", type=int, default=0.5)
+    parser.add_argument("--dropout", type=float, default=0.5)
     parser.add_argument("--feature_size", type=int, default=120)
     parser.add_argument("--model", type=str)
     parser.add_argument("--nj", type=int)
@@ -64,7 +64,7 @@ if __name__ == "__main__":
 
     model = Model(args.arch, args.feature_size, args.hdim, args.output_unit,
                   args.layers, args.dropout)
-    model.load_state_dict(torch.load(args.model))
+    model.load_state_dict(torch.load(args.model)['model'])
     model.eval()
     model.cuda()
     n_jobs = args.nj

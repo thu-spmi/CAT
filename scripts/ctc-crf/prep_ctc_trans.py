@@ -19,6 +19,8 @@
 # represented by their indices. 
 
 import sys
+import codecs
+sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
 
 if __name__ == '__main__':
 
@@ -41,7 +43,7 @@ if __name__ == '__main__':
         space_word = sys.argv[4]
 
     # read the lexicon into a dictionary data structure
-    fread = open(dict_file,'r')
+    fread = open(dict_file,'r',encoding="utf-8")
     dict = {}
     for line in fread.readlines():
         line = line.replace('\n','')
@@ -54,7 +56,7 @@ if __name__ == '__main__':
     fread.close()
 
     # assume that each line is formatted as "uttid word1 word2 word3 ...", with no multiple spaces appearing
-    fread = open(trans_file,'r')
+    fread = open(trans_file,'r',encoding="utf-8")
     for line in fread.readlines():
         out_line = ''
         line = line.replace('\n','').strip()
