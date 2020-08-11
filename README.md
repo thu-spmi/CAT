@@ -40,6 +40,8 @@ Please cite CAT using:
 
 4. **Evaluation results on major benchmarks such as Switchboard and Aishell show that CAT obtains the state-of-the-art results among existing end-to-end models with less parameters, and is competitive compared with the hybrid DNN-HMM models.**
 
+5. **We add the support of streaming ASR**. To this end, we propose a new method called contextualized soft forgetting (CSF), which combines soft forgetting and context-sensitive-chunk in bidirectional LSTM (BLSTM). With contextualized soft forgetting, the chunk BLSTM based CTC-CRF with a latency of 300ms outperforms the whole-utterance BLSTM based CTC-CRF. See [pdf](http://oa.ee.tsinghua.edu.cn/~ouzhijian/pdf/is2020_CAT.pdf) for details.
+
 
 ## Dependencies
 
@@ -77,6 +79,7 @@ To begin, go to an example directory under the `egs` directory, e.g. `egs/wsj`, 
 4. [Neural network training preparation](#Neural-network-training-preparation)
 5. [Model training](#Model-training)
 6. [Decoding](#Decoding)
+7. [Low latency acoustic modeling](#Low-latency-acoustic-modeling)
 
 ### Data preparation
 
@@ -271,3 +274,26 @@ Rescore the lattice with ConstArpa-type language model.
 **4) lmrescore.sh** from Kaldi
 
 Rescore the lattice with fst-type language model.
+
+### Low latency acoustic modeling
+
+**1) scripts/ctc-crf/convert_to_hdf5_chunk.py**
+
+Split an utterance into non-overlapping chunks.
+
+**2) ChunkBLSTM_with_Context in scripts/ctc-crf/model.py**
+
+For each chunk, a fixed number of frames to the left and right of the chunk are appended as contextual frames.
+
+The hidden and cell states of the forward and backward LSTM networks are reset to zeros at the left and right boundaries of each CSC in both training and inference. 
+
+When calculating the sequence-level loss in CTC-CRF, we splice the neural network output from chunks into a sequence again, but excluding the network outputs from contextual frames.
+
+**3) scripts/ctc-crf/train_chunk_context.py and scripts/ctc-crf/train_dist_chunk_context.py**
+
+A pre-trained fixed whole-utterance BLSTM is used to regularize the hidden states of the CSC-based BLSTM, and the overall training loss is the sum of the CTC-CRF loss and the twin regularization loss with a scaling factor. 
+
+
+**4) scripts/ctc-crf/calculate_logits_chunk_context.py**
+
+Once the CSC-based BLSTM is trained, we can discard the whole-utterance BLSTM and perform inference over testing utterances without it.
