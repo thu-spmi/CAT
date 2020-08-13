@@ -9,7 +9,7 @@
 
 ## Overview
 
-Recent ASR Toolkits based on DNN-HMM hybrid systems like [Kaldi](http://kaldi-asr.org/) and [RASR](http://www-i6.informatik.rwth-aachen.de/rwth-asr/) achieve the state-of-the-art performance in terms of recognition accuracy, usually measured by word error rate (WER) or character error rate (CER). In contrast, end-to-end systems[^e2e] (like [Eesen](https://github.com/yajiemiao/eesen) and [Espnet](https://github.com/espnet/espnet)) put simplicity of the training pipeline at a higher priority and usually are data-hungry. There is still a pronounced gap between attention end-to-end models and hybrid models in terms of recognition accuracy.
+Deep neural networks (DNNs) of various architectures have become dominantly used in automatic speech recognition (ASR), which roughly can be classified into two approaches - the DNN-HMM hybrid and the end-to-end (E2E) approaches. DNN-HMM hybrid systems like [Kaldi](http://kaldi-asr.org/) and [RASR](http://www-i6.informatik.rwth-aachen.de/rwth-asr/) achieve the state-of-the-art performance in terms of recognition accuracy, usually measured by word error rate (WER) or character error rate (CER). End-to-end systems[^e2e] (like [Eesen](https://github.com/yajiemiao/eesen) and [Espnet](https://github.com/espnet/espnet)) put simplicity of the training pipeline at a higher priority and usually are data-hungry. When comparing the hybrid and E2E approaches (modularity versus a single neural network, separate optimization versus joint optimization), it is worthwhile to note the pros and cons of each approach, as described in [2].
 
 CAT aims at combining the advantages of the two kinds of ASR systems. CAT advocates discriminative training in the framework of [conditional random field](https://en.wikipedia.org/wiki/Conditional_random_field) (CRF), particularly with but not limited to [connectionist temporal classification]() (CTC) inspired state topology.
 
@@ -19,9 +19,11 @@ The recently developed [CTC-CRF](http://oa.ee.tsinghua.edu.cn/~ouzhijian/pdf/ctc
 
 Please cite CAT using:
 
-* Hongyu Xiang, Zhijian Ou. CRF-based Single-stage Acoustic Modeling with CTC Topology. ICASSP, Brighton, UK, 2019. [pdf](http://oa.ee.tsinghua.edu.cn/~ouzhijian/pdf/ctc-crf.pdf)
+[1] Hongyu Xiang, Zhijian Ou. CRF-based Single-stage Acoustic Modeling with CTC Topology. ICASSP, 2019. [pdf](http://oa.ee.tsinghua.edu.cn/~ouzhijian/pdf/ctc-crf.pdf)
 
-* Keyu An, Hongyu Xiang. Zhijian Ou. CRF-based ASR Toolkit. arXiv, 2019. [pdf](https://arxiv.org/abs/1911.08747)
+[2] Keyu An, Hongyu Xiang. Zhijian Ou. CRF-based ASR Toolkit. arXiv, 2019. [pdf](https://arxiv.org/abs/1911.08747) (More descriptions about the toolkit implementation)
+
+[3] Keyu An, Hongyu Xiang. Zhijian Ou. CAT: A CTC-CRF based ASR Toolkit Bridging the Hybrid and the End-to-end Approaches towards Data Efficiency and Low Latency. INTERSPEECH, 2020. [pdf](http://oa.ee.tsinghua.edu.cn/~ouzhijian/pdf/is2020_CAT.pdf)
 
 ## Key Features
 
@@ -37,6 +39,8 @@ Please cite CAT using:
    * Detailed documentation and code comments are also provided in CAT, making it easy to get start and obtain state-of-the-art baseline results even for beginners of ASR.
 
 4. **Evaluation results on major benchmarks such as Switchboard and Aishell show that CAT obtains the state-of-the-art results among existing end-to-end models with less parameters, and is competitive compared with the hybrid DNN-HMM models.**
+
+5. **We add the support of streaming ASR**. To this end, we propose a new method called contextualized soft forgetting (CSF), which combines soft forgetting and context-sensitive-chunk in bidirectional LSTM (BLSTM). With contextualized soft forgetting, the chunk BLSTM based CTC-CRF with a latency of 300ms outperforms the whole-utterance BLSTM based CTC-CRF. See [pdf](http://oa.ee.tsinghua.edu.cn/~ouzhijian/pdf/is2020_CAT.pdf) for details.
 
 
 ## Dependencies
@@ -75,6 +79,7 @@ To begin, go to an example directory under the `egs` directory, e.g. `egs/wsj`, 
 4. [Neural network training preparation](#Neural-network-training-preparation)
 5. [Model training](#Model-training)
 6. [Decoding](#Decoding)
+7. [Low latency acoustic modeling](#Low-latency-acoustic-modeling)
 
 ### Data preparation
 
@@ -99,11 +104,11 @@ units.txt : used to generate T.fst (a WFST representation of the CTC topology) l
 lexicon.txt : used to generate L.fst (a WFST representation of the lexicon) later.
 ```
 
-**3) `utils/ctc_compile_dict_token.sh`** from Eesen
+**3) `scripts/ctc-crf/ctc_compile_dict_token.sh`** from Eesen
 
 Compile `T.fst` and `L.fst`.
 
-Note that Eesen `T.fst` (created by `utils/ctc_token_fst.py` in Eesen) makes mistakes, as described in the [CTC-CRF paper](http://oa.ee.tsinghua.edu.cn/~ouzhijian/pdf/ctc-crf.pdf). We correct it by a new `utils/ctc_token_fst_corrected.py`, which is called by `ctc_compile_dict_token.sh` to create the correct `T.fst`.
+Note that Eesen `T.fst` (created by `utils/ctc_token_fst.py` in Eesen) makes mistakes, as described in the [CTC-CRF paper](http://oa.ee.tsinghua.edu.cn/~ouzhijian/pdf/ctc-crf.pdf). We correct it by a new `scripts/ctc-crf/ctc_token_fst_corrected.py`, which is called by `ctc_compile_dict_token.sh` to create the correct `T.fst`.
 
 **4) `local/wsj_format_local_lms.sh`** from Kaldi
 
@@ -138,9 +143,9 @@ Compute the mean and variance of features for feature normalization.
 
 ### Denominator LM preparation
 
-**1) `utils/prep_ctc_trans.py`** from Eesen
+**1) `scripts/ctc-crf/prep_ctc_trans.py`** from Eesen
 
-The training transcripts are saved in `text` file. Based on lexicon, convert word sequences  in `text` file to  label sequences and place in `text_number` file. For example,
+The training transcripts are saved in `text` file. Based on lexicon, convert word sequences  in `text` file to label sequences and place in `text_number` file. For example,
 
 ```
 IT GAVE ME THE FEELING I WAS PART OF A LARGE INDUSTRY 
@@ -158,7 +163,7 @@ Sort the training transcripts in `text_number` file according to head labels in 
 
 Based on `unique_text_number` file, train a phone-based language model `phone_lm.fst` and place in folder `data/den_meta`.
 
-**3) `utils/ctc_token_fst_corrected.py`**
+**3) `scripts/ctc-crf/ctc_token_fst_corrected.py`**
 
 Create the correct `T_den.fst`.
 
@@ -269,3 +274,26 @@ Rescore the lattice with ConstArpa-type language model.
 **4) lmrescore.sh** from Kaldi
 
 Rescore the lattice with fst-type language model.
+
+### Low latency acoustic modeling
+
+**1) scripts/ctc-crf/convert_to_hdf5_chunk.py**
+
+Split an utterance into non-overlapping chunks.
+
+**2) ChunkBLSTM_with_Context in scripts/ctc-crf/model.py**
+
+For each chunk, a fixed number of frames to the left and right of the chunk are appended as contextual frames.
+
+The hidden and cell states of the forward and backward LSTM networks are reset to zeros at the left and right boundaries of each CSC in both training and inference. 
+
+When calculating the sequence-level loss in CTC-CRF, we splice the neural network output from chunks into a sequence again, but excluding the network outputs from contextual frames.
+
+**3) scripts/ctc-crf/train_chunk_context.py and scripts/ctc-crf/train_dist_chunk_context.py**
+
+A pre-trained fixed whole-utterance BLSTM is used to regularize the hidden states of the CSC-based BLSTM, and the overall training loss is the sum of the CTC-CRF loss and the twin regularization loss with a scaling factor. 
+
+
+**4) scripts/ctc-crf/calculate_logits_chunk_context.py**
+
+Once the CSC-based BLSTM is trained, we can discard the whole-utterance BLSTM and perform inference over testing utterances without it.
