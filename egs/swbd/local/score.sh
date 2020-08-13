@@ -1,1 +1,1 @@
-../steps/score_kaldi.sh
+local/score_sclite.sh
