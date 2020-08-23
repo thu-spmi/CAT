@@ -94,7 +94,7 @@ class LSTM(nn.Module):
 
 class VGGBLSTM(torch.nn.Module):
     def __init__(self, idim, hdim, n_layers, dropout, in_channel=3):
-        super(EncoderBLSTM, self).__init__()
+        super(VGGBLSTM, self).__init__()
 
         self.VGG = VGG2L(in_channel)
         self.BLSTM = BLSTM(get_vgg2l_odim(idim, in_channel=in_channel),
@@ -108,7 +108,7 @@ class VGGBLSTM(torch.nn.Module):
 
 class VGGLSTM(torch.nn.Module):
     def __init__(self, idim,  hdim, n_layers, dropout, in_channel=3):
-        super(EncoderLSTM, self).__init__()
+        super(VGGLSTM, self).__init__()
         self.VGG = VGG2L(in_channel)
         self.LSTM = LSTM(get_vgg2l_odim(idim, in_channel=in_channel),
                          hdim, n_layers, dropout)
