@@ -17,7 +17,7 @@ class Model(nn.Module):
     def __init__(self, net, idim, hdim, K, n_layers, dropout):
         super(Model, self).__init__()
         self.net = eval(net)(idim, hdim, n_layers, dropout)
-        if net in ['BLSTM', 'BLSTMN']:
+        if net in ['BLSTM', 'BLSTMN', 'VGGBLSTM']:
             self.linear = nn.Linear(hdim * 2, K)
         else:
             self.linear = nn.Linear(hdim, K)
