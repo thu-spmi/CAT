@@ -110,7 +110,11 @@ dir=exp/$arch
 
 if [ $stage -le 6 ]; then
   python3 ctc-crf/train.py \
-    --min_epoch=8 --output_unit=72 --arch=$arch --lamb=0.01 --data_path=data/hdf5 \
+    --min_epoch=8 \
+    --output_unit=72 \
+    --arch=$arch \
+    --lamb=0.01 \
+    --data_path=data/hdf5 \
     $dir
 fi
 
