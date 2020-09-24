@@ -128,7 +128,12 @@ arch=BLSTM
 dir=exp/$arch
 
 if [ $stage -le 5 ]; then
-  python ctc-crf/train.py --output_unit=46 --arch=$arch --lamb=0.01 --data_path=data/hdf5 $dir
+  python ctc-crf/train.py \
+      --output_unit=46 \
+      --arch=$arch \
+      --lamb=0.01 \
+      --data_path=data/hdf5 \
+      $dir
 fi
 
 data_eval2000=data/eval2000
