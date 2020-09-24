@@ -87,6 +87,8 @@ def train():
     parser.add_argument("--data_path")
     parser.add_argument("--lr", type=float,default=0.001)
     parser.add_argument("--stop_lr", type=float,default=0.00001)
+    parser.add_argument("--resume", type=bool, default=False)
+    parser.add_argument("--pretrained_model_path")
     args = parser.parse_args()
 
     os.makedirs(args.dir + '/board', exist_ok=True)
@@ -105,6 +107,12 @@ def train():
 
     model = Model(args.arch, args.feature_size, args.hdim, args.output_unit,
                   args.layers, args.dropout, args.lamb)
+    
+    if args.resume:
+        print("resume from {}".format(args.pretrained_model_path))
+        pretrained_dict = torch.load(args.pretrained_model_path)
+        model.load_state_dict(pretrained_dict)
+        
     device = torch.device("cuda:0")
     model.cuda()
     model = nn.DataParallel(model)
