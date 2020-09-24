@@ -119,7 +119,13 @@ output_unit=$(awk '{if ($1 == "#0")print $2 - 1 ;}' data/lang_phn/tokens.txt)
 
 if [ $stage -le 6 ]; then
     echo "nn training."
-    python3 ctc-crf/train.py --arch=$arch --output_unit=$output_unit --lamb=0.01 --data_path $data/hdf5 $dir
+    python3 ctc-crf/train.py \
+        --arch=$arch \
+        --output_unit=$output_unit \
+        --lamb=0.01 \
+        --data_path \
+        $data/hdf5 \
+        $dir
 fi
 
 nj=20
