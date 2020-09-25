@@ -2,6 +2,7 @@ THCHS30 RESULT
 ---------------
 
 
+1）
 -4*GTX1080 ti 
 
 --ctc_crf 
