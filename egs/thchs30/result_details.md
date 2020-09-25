@@ -1,5 +1,5 @@
-#THCHS30 RESULT
-
+THCHS30 RESULT
+---------------
 
 
 -4*GTX1080 ti 
@@ -25,6 +25,7 @@
 
 
 ![loss curve](assets/loss_curve.png)
+
 
 | epoch | time   | lr      | mean-cv-loss  |
 | ----- | ------ | ------- | ------------- |
