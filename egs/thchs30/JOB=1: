@@ -1,6 +1,0 @@
-# exp/decode_test/ark/log/decode.JOB.log latgen-faster --max-mem=200000000 --min-active=200 --max-active=7000 --beam=17.0 --lattice-beam=8.0 --minimize=false --acoustic-scale=1.0 --allow-partial=true --word-symbol-table=data/lang_phn_test/words.txt data/lang_phn_test/TLG.fst ark:exp/decode_test/ark/decode.JOB.ark "ark:|gzip -c > exp/decode_test/lattice/lat.JOB.gz" 
-# Started at Wed Jul 22 16:33:51 CST 2020
-#
-bash: line 1: exp/decode_test/ark/log/decode.JOB.log: No such file or directory
-# Accounting: time=0 threads=1
-# Ended (code 127) at Wed Jul 22 16:33:51 CST 2020, elapsed time 0 seconds
