@@ -77,26 +77,26 @@
       
 12. **训练语言模型时报错Usage: optimize_alpha.pl alpha1 perplexity@alpha1 alpha2 perplexity@alpha2 alpha3 perplexity@alph3 at /xxx/xxx/kaldi/tools/kaldi_lm/optimize_alpha.pl line 23.**
 
-      原因是调用了Kaldi中的脚本train_lm.sh进行语言模型的训练，而这个脚本默认语料文本至少10k句，held_out参数默认设置为10000。对于语料较少的情况，可以考虑将held_out改小。修改该参数后，还要注意将data目录下的文件全部删除，再运行run.sh才能成功。
-      
-13. **发现生成的lexicon_numbers.txt文件为空？**
+      原因是调用了Kaldi中的脚本train_lm.sh进行语言模型的训练，而这个脚本默认语料文本至少10k句，held_out参数默认设置为10000，如果训练集的总句子数小于held_out的值就会出错。对于语料较少的情况，可以考虑将held_out改小。修改该参数后，还要注意将data目录下的文件全部删除，再运行run.sh才能成功。
+    
+13. **发现生成的data/dict_phn/lexicon_numbers.txt文件为空？**
 
-      是因为生成此文件时，在词典lexicon.txt的所有音素里，有不在units.txt音素集中的非法音素。一般可能是lexicon.txt中出现了连续的多余空格，空格是没有被收录在units.txt中的，删去多余的空格即可。
+      是因为生成此文件时，在词典lexicon.txt中存在非法音素，这些音素不包含在在units.txt音素集中。一般可能是lexicon.txt中出现了连续的多余空格，空格是没有被收录在units.txt中的，删去多余的空格即可。
    
 14. **网络训练时，出现CUDA error：out of memory？**
 
-      将batch size改小即可。
-      
+      尝试改小batch size。
+    
 15. **解码时出错，log文件中提示latgen-faster command not found？**
 
       因为CAT安装中第一步，latgen-faster编译未成功。需要将latgen-faster加入kaldi的src中，并在Makefile文件中加上latgen-faster，之后在kaldi的src目录下make，才能成功编译。
-      
+    
 16. **loss出现不降反增的情况？**
-      
-      检查网络的输出单元数与labels的维度是否匹配，不匹配时会出现学习错误的情况，与音素数量保持一致即可。
-      
-17. **token中出现了非音素集的字符？**
-      
+  
+      检查网络的输出单元数与labels的维度是否匹配，不匹配时会出现学习错误的情况，与labels维度（即音素数量）保持一致即可。
+    
+17. **data/dict_phn/units.txt中出现了非音素集的字符？**
+  
       检查词典的单词中是否有空格，如果有，处理脚本会将空格后部分的单词当作注音，将其每个字母当作新的音素，导致音素集引入更多其他的符号。
       
       
