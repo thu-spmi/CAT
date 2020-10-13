@@ -87,7 +87,7 @@ def train():
     parser.add_argument("--data_path")
     parser.add_argument("--lr", type=float,default=0.001)
     parser.add_argument("--stop_lr", type=float,default=0.00001)
-    parser.add_argument("--resume", type=bool, default=False)
+    parser.add_argument("--resume", action="store_true")
     parser.add_argument("--pretrained_model_path")
     args = parser.parse_args()
 
