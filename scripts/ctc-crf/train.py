@@ -22,7 +22,7 @@ from dataset import SpeechDataset, SpeechDatasetMem, PadCollate
 import ctc_crf_base
 from torch.utils.tensorboard import SummaryWriter
 
-TARGET_GPUS = list(map(int, os.environ['CUDA_VISIBLE_DEVICES'].split(",")))
+TARGET_GPUS = [i for i in range(len(os.environ['CUDA_VISIBLE_DEVICES'].split(",")))]
 gpus = torch.IntTensor(TARGET_GPUS)
 ctc_crf_base.init_env('data/den_meta/den_lm.fst', gpus)
 
