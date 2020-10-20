@@ -64,7 +64,7 @@ if __name__ == "__main__":
 
     model = Model(args.arch, args.feature_size, args.hdim, args.output_unit,
                   args.layers, args.dropout)
-    model.load_state_dict(torch.load(args.model)['model'])
+    model.load_state_dict(torch.load(args.model))
     model.eval()
     model.cuda()
     n_jobs = args.nj

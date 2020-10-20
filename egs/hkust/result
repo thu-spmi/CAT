@@ -1,0 +1,2 @@
+# 6layer BLSTM, 512 hidden units, dropout=0.5, lamb=0.01
+%WER 26.79 [ 15042 / 56154, 1554 ins, 2636 del, 10852 sub ] exp/BLSTM/decode/cer_10_0.0

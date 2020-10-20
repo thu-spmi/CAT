@@ -18,7 +18,7 @@ import json
 from torch.autograd import Function
 from torch.utils.data import Dataset, DataLoader
 from model import BLSTM, LSTM, VGGBLSTM, VGGLSTM, LSTMrowCONV, TDNN_LSTM, BLSTMN
-from dataset import SpeechDataset, SpeechDatasetMem, PadCollate
+from dataset import SpeechDataset, SpeechDatasetMem, SpeechDatasetPickle, SpeechDatasetMemPickle, PadCollate
 import ctc_crf_base
 from torch.utils.tensorboard import SummaryWriter
 
@@ -88,6 +88,7 @@ def train():
     parser.add_argument("--lr", type=float,default=0.001)
     parser.add_argument("--stop_lr", type=float,default=0.00001)
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--pkl", action="store_true")
     parser.add_argument("--pretrained_model_path")
     args = parser.parse_args()
 
@@ -120,8 +121,12 @@ def train():
 
     lr = args.lr
     optimizer = optim.Adam(model.parameters(), lr=lr)
+    
+    if args.pkl:
+        tr_dataset = SpeechDatasetMemPickle(args.data_path + "/tr.pkl") 
+    else:
+        tr_dataset = SpeechDatasetMem(args.data_path + "/tr.hdf5")
 
-    tr_dataset = SpeechDatasetMem(args.data_path + "/tr.hdf5")
     tr_dataloader = DataLoader(
         tr_dataset,
         batch_size=args.batch_size,
@@ -130,7 +135,11 @@ def train():
         num_workers=0,
         collate_fn=PadCollate())
 
-    cv_dataset = SpeechDatasetMem(args.data_path + "/cv.hdf5")
+    if args.pkl:
+        cv_dataset = SpeechDatasetMemPickle(args.data_path + "/cv.pkl") 
+    else:
+        cv_dataset = SpeechDatasetMem(args.data_path + "/cv.hdf5")
+
     cv_dataloader = DataLoader(
         cv_dataset,
         batch_size=args.batch_size,
@@ -194,6 +203,8 @@ def train():
             print("cv_real_loss: {}".format(real_loss.item()))
 
         cv_loss = np.sum(np.asarray(cv_losses_sum)) / count
+        print("mean_cv_loss: {}".format(cv_loss))
+        
         writer.add_scalar('mean_cv_loss',cv_loss,epoch)
         if epoch < args.min_epoch or cv_loss <= prev_cv_loss:
             torch.save(model.module.state_dict(), args.dir + "/best_model")

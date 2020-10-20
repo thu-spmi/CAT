@@ -166,6 +166,39 @@ class TDNN(torch.nn.Module):
         output = self.bn(output, input_lengths)
         return output.transpose(1, 2)
 
+class TDNN_downsample(torch.nn.Module):
+    def __init__(self, idim, hdim, n_layers=7,dropout=0.5):
+        super(TDNN_downsample, self).__init__()
+        self.idim = idim
+        self.hdim = hdim
+        self.n_layers = n_layers
+        self.dropout = dropout
+        setattr(self,"conv0" , torch.nn.Conv1d(self.idim, self.hdim, 5, padding=2))
+        setattr(self, "dropout0" , torch.nn.Dropout(dropout))
+        setattr(self,"conv1" , torch.nn.Conv1d(self.hdim, self.hdim, 5, dilation=2,padding=4))
+        setattr(self, "dropout1" , torch.nn.Dropout(dropout))
+        setattr(self,"conv2" , torch.nn.Conv1d(self.hdim, self.hdim, 5, padding=2))
+        setattr(self, "dropout2" , torch.nn.Dropout(dropout))
+        setattr(self,"conv3" , torch.nn.Conv1d(self.hdim, self.hdim, 3, stride=3))
+        setattr(self, "dropout3" , torch.nn.Dropout(dropout))
+        setattr(self,"conv4" , torch.nn.Conv1d(self.hdim, self.hdim, 5, dilation=2,padding=4))
+        setattr(self, "dropout4" , torch.nn.Dropout(dropout))
+        setattr(self,"conv5" , torch.nn.Conv1d(self.hdim, self.hdim, 5, padding=2))
+        setattr(self, "dropout5" , torch.nn.Dropout(dropout))
+        setattr(self,"conv6" , torch.nn.Conv1d(self.hdim, self.hdim, 5, dilation=2,padding=4))
+
+    def forward(self, features, input_lengths):
+        for layer in six.moves.range(self.n_layers):
+            conv= getattr(self, 'conv' + str(layer))
+            features = features.transpose(1,2)
+            features = conv(features)
+            features = F.relu(features)
+            features = features.transpose(1,2)
+            features = F.layer_norm(features, [features.size()[-1]])
+            if layer < self.n_layers-1:
+               dropout = getattr(self, 'dropout' + str(layer))
+               features = dropout(features)
+        return features,input_lengths
 
 class TDNN_LSTM(torch.nn.Module):
     def __init__(self, idim,  hdim, n_layers, dropout):
