@@ -177,6 +177,7 @@ def train():
             writer.add_scalar('training loss',
                             real_loss.item(),
                             (epoch-1) * len(tr_dataloader) + i)
+            print("time: {}, tr_real_loss: {}, lr: {}".format(t2 - prev_t, real_loss.item(), optimizer.param_groups[0]['lr']))
             prev_t = t2
 
         # save model
