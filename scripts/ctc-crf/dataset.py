@@ -110,7 +110,7 @@ class SpeechDatasetMem(Dataset):
     def __getitem__(self, idx):
         return self.data_batch[idx]
 
-class SpeechDatasetPickel(Dataset):
+class SpeechDatasetPickle(Dataset):
     def __init__(self, pickle_path):
         with open(pickle_path, 'rb') as f:
             self.dataset = pickle.load(f)
@@ -124,7 +124,7 @@ class SpeechDatasetPickel(Dataset):
         return torch.FloatTensor(mat), torch.IntTensor(label), torch.FloatTensor(weight)
 
 
-class SpeechDatasetMemPickel(Dataset):
+class SpeechDatasetMemPickle(Dataset):
     def __init__(self, pickle_path):
         with open(pickle_path, 'rb') as f:
             self.dataset = pickle.load(f)

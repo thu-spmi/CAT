@@ -27,8 +27,7 @@ from plot_train_process import plot_train_figure
 from utils import save_ckpt, adjust_lr, parse_args, train_chunk_model, validate_chunk_model
 import ctc_crf_base
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0,1,2,3'
-TARGET_GPUS = [0, 1, 2, 3]
+TARGET_GPUS = [i for i in range(len(os.environ['CUDA_VISIBLE_DEVICES'].split(",")))]
 gpus = torch.IntTensor(TARGET_GPUS)
 
 header = ['epoch', 'time', 'lr', 'held-out loss']

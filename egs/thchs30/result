@@ -1,0 +1,5 @@
+grep WER exp/decode_*/lattice/cer_* | utils/best_wer.sh
+
+# 6layer-BLSTM results, lamb=0.01, hdim=512, lr=0.001
+# sp  unit    test set
+# N   phone   20.31%

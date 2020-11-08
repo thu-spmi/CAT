@@ -110,7 +110,11 @@ dir=exp/$arch
 
 if [ $stage -le 6 ]; then
   python3 ctc-crf/train.py \
-    --min_epoch=8 --output_unit=72 --arch=$arch --lamb=0.01 --data_path=data/hdf5 \
+    --min_epoch=8 \
+    --output_unit=72 \
+    --arch=$arch \
+    --lamb=0.01 \
+    --data_path=data/hdf5 \
     $dir
 fi
 
@@ -139,9 +143,9 @@ if [ $stage -le 8 ]; then
 
 
   for set in dev93 eval92; do
-    mkdir -p $dir/decode_${set}/lattice_bd_fgconst
-    steps/lmrescore_const_arpa.sh --cmd "$decode_cmd" data/lang_phn_test_bd_{tgpr,fgconst} data/test_${set} exp/decode_${set}/lattice_bd_{tgpr,fgconst} || exit 1;
-    mkdir -p $dir/exp/decode_${set}/lattice_tg
-    steps/lmrescore.sh --cmd "$decode_cmd" data/lang_phn_test_{tgpr,tg} data/test_${set} exp/decode_${set}/lattice_{tgpr,tg} || exit 1;
+    mkdir -p $dir/decode_${set}_bd_fgconst
+    steps/lmrescore_const_arpa.sh --cmd "$decode_cmd" data/lang_phn_test_bd_{tgpr,fgconst} data/test_${set} $dir/decode_${set}_bd_{tgpr,fgconst} || exit 1;
+    mkdir -p $dir/exp/decode_${set}_tg
+    steps/lmrescore.sh --cmd "$decode_cmd" --mode 3 data/lang_phn_test_{tgpr,tg} data/test_${set} $dir/decode_${set}_{tgpr,tg} || exit 1;
   done
 fi

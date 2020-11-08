@@ -18,11 +18,11 @@ import json
 from torch.autograd import Function
 from torch.utils.data import Dataset, DataLoader
 from model import BLSTM, LSTM, VGGBLSTM, VGGLSTM, LSTMrowCONV, TDNN_LSTM, BLSTMN
-from dataset import SpeechDataset, SpeechDatasetMem, PadCollate
+from dataset import SpeechDataset, SpeechDatasetMem, SpeechDatasetPickle, SpeechDatasetMemPickle, PadCollate
 import ctc_crf_base
 from torch.utils.tensorboard import SummaryWriter
 
-TARGET_GPUS = list(map(int, os.environ['CUDA_VISIBLE_DEVICES'].split(",")))
+TARGET_GPUS = [i for i in range(len(os.environ['CUDA_VISIBLE_DEVICES'].split(",")))]
 gpus = torch.IntTensor(TARGET_GPUS)
 ctc_crf_base.init_env('data/den_meta/den_lm.fst', gpus)
 
@@ -31,7 +31,7 @@ class Model(nn.Module):
     def __init__(self, net, idim, hdim, K, n_layers, dropout, lamb):
         super(Model, self).__init__()
         self.net = eval(net)(idim, hdim, n_layers, dropout=dropout)
-        if net in ['BLSTM', 'BLSTMN']:
+        if net in ['BLSTM', 'BLSTMN', 'VGGBLSTM']:
             self.linear = nn.Linear(hdim * 2, K)
         else:
             self.linear = nn.Linear(hdim, K)
@@ -87,6 +87,9 @@ def train():
     parser.add_argument("--data_path")
     parser.add_argument("--lr", type=float,default=0.001)
     parser.add_argument("--stop_lr", type=float,default=0.00001)
+    parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--pkl", action="store_true")
+    parser.add_argument("--pretrained_model_path")
     args = parser.parse_args()
 
     os.makedirs(args.dir + '/board', exist_ok=True)
@@ -105,6 +108,12 @@ def train():
 
     model = Model(args.arch, args.feature_size, args.hdim, args.output_unit,
                   args.layers, args.dropout, args.lamb)
+    
+    if args.resume:
+        print("resume from {}".format(args.pretrained_model_path))
+        pretrained_dict = torch.load(args.pretrained_model_path)
+        model.load_state_dict(pretrained_dict)
+        
     device = torch.device("cuda:0")
     model.cuda()
     model = nn.DataParallel(model)
@@ -112,8 +121,12 @@ def train():
 
     lr = args.lr
     optimizer = optim.Adam(model.parameters(), lr=lr)
+    
+    if args.pkl:
+        tr_dataset = SpeechDatasetMemPickle(args.data_path + "/tr.pkl") 
+    else:
+        tr_dataset = SpeechDatasetMem(args.data_path + "/tr.hdf5")
 
-    tr_dataset = SpeechDatasetMem(args.data_path + "/tr.hdf5")
     tr_dataloader = DataLoader(
         tr_dataset,
         batch_size=args.batch_size,
@@ -122,7 +135,11 @@ def train():
         num_workers=0,
         collate_fn=PadCollate())
 
-    cv_dataset = SpeechDatasetMem(args.data_path + "/cv.hdf5")
+    if args.pkl:
+        cv_dataset = SpeechDatasetMemPickle(args.data_path + "/cv.pkl") 
+    else:
+        cv_dataset = SpeechDatasetMem(args.data_path + "/cv.hdf5")
+
     cv_dataloader = DataLoader(
         cv_dataset,
         batch_size=args.batch_size,
@@ -160,6 +177,7 @@ def train():
             writer.add_scalar('training loss',
                             real_loss.item(),
                             (epoch-1) * len(tr_dataloader) + i)
+            print("time: {}, tr_real_loss: {}, lr: {}".format(t2 - prev_t, real_loss.item(), optimizer.param_groups[0]['lr']))
             prev_t = t2
 
         # save model
@@ -186,6 +204,8 @@ def train():
             print("cv_real_loss: {}".format(real_loss.item()))
 
         cv_loss = np.sum(np.asarray(cv_losses_sum)) / count
+        print("mean_cv_loss: {}".format(cv_loss))
+        
         writer.add_scalar('mean_cv_loss',cv_loss,epoch)
         if epoch < args.min_epoch or cv_loss <= prev_cv_loss:
             torch.save(model.module.state_dict(), args.dir + "/best_model")
