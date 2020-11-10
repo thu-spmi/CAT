@@ -35,6 +35,10 @@ class Model(nn.Module):
             self.linear = nn.Linear(hdim * 2, K)
         else:
             self.linear = nn.Linear(hdim, K)
+        if net == 'TDNN_downsample':
+            self.downsample = True
+        else:
+            self.downsample = False
         self.loss_fn = CTC_CRF_LOSS(lamb=lamb)
 
     def forward(self, logits, labels_padded, input_lengths, label_lengths):
@@ -56,7 +60,8 @@ class Model(nn.Module):
         netout, _ = self.net(logits, input_lengths)
         netout = self.linear(netout)
         netout = F.log_softmax(netout, dim=2)
-
+        if self.downsample:
+            input_lengths = input_lengths / 3
         loss = self.loss_fn(netout, labels, input_lengths, label_lengths)
         return loss
 
@@ -73,7 +78,7 @@ def train():
         "--arch",
         choices=[
             'BLSTM', 'LSTM', 'VGGBLSTM', 'VGGLSTM', 'LSTMrowCONV', 'TDNN_LSTM',
-            'BLSTMN'
+            'BLSTMN', 'TDNN_downsample'
         ],
         default='BLSTM')
     parser.add_argument("--min_epoch", type=int, default=15)
