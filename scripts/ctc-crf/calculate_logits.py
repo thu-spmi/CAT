@@ -6,7 +6,6 @@ import sys
 import kaldi_io
 import argparse
 import json
-from torch.autograd import Variable
 from model import BLSTM, LSTM, VGGBLSTM, VGGLSTM, LSTMrowCONV, TDNN_LSTM, BLSTMN
 
 
