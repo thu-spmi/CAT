@@ -1,14 +1,9 @@
-import sys
-import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-import sys
 import kaldi_io
-import six
 import argparse
-import math
 from torch.autograd import Variable
 from model import ChunkBLSTM_with_Context
 
