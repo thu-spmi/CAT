@@ -4,7 +4,6 @@ import torch.nn.functional as F
 import numpy as np
 import kaldi_io
 import argparse
-from torch.autograd import Variable
 from model import ChunkBLSTM_with_Context
 
 class Model(nn.Module):
