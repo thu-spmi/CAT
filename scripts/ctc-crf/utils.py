@@ -252,10 +252,10 @@ def parse_args():
                         help='the checkpoint file path of reg model')
 
     parser.add_argument("--default_chunk_size", type=int, default=40,
-                        help='the checkpoint file path of reg model')
+                        help='default chunk size for low latency model')
 
     parser.add_argument("--jitter_range", type=int, default=10,
-                        help='the checkpoint file path of reg model')
+                        help='contextual frame number of low latency model')
     parser.add_argument("--cate", type=int, default=4000, 
                         help='the number of pkls the training ark data was diviced and assigned to by utterence length')
 
