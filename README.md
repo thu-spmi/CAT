@@ -80,6 +80,7 @@ To begin, go to an example directory under the `egs` directory, e.g. `egs/wsj`, 
 5. [Model training](#Model-training)
 6. [Decoding](#Decoding)
 7. [Low latency acoustic modeling](#Low-latency-acoustic-modeling)
+8. [Distributed Model training](#Distributed-Model-training)
 
 ### Data preparation
 
@@ -297,3 +298,12 @@ A pre-trained fixed whole-utterance BLSTM is used to regularize the hidden state
 **4) scripts/ctc-crf/calculate_logits_chunk_context.py**
 
 Once the CSC-based BLSTM is trained, we can discard the whole-utterance BLSTM and perform inference over testing utterances without it.
+
+### Distributed Model training
+
+**1) scripts/ctc-crf/train_dist.py**
+A script to be used for training models on multiple devices. DistributedDataParallel api was used to implement this function. For details about this api please refer describe on PyTorch website https://pytorch.org/docs/master/generated/torch.nn.parallel.DistributedDataParallel.html#distributeddataparallel. To use this script the parameters --dist_url, --world_size, --start_rank,--gpu_batch_size in scripts/ctc-crf/utils.py should be set appropriately depend on your device number and gpu number of each device. Please refer the description of this parameters.
+
+
+**2) scripts/ctc-crf/train_dist_chunk_context.py**
+This script was used to train low latency acoustic model with distributed method. Except the parameters of train_dist.py and parameters of low latency model,--cate should be set to specify the max cate number of classified training data by length of utterances.
