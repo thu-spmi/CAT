@@ -306,4 +306,4 @@ A script to be used for training models on multiple devices. DistributedDataPara
 
 
 **2) scripts/ctc-crf/train_dist_chunk_context.py**
-This script was used to train low latency acoustic model with distributed method. Except the parameters of train_dist.py and parameters of low latency model,--cate should be set to specify the max cate number of classified training data by length of utterances.
+This script was used to train low latency acoustic model with distributed method. Except the parameters of train_dist.py and parameters of low latency model, --cate should be set to specify the number of categories of training data. For the training of low latency model, the train data should be categoried by the multiple times length of default chunk size of utterances. And at the first training epoch the train data was used from category 0 to the max category size, i.e the asending order of utterance length. After that, from the second epoch the category should be shuffled.
