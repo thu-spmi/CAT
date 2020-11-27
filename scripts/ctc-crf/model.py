@@ -198,7 +198,7 @@ class TDNN_downsample(torch.nn.Module):
             if layer < self.n_layers-1:
                dropout = getattr(self, 'dropout' + str(layer))
                features = dropout(features)
-        return features,input_lengths
+        return features,input_lengths/3
 
 class TDNN_LSTM(torch.nn.Module):
     def __init__(self, idim,  hdim, n_layers, dropout):
