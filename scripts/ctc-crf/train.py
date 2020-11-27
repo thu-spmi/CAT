@@ -35,10 +35,6 @@ class Model(nn.Module):
             self.linear = nn.Linear(hdim * 2, K)
         else:
             self.linear = nn.Linear(hdim, K)
-        if net == 'TDNN_downsample':
-            self.downsample = True
-        else:
-            self.downsample = False
         self.loss_fn = CTC_CRF_LOSS(lamb=lamb)
 
     def forward(self, logits, labels_padded, input_lengths, label_lengths):
@@ -57,11 +53,9 @@ class Model(nn.Module):
             labels_padded[i, :x] for i, x in enumerate(label_lengths)
         ]
         labels = torch.cat(label_list)
-        netout, _ = self.net(logits, input_lengths)
+        netout, input_lengths = self.net(logits, input_lengths)
         netout = self.linear(netout)
         netout = F.log_softmax(netout, dim=2)
-        if self.downsample:
-            input_lengths = input_lengths / 3
         loss = self.loss_fn(netout, labels, input_lengths, label_lengths)
         return loss
 
