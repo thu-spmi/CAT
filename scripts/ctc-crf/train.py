@@ -54,6 +54,7 @@ class Model(nn.Module):
         ]
         labels = torch.cat(label_list)
         netout, input_lengths = self.net(logits, input_lengths)
+        input_lengths = input_lengths.to(dtype=torch.int32)
         netout = self.linear(netout)
         netout = F.log_softmax(netout, dim=2)
         loss = self.loss_fn(netout, labels, input_lengths, label_lengths)
