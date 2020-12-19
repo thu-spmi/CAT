@@ -76,7 +76,7 @@ def train():
             'BLSTMN', 'TDNN_downsample'
         ],
         default='BLSTM')
-    parser.add_argument("--min_epoch", type=int, default=15)
+    parser.add_argument("--min_epoch", type=int, default=5)
     parser.add_argument("--output_unit", type=int)
     parser.add_argument("--lamb", type=float, default=0.1)
     parser.add_argument("--hdim", type=int, default=512)
