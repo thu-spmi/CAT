@@ -170,7 +170,7 @@ def train():
             weight = torch.mean(path_weights)
             real_loss = partial_loss - weight
 
-            loss.backward(loss.new_ones(len(TARGET_GPUS)))
+            loss.backward(loss.new_ones(loss.shape[0]))
 
             optimizer.step()
             t2 = timeit.default_timer()
