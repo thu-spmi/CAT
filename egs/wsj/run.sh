@@ -72,7 +72,9 @@ if [ $stage -le 3 ]; then
   ctc-crf/ctc_token_fst_corrected.py den data/lang_phn/tokens.txt | fstcompile | fstarcsort --sort_type=olabel > data/den_meta/T_den.fst
   fstcompose data/den_meta/T_den.fst data/den_meta/phone_lm.fst > data/den_meta/den_lm.fst
   echo "prepare denominator finished"
-
+  
+  # for label sequence l, log p(l) also appears in the numerator but behaves like an constant. So log p(l) is
+  # pre-calculated based on the denominator n-gram LM and saved, and then applied in training.
   path_weight $data_tr/text_number data/den_meta/phone_lm.fst > $data_tr/weight
   path_weight $data_cv/text_number data/den_meta/phone_lm.fst > $data_cv/weight
   echo "prepare weight finished"
