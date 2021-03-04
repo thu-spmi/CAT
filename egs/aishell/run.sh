@@ -123,8 +123,7 @@ if [ $stage -le 6 ]; then
         --arch=$arch \
         --output_unit=$output_unit \
         --lamb=0.01 \
-        --data_path \
-        $data/hdf5 \
+        --data_path=$data/hdf5 \
         $dir
 fi
 
