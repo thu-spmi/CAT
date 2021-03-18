@@ -88,6 +88,7 @@ def train():
     parser.add_argument("--lr", type=float,default=0.001)
     parser.add_argument("--stop_lr", type=float,default=0.00001)
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--clip_grad", action="store_true")
     parser.add_argument("--pkl", action="store_true")
     parser.add_argument("--pretrained_model_path")
     args = parser.parse_args()
@@ -171,7 +172,8 @@ def train():
             real_loss = partial_loss - weight
 
             loss.backward(loss.new_ones(loss.shape[0]))
-
+            if args.clip_grad:
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=20, norm_type=2)
             optimizer.step()
             t2 = timeit.default_timer()
             writer.add_scalar('training loss',
