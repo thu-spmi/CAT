@@ -57,7 +57,7 @@ Please cite CAT using:
 **Step 2.** `cd src/ctc_crf`, and run the commands below:
 
 ```
-make OPENFST=/path/to/your/openfst
+CC=gcc-6 CXX=g++-6 make OPENFST=/path/to/your/openfst
 ```
 
 For pytorch version 1.0+, use `python setup_1_0.py install` in the `ctc_crf/Makefile`.
