@@ -1,3 +1,6 @@
+export CAT_ROOT=../../                                                                                                                                         
+export PATH=$CAT_ROOT/src/ctc_crf/path_weight/build:$PATH
+export PATH=$PWD/ctc-crf:$PATH
 export KALDI_ROOT=/opt/kaldi
 [ -f $KALDI_ROOT/tools/env.sh ] && . $KALDI_ROOT/tools/env.sh
 export PATH=$PWD/utils/:$KALDI_ROOT/tools/openfst/bin:$PWD:$PATH

@@ -101,7 +101,7 @@ if [ $stage -le 3 ]; then
   cat data/train_nodup/text_number | sort -k 2 | uniq -f 1 > data/train_nodup/unique_text_number
   mkdir -p data/den_meta
   chain-est-phone-lm ark:data/train_nodup/unique_text_number data/den_meta/phone_lm.fst
-  utils/ctc_token_fst_corrected.py den data/lang_phn/tokens.txt | fstcompile | fstarcsort --sort_type=olabel > data/den_meta/T_den.fst
+  ctc-crf/ctc_token_fst_corrected.py den data/lang_phn/tokens.txt | fstcompile | fstarcsort --sort_type=olabel > data/den_meta/T_den.fst
   fstcompose data/den_meta/T_den.fst data/den_meta/phone_lm.fst > data/den_meta/den_lm.fst
   echo "prepare denominator finished"
  
@@ -115,9 +115,12 @@ if [ $stage -le 4 ]; then
     | add-deltas ark:- ark:- | subsample-feats --n=3 ark:- ark:- |"
   feats_cv="ark,s,cs:apply-cmvn --norm-vars=true --utt2spk=ark:$data_cv/utt2spk scp:$data_cv/cmvn.scp scp:$data_cv/feats.scp ark:- \
     | add-deltas ark:- ark:- | subsample-feats --n=3 ark:- ark:- |"
-  mkdir -p data/all_ark
-  copy-feats "$feats_tr" "ark,scp:data/all_ark/tr.ark,data/all_ark/tr.scp"
-  copy-feats "$feats_cv" "ark,scp:data/all_ark/cv.ark,data/all_ark/cv.scp"
+ 
+  mkdir -p data/all_ark 
+  ark_tr=$(readlink -f data/all_ark/tr.ark)
+  ark_cv=$(readlink -f data/all_ark/cv.ark)
+  copy-feats "$feats_tr" "ark,scp:"$ark_tr",data/all_ark/tr.scp"
+  copy-feats "$feats_cv" "ark,scp:"$ark_cv",data/all_ark/cv.scp"
 
   mkdir -p data/hdf5
   python ctc-crf/convert_to_hdf5.py data/all_ark/cv.scp $data_cv/text_number $data_cv/weight data/hdf5/cv.hdf5 || exit 1
