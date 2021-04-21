@@ -74,11 +74,10 @@ fi
 
 if [ $stage -le 4 ]; then 
   #calculate and save the weight for each label sequence based on text_number and phone_lm.fst
-  #../../src/ctc_crf/path_weight/build/path_weight $data_tr/text_number data/den_meta/phone_lm.fst > $data_tr/weight
-  #../../src/ctc_crf/path_weight/build/path_weight $data_cv/text_number data/den_meta/phone_lm.fst > $data_cv/weight
-path_weight $data_tr/text_number data/den_meta/phone_lm.fst > $data_tr/weight
-path_weight $data_cv/text_number data/den_meta/phone_lm.fst > $data_cv/weight
-echo "prepare weight finished"
+
+  path_weight $data_tr/text_number data/den_meta/phone_lm.fst > $data_tr/weight
+  path_weight $data_cv/text_number data/den_meta/phone_lm.fst > $data_cv/weight
+  echo "prepare weight finished"
   #apply CMVN feature normalization, calculate delta features, then sub-sample the input feature sequence
   feats_tr="ark,s,cs:apply-cmvn --norm-vars=true --utt2spk=ark:$data_tr/utt2spk scp:$data_tr/cmvn.scp scp:$data_tr/feats.scp ark:- \
       | add-deltas ark:- ark:- | subsample-feats --n=3 ark:- ark:- |"
