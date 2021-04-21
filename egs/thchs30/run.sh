@@ -127,8 +127,7 @@ echo "nn training."
         --output_unit=$output_unit \
         --lamb=0.01 \
         --data_path \
-        $data \
-        $dir
+        $data $dir
 
 
 fi
