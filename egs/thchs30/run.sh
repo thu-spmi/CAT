@@ -14,8 +14,8 @@ if [ $stage -le 1 ]; then
   local/thchs-30_data_prep.sh $H $thchs/data_thchs30 || exit 1;
   
   # Construct the phoneme-based lexicon from the CMU dicta
-  # Create lexicon.txt, units.txt and lexicon_numbers.txt at data.dict_phn
-  local/thchs30_prepare_phn_dict.sh || exit 1;
+  # Create lexicon.txt, units.txt and lexicon_numbers.txt at data/dict_phn
+  local/thchs30_prepare_phn_dict.sh $thchs|| exit 1;
   
   # Compile the lexicon and token FSTs
   # generate lexicon FST L.fst according to words.txt, generate token FST T.fst according to tokens.txt
@@ -31,7 +31,6 @@ if [ $stage -le 2 ]; then
   #perturb the speaking speed to achieve data augmentation
   utils/data/perturb_data_dir_speed_3way.sh data/train data/train_sp
   utils/data/perturb_data_dir_speed_3way.sh data/dev data/dev_sp
-  echo " preparing directory for speed-perturbed data done"
   
   # Generate the fbank features; by default 40-dimensional fbanks on each frame
   fbankdir=fbank
@@ -53,8 +52,8 @@ data_cv=data/dev_sp
 if [ $stage -le 3 ]; then
   #convert word sequences to label sequences according to lexicon_numbers.txt and text files in data/lang_phn
   #the result will be placed in $data_tr/ and $data_cv/
-  utils/prep_ctc_trans.py data/lang_phn/lexicon_numbers.txt $data_tr/text "<UNK>" > $data_tr/text_number
-  utils/prep_ctc_trans.py data/lang_phn/lexicon_numbers.txt $data_cv/text "<UNK>" > $data_cv/text_number
+  ctc-crf/prep_ctc_trans.py data/lang_phn/lexicon_numbers.txt $data_tr/text "<UNK>" > $data_tr/text_number
+  ctc-crf/prep_ctc_trans.py data/lang_phn/lexicon_numbers.txt $data_cv/text "<UNK>" > $data_cv/text_number
   echo "convert text_number finished"
 
   # prepare denominator
@@ -71,11 +70,15 @@ if [ $stage -le 3 ]; then
   echo "prepare denominator finished"
   
 fi
+
+
 if [ $stage -le 4 ]; then 
   #calculate and save the weight for each label sequence based on text_number and phone_lm.fst
-  path_weight $data_tr/text_number data/den_meta/phone_lm.fst > $data_tr/weight
-  path_weight $data_cv/text_number data/den_meta/phone_lm.fst > $data_cv/weight
-  echo "prepare weight finished"
+  #../../src/ctc_crf/path_weight/build/path_weight $data_tr/text_number data/den_meta/phone_lm.fst > $data_tr/weight
+  #../../src/ctc_crf/path_weight/build/path_weight $data_cv/text_number data/den_meta/phone_lm.fst > $data_cv/weight
+path_weight $data_tr/text_number data/den_meta/phone_lm.fst > $data_tr/weight
+path_weight $data_cv/text_number data/den_meta/phone_lm.fst > $data_cv/weight
+echo "prepare weight finished"
   #apply CMVN feature normalization, calculate delta features, then sub-sample the input feature sequence
   feats_tr="ark,s,cs:apply-cmvn --norm-vars=true --utt2spk=ark:$data_tr/utt2spk scp:$data_tr/cmvn.scp scp:$data_tr/feats.scp ark:- \
       | add-deltas ark:- ark:- | subsample-feats --n=3 ark:- ark:- |"
@@ -91,9 +94,10 @@ if [ $stage -le 4 ]; then
   ark_dir=data/all_ark
   mkdir -p data/hdf5
   #create a hdf5 file to save the feature, text_number and path weights.
-  python3 ctc-crf/convert_to_hdf5.py $ark_dir/cv.scp $data_cv/text_number $data_cv/weight data/hdf5/cv.hdf5
-  python3 ctc-crf/convert_to_hdf5.py $ark_dir/tr.scp $data_tr/text_number $data_tr/weight data/hdf5/tr.hdf5
+  python ctc-crf/convert_to_hdf5.py $ark_dir/cv.scp $data_cv/text_number $data_cv/weight data/hdf5/cv.hdf5
+  python ctc-crf/convert_to_hdf5.py $ark_dir/tr.scp $data_tr/text_number $data_tr/weight data/hdf5/tr.hdf5
 fi
+
 
 data_test=data/test
 
@@ -108,16 +112,26 @@ fi
 arch=BLSTM
 dir=exp/$arch
 output_unit=$(awk '{if ($1 == "#0")print $2 - 1 ;}' data/lang_phn/tokens.txt)
+data=data/hdf5
 
 if [ $stage -le 6 ]; then
 echo "nn training."
     #start training.
-    python3 ctc-crf/train.py \
+        CUDA_VISIBLE_DEVICES="0,1,2,3" \
+        python3 ctc-crf/train.py \
         --arch=$arch \
+        --lr=0.001 \
+        --layers=6 \
+        --batch_size=256 \
+        --hdim=512 \
+        --dropout=0.8 \
         --output_unit=$output_unit \
         --lamb=0.01 \
-        --data_path=$data/hdf5 \
+        --data_path \
+        $data \
         $dir
+
+
 fi
 
 nj=20
@@ -125,7 +139,7 @@ nj=20
 if [ $stage -le 7 ]; then
   for set in test; do
     CUDA_VISIBLE_DEVICES=0 \
-    ctc-crf/decode.sh --cmd "$decode_cmd" --nj 20 --acwt 1.0 \
+    ctc-crf/decode.sh --cmd "$decode_cmd" --nj 20 --stage 0 --acwt 1.0 \
       data/lang_phn_test data/$set data/${set}_data/test.scp $dir/decode
   done
 fi
