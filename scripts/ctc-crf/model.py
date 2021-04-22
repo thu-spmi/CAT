@@ -74,6 +74,26 @@ class BLSTM(nn.Module):
             packed_output, batch_first=True)
         return lstm_out, ilens
 
+class myBLSTM(nn.Module):
+    def __init__(self, idim,  hdim, n_layers, num_classes, dropout):
+        super().__init__()
+        self.lstm1 = nn.LSTM(idim, hdim, num_layers=n_layers,
+                             bidirectional=True, batch_first=True, dropout=dropout)
+        
+        self.linear = nn.Linear(hdim*2, num_classes)
+
+    def forward(self, features, input_lengths, hidden=None):
+        self.lstm1.flatten_parameters()
+
+        packed_input = torch.nn.utils.rnn.pack_padded_sequence(
+            features, input_lengths, batch_first=True)
+        packed_output, _ = self.lstm1(packed_input, hidden)
+        lstm_out, ilens = torch.nn.utils.rnn.pad_packed_sequence(
+            packed_output, batch_first=True)
+
+        out = self.linear(lstm_out)
+        return out, ilens
+
 
 class LSTM(nn.Module):
     def __init__(self, idim, hdim, n_layers, dropout):

@@ -55,13 +55,13 @@ echo "$nj" > $dir/num_jobs
 
 # check files
 num_error=0
-for f in $TLG_dir/TLG.fst $graph/words.txt $input_scp $srcdir/$model $srcdir/config.json; do
-  if [ ! -f "$f" ]; then
-    echo "Missing file: $f"
-    num_error=$((num_error + 1))
-  fi
-done
-[ $num_error -gt 0 ] && exit 1;
+# for f in $TLG_dir/TLG.fst $graph/words.txt $input_scp $srcdir/$model $srcdir/config.json; do
+#   if [ ! -f "$f" ]; then
+#     echo "Missing file: $f"
+#     num_error=$((num_error + 1))
+#   fi
+# done
+# [ $num_error -gt 0 ] && exit 1;
 
 if [ $stage -le 0 ]; then
   mkdir -p $logits
@@ -91,3 +91,6 @@ if [ $stage -le 2 ]; then
     echo "score confidence and timing with sclite"
 fi
 echo "Decoding done."
+
+grep WER $dir/decode_eval92_*/wer_* | utils/best_wer.sh
+grep WER $dir/decode_dev93_*/wer_* | utils/best_wer.sh

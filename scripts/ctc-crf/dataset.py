@@ -7,6 +7,7 @@ Apache 2.0.
 import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader
+from torch.nn.utils.rnn import pad_sequence
 import sys
 import math
 import kaldi_io
@@ -120,7 +121,7 @@ class SpeechDatasetPickle(Dataset):
 
     def __getitem__(self, idx):
         key, feature_path, label, weight = self.dataset[idx]
-        mat = np.asarray(kaldi_io.read_mat(feature_path))
+        mat = np.array(kaldi_io.read_mat(feature_path))
         return torch.FloatTensor(mat), torch.IntTensor(label), torch.FloatTensor(weight)
 
 
@@ -133,7 +134,7 @@ class SpeechDatasetMemPickle(Dataset):
 
         for data in self.dataset:
             key, feature_path, label, weight = data
-            mat = np.asarray(kaldi_io.read_mat(feature_path))
+            mat = np.array(kaldi_io.read_mat(feature_path))
             self.data_batch.append(
                 [torch.FloatTensor(mat), torch.IntTensor(label), torch.FloatTensor(weight)])
 
@@ -215,3 +216,59 @@ class PadCollateChunk:
         label_lengths = torch.IntTensor(label_lengths)
         weights = torch.FloatTensor([x[2] for x in batch])
         return logits, input_lengths, label_padded, label_lengths, weights
+
+def pad_list(xs, pad_value=0, dim=0):
+    """Perform padding for the list of tensors.
+
+    Args:
+        xs (`list`): List of Tensors [(T_1, `*`), (T_2, `*`), ..., (T_B, `*`)].
+        pad_value (float): Value for padding.
+
+    Returns:
+        Tensor: Padded tensor (B, Tmax, `*`).
+
+    Examples:
+        >>> x = [torch.ones(4), torch.ones(2), torch.ones(1)]
+        >>> x
+        [tensor([1., 1., 1., 1.]), tensor([1., 1.]), tensor([1.])]
+        >>> pad_list(x, 0)
+        tensor([[1., 1., 1., 1.],
+                [1., 1., 0., 0.],
+                [1., 0., 0., 0.]])
+
+    """
+    if dim == 0:
+        return pad_sequence(xs, batch_first=True, padding_value=pad_value)
+    else:
+        xs = [x.transpose(0, dim) for x in xs]
+        padded = pad_sequence(xs, batch_first=True, padding_value=pad_value)
+        return padded.transpose(1, dim+1).contiguous()
+
+
+def sortedPadCollate(batch):
+    """Collect data into batch by desending order and add padding.
+
+    Args: 
+        batch  : list of (mat, label, weight)
+        mat    : torch.FloatTensor
+        label  : torch.IntTensor
+        weight : torch.FloatTensor
+
+    Return: 
+        (logits, input_lengths, labels, label_lengths, weights)
+    """
+    batch_sorted = [(mat, label, weight, mat.size(0))
+                    for mat, label, weight in batch]
+    batch_sorted = sorted(batch_sorted, key=lambda item: item[3], reverse=True)
+
+    mats = pad_list([x[0] for x in batch_sorted])
+
+    labels = torch.cat([x[1] for x in batch_sorted])
+
+    input_lengths = torch.LongTensor([x[3] for x in batch_sorted])
+
+    label_lengths = torch.IntTensor([x[1].size(0) for x in batch_sorted])
+
+    weights = torch.cat([x[2] for x in batch_sorted])
+
+    return mats, input_lengths, labels, label_lengths, weights

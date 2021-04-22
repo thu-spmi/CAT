@@ -7,7 +7,7 @@
 . ./cmd.sh ## You'll want to change cmd.sh to something that will work on your system.
            ## This relates to the queue.
 . ./path.sh
-stage=1
+stage=6
 wsj0=/data/csr_1
 wsj1=/data/csr_2_comp
 
@@ -85,13 +85,17 @@ if [ $stage -le 4 ]; then
     | add-deltas ark:- ark:- | subsample-feats --n=3 ark:- ark:- |"
   feats_cv="ark,s,cs:apply-cmvn --norm-vars=true --utt2spk=ark:$data_cv/utt2spk scp:$data_cv/cmvn.scp scp:$data_cv/feats.scp ark:- \
     | add-deltas ark:- ark:- | subsample-feats --n=3 ark:- ark:- |"
-  mkdir -p data/tmp
-  copy-feats "$feats_tr" "ark,scp:data/tmp/tr.ark,data/tmp/tr.scp"
-  copy-feats "$feats_cv" "ark,scp:data/tmp/cv.ark,data/tmp/cv.scp"
+  mkdir -p data/all_ark
+  copy-feats "$feats_tr" "ark,scp:data/all_ark/tr.ark,data/all_ark/tr.scp"
+  copy-feats "$feats_cv" "ark,scp:data/all_ark/cv.ark,data/all_ark/cv.scp"
 
   mkdir -p data/hdf5
-  python ctc-crf/convert_to_hdf5.py data/tmp/cv.scp $data_cv/text_number $data_cv/weight data/hdf5/cv.hdf5 || exit 1
-  python ctc-crf/convert_to_hdf5.py data/tmp/tr.scp $data_tr/text_number $data_tr/weight data/hdf5/tr.hdf5 || exit 1
+  python ctc-crf/convert_to_hdf5.py data/all_ark/cv.scp $data_cv/text_number $data_cv/weight data/hdf5/cv.hdf5 || exit 1
+  python ctc-crf/convert_to_hdf5.py data/all_ark/tr.scp $data_tr/text_number $data_tr/weight data/hdf5/tr.hdf5 || exit 1
+  
+  mkdir -p data/pickle
+  python ctc-crf/convert_to_pickle.py data/all_ark/cv.scp $data_cv/text_number $data_cv/weight data/pickle/cv.pickle || exit 1
+  python ctc-crf/convert_to_pickle.py data/all_ark/tr.scp $data_tr/text_number $data_tr/weight data/pickle/tr.pickle || exit 1
 fi
 
 data_dev93=data/test_dev93
@@ -107,26 +111,50 @@ if [ $stage -le 5 ]; then
   copy-feats "$feats_eval92" "ark,scp:data/test_data/eval92.ark,data/test_data/eval92.scp"
 fi
 
-arch=BLSTM
-dir=exp/$arch
+PARENTDIR='.'
+dir="exp/test_blstm"
+DATAPATH=$PARENTDIR/data/
 
 if [ $stage -le 6 ]; then
-  python3 ctc-crf/train.py \
-    --min_epoch=8 \
-    --output_unit=72 \
-    --arch=$arch \
-    --lamb=0.01 \
-    --data_path=data/hdf5 \
-    $dir
+unset CUDA_VISIBLE_DEVICES
+
+NODE=$1
+
+if [ ! $NODE ]
+then
+    NODE=0
+fi
+
+if [[ $NODE == 0 && ! -f $dir/scripts.tar.gz ]]
+then
+    echo ""
+    tar -zcf $dir/scripts.tar.gz $(readlink ctc-crf) $0
+elif [ $NODE == 0 ]
+then
+    echo ""
+    echo "'$dir/scripts.tar.gz' already exists."
+    echo "If you want to update it, please manually rm it then re-run this script."
+fi
+
+python3 ctc-crf/train_v2.py --seed=0            \
+    --world-size 1 --rank $NODE                 \
+    --batch_size=128                            \
+    --dir=$dir                                  \
+    --config=$dir/config.json                   \
+    --data=$DATAPATH                            \
+    --resume=$dir/ckpt/checkpoint.pt            \
+    || exit 1
 fi
 
 if [ $stage -le 7 ]; then
- for set in dev93 eval92; do
-     ark_dir=$dir/logits/${set}
-     mkdir -p $ark_dir
-     CUDA_VISIBLE_DEVICES=0 python3 ctc-crf/calculate_logits.py \
-       --nj=20 --input_scp=data/test_data/${set}.scp \
-       --config=$dir/config.json --model=$dir/best_model --output_dir=$ark_dir
+  for set in dev93 eval92; do
+    ark_dir=$dir/logits/${set}
+    mkdir -p $ark_dir
+    CUDA_VISIBLE_DEVICES=0 python3 ctc-crf/calculate_logits_v2.py \
+      --resume=$dir/ckpt/infer.pt                   \
+      --config=$dir/config.json                     \
+      --nj=20 --input_scp=data/test_data/${set}.scp \
+      --output_dir=$ark_dir || exit 1
  done
 fi
 

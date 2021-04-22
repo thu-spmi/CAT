@@ -1,3 +1,4 @@
+import scheduler
 import sys
 import argparse
 import torch
@@ -5,7 +6,150 @@ import shutil
 import math
 import random
 import timeit
+import os
+
+
+import torch
+import torch.distributed as dist
+
 base_line_batch_size = 256
+
+
+def GetScheduler(scheduler_configs, param_list) -> scheduler.Scheduler:
+    schdl_base = getattr(scheduler, scheduler_configs['type'])
+    return schdl_base(scheduler_configs['optimizer'], param_list, **scheduler_configs['kwargs'])
+
+
+def str2num(src: str) -> list:
+    return list(src.encode())
+
+
+def num2str(num_list: list) -> str:
+    return bytes(num_list).decode()
+
+
+def gather_all_gpu_info(local_gpuid: int, num_all_gpus: int = None) -> list:
+    """Gather all gpu info based on DDP backend
+
+    This function is supposed to be invoked in all sub-process.
+    """
+    if num_all_gpus is None:
+        num_all_gpus = dist.get_world_size()
+
+    gpu_info = torch.cuda.get_device_name(local_gpuid)
+    gpu_info_len = torch.tensor(len(gpu_info)).cuda(local_gpuid)
+    dist.all_reduce(gpu_info_len, op=dist.ReduceOp.MAX)
+    gpu_info_len = gpu_info_len.cpu()
+    gpu_info = gpu_info + ' ' * (gpu_info_len-len(gpu_info))
+
+    unicode_gpu_info = torch.tensor(
+        str2num(gpu_info), dtype=torch.uint8).cuda(local_gpuid)
+    info_list = [torch.empty(
+        gpu_info_len, dtype=torch.uint8, device=local_gpuid) for _ in range(num_all_gpus)]
+    dist.all_gather(info_list, unicode_gpu_info)
+    return [num2str(x.tolist()).strip() for x in info_list]
+
+
+def gen_readme(path, model, gpu_info: list = []):
+    if os.path.exists(path):
+        highlight_msg(f"Not generate new readme, since '{path}' exists.")
+        return path
+
+    model_size = count_parameters(model)/1e6
+
+    msg = [
+        "### Basic info",
+        "",
+        "**This part is auto generated, add your details in Appendix**",
+        "",
+        "* Model size/M: {:.2f}".format(model_size),
+        f"* GPU info \[{len(gpu_info)}\]"
+    ]
+    gpu_set = list(set(gpu_info))
+    gpu_set = {x: gpu_info.count(x) for x in gpu_set}
+    gpu_msg = [f"  * \[{num_device}\] {device_name}" for device_name,
+               num_device in gpu_set.items()]
+
+    msg += gpu_msg + [""]
+    msg += [
+        "### Appendix",
+        "",
+        "* ",
+        ""
+    ]
+    msg += [
+        "### WER"
+        "",
+        "```",
+        "",
+        "```",
+        "",
+        "### Monitor figure",
+        "![monitor](./monitor.png)",
+        ""
+    ]
+    with open(path, 'w') as fo:
+        fo.write('\n'.join(msg))
+
+    return path
+
+
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+
+class ProgressMeter(object):
+    def __init__(self, num_batches, meters, prefix=""):
+        self.batch_fmtstr = self._get_batch_fmtstr(num_batches)
+        self.meters = meters
+        self.prefix = prefix
+
+    def display(self, batch):
+        entries = [self.prefix + self.batch_fmtstr.format(batch)]
+        entries += [str(meter) for meter in self.meters]
+        print('\t'.join(entries))
+
+    def _get_batch_fmtstr(self, num_batches):
+        num_digits = len(str(num_batches // 1))
+        fmt = '{:' + str(num_digits) + 'd}'
+        return '[' + fmt + '/' + fmt.format(num_batches) + ']'
+
+
+class AverageMeter(object):
+    """Computes and stores the average and current value"""
+
+    def __init__(self, name, fmt=':f'):
+        self.name = name
+        self.fmt = fmt
+        self.reset()
+
+    def reset(self):
+        self.val = 0
+        self.avg = 0
+        self.sum = 0
+        self.count = 0
+
+    def update(self, val, n=1):
+        self.val = val
+        self.sum += val * n
+        self.count += n
+        self.avg = self.sum / self.count
+
+    def __str__(self):
+        fmtstr = '{name} {val' + self.fmt + '} ({avg' + self.fmt + '})'
+        return fmtstr.format(**self.__dict__)
+
+
+def highlight_msg(msg: str):
+    len_str = len(msg)
+    if '\n' in msg:
+        msg = msg.split('\n')
+        msg = '\n'.join(['# ' + line + ' #' for line in msg])
+    else:
+        msg = '# ' + msg + ' #'
+    print('\n' + "#"*(len_str + 4))
+    print(msg)
+    print("#"*(len_str + 4) + '\n')
 
 
 def save_ckpt(state, is_best, ckpt_path, filename):
@@ -81,8 +225,8 @@ def train_chunk_model(model, reg_model, tr_dataloader, optimizer, epoch, chunk_s
             optimizer.zero_grad()
             input_lengths = map(lambda x: x.size()[0], logits)
             if sys.version > '3':
-                 input_lengths = list(input_lengths)
-            
+                input_lengths = list(input_lengths)
+
             input_lengths = torch.IntTensor(input_lengths)
             out1_reg, out2_reg, out3_reg = reg_model(
                 logits, labels_padded, input_lengths, label_lengths)
@@ -120,7 +264,7 @@ def validate_chunk_model(model, reg_model, cv_dataloader, epoch, cv_losses_sum, 
 
             input_lengths = map(lambda x: x.size()[0], logits)
             if sys.version > '3':
-                 input_lengths = list(input_lengths)
+                input_lengths = list(input_lengths)
             input_lengths = torch.IntTensor(input_lengths)
 
             reg_out1, reg_out2, reg_out3 = reg_model(
@@ -256,7 +400,7 @@ def parse_args():
 
     parser.add_argument("--jitter_range", type=int, default=10,
                         help='contextual frame number of low latency model')
-    parser.add_argument("--cate", type=int, default=4000, 
+    parser.add_argument("--cate", type=int, default=4000,
                         help='the number of pkls the training ark data was diviced and assigned to by utterence length')
 
     args = parser.parse_args()
