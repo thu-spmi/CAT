@@ -55,7 +55,7 @@ class ConvModule(nn.Module):
         self.glu = nn.GLU(dim=1)
         cdim = idim
         padding = (kernel_size-1)//2
-        self.padding = (padding, kernel_size-1-padding, 0, 0)
+        self.padding = nn.ConstantPad2d((padding, kernel_size-1-padding, 0, 0), 0.)
         self.depthwise_conv = nn.Conv1d(
             cdim, multiplier*cdim, kernel_size=kernel_size, stride=1, groups=cdim, padding=0)
         cdim = multiplier * cdim
@@ -74,9 +74,9 @@ class ConvModule(nn.Module):
         # [B, 2D, T] -> [B, D, T]
         output = self.glu(output)
         # [B, D, T] -> [B, multiplier*D, T]
-        output = torch.nn.functional.pad(output, self.padding)
+        output = self.padding(output)
         output = self.depthwise_conv(output)
-        if output.size(0) > 1 and output.size(2) > 1:
+        if output.size(0) > 1 or output.size(2) > 1:
             # Doing batchnorm with [1, D, 1] tensor raise error.
             output = self.bn(output)
         output = self.swish(output)

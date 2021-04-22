@@ -69,10 +69,11 @@ class Conv2dSubdampling(nn.Module):
             idim = 1
 
         self.conv = nn.Sequential(
-            nn.Conv2d(idim, multiplier, kernel_size=3, stride=2, padding=1),
+            nn.ConstantPad2d(padding=(0, 1, 0, 1), value=0.),
+            nn.Conv2d(idim, multiplier, kernel_size=3, stride=2),
             nn.ReLU(),
-            nn.Conv2d(multiplier, multiplier,
-                      kernel_size=3, stride=2, padding=1),
+            nn.ConstantPad2d(padding=(0, 1, 0, 1), value=0.),
+            nn.Conv2d(multiplier, multiplier, kernel_size=3, stride=2),
             nn.ReLU()
         )
 
