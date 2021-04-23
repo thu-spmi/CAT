@@ -49,16 +49,28 @@ def plot_monitor(task: str, interactive_show=False):
     running_mean = [train_loss[0]]
     for i in range(1, len(train_loss)):
         running_mean.append(running_mean[i-1]*0.9+0.1*train_loss[i])
-    axes[1][0].semilogy(train_loss, alpha=0.3)
-    axes[1][0].semilogy(running_mean, color='orangered')
+    min_loss = min(train_loss)
+    if min_loss <= 0.:
+        axes[1][0].set_yscale('symlog')
+        axes[1][0].plot(train_loss, alpha=0.3)
+        axes[1][0].plot(running_mean, color='orangered')
+    else:
+        axes[1][0].semilogy(train_loss, alpha=0.3)
+        axes[1][0].semilogy(running_mean, color='orangered')
     axes[1][0].grid(True, which="both", ls='--')
     axes[1][0].set_ylabel('Train set loss')
     axes[1][0].set_xlabel('Step')
 
     # dev loss
-    axes[1][1].semilogy([i+1 for i in range(len(df_eval))],
-                        df_eval['loss_real'].values)
     min_loss = min(df_eval['loss_real'])
+    if min_loss <= 0.:
+        axes[1][1].set_yscale('symlog')
+        axes[1][1].plot([i+1 for i in range(len(df_eval))],
+                        df_eval['loss_real'].values)
+    else:
+        axes[1][1].semilogy([i+1 for i in range(len(df_eval))],
+                            df_eval['loss_real'].values)
+
     axes[1][1].axhline(y=min_loss, ls='--', color='black', alpha=0.5)
     axes[1][1].grid(True, which="both", ls='--')
     axes[1][1].set_ylabel('Dev set loss')
@@ -86,4 +98,3 @@ if __name__ == "__main__":
 
     plot_monitor(task)
     print(f"Saved at exp/{task}/monitor.png")
-
