@@ -1,6 +1,6 @@
 ## To begin with
 
-* For well-maintaining of experiments and assuring the reproduciblity,  this guideline introduces our **strongly recommened** way of conducting experiments using **CAT**.
+* For well maintaining of experiments and assuring the reproduciblity,  this guideline introduces our **strongly recommened** way of conducting experiments using **CAT**.
 * We (and PyTorch officially) recommend  to use DistributedDataParallel (DDP) instead of DataParallel.
 * In this guideline, we take the *Wall Street Journal* dataset as example, and working at directory `CAT/egs/wsj` if no other statement.
 
@@ -55,7 +55,7 @@ exp/myexp/
 
 We don't place any restriction to this file. You can consider it as the `result` file of Kaldi. 
 
-A well-maintained table is better.![sup-README](assets/sup-README.png)
+A well-maintained results table is better.![sup-README](assets/sup-README.png)
 
 ### Configure single-running readme<a name='howto-sr-readme'></a>
 
@@ -65,7 +65,7 @@ As we mentioned, this file can be auto-generated, but there are still something 
 
 Paste the results you get in **WER** blank.
 
-Add anything you think is helpful in **Appendix**. Though most of the details are included in `config.json` and `scripts.tar.gz`, but additional information helping people understand is recommended.
+Add anything you think is helpful in **Appendix**. Though most of the details are included in `config.json` and `scripts.tar.gz`, additional information helping people understand is encouraged.
 
 * WHY you conduct this experiment.
 * WHAT improvement you make compared to previous experiment.
