@@ -7,7 +7,7 @@
 . ./cmd.sh ## You'll want to change cmd.sh to something that will work on your system.
            ## This relates to the queue.
 . ./path.sh
-stage=6
+stage=8
 wsj0=/data/csr_1
 wsj1=/data/csr_2_comp
 
@@ -174,7 +174,10 @@ if [ $stage -le 8 ]; then
   for set in dev93 eval92; do
     mkdir -p $dir/decode_${set}_bd_fgconst
     steps/lmrescore_const_arpa.sh --cmd "$decode_cmd" data/lang_phn_test_bd_{tgpr,fgconst} data/test_${set} $dir/decode_${set}_bd_{tgpr,fgconst} || exit 1;
-    mkdir -p $dir/exp/decode_${set}_tg
+    mkdir -p $dir/decode_${set}_tg
     steps/lmrescore.sh --cmd "$decode_cmd" --mode 3 data/lang_phn_test_{tgpr,tg} data/test_${set} $dir/decode_${set}_{tgpr,tg} || exit 1;
   done
 fi
+
+grep WER $dir/decode_eval92_*/wer_* | utils/best_wer.sh
+grep WER $dir/decode_dev93_*/wer_* | utils/best_wer.sh

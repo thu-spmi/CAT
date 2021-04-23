@@ -101,6 +101,3 @@ if [ $stage -le 2 ]; then
     echo "score confidence and timing with sclite"
 fi
 echo "Decoding done."
-
-grep WER $dir/decode_eval92_*/wer_* | utils/best_wer.sh
-grep WER $dir/decode_dev93_*/wer_* | utils/best_wer.sh
