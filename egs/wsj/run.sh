@@ -142,7 +142,6 @@ python3 ctc-crf/train_v2.py --seed=0            \
     --dir=$dir                                  \
     --config=$dir/config.json                   \
     --data=$DATAPATH                            \
-    --resume=$dir/ckpt/checkpoint.pt            \
     || exit 1
 fi
 
