@@ -112,7 +112,7 @@ if [ $stage -le 5 ]; then
 fi
 
 PARENTDIR='.'
-dir="exp/test_blstm2"
+dir="exp/demo"
 DATAPATH=$PARENTDIR/data/
 
 NODE=$1

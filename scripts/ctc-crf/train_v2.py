@@ -108,16 +108,18 @@ def main_worker(gpu, ngpus_per_node, args):
         utils.gen_readme(args.dir+'/readme.md',
                          model=manager.model, gpu_info=gpu_info)
 
-    # init ctc-crf
-    gpus = torch.IntTensor([args.gpu])
-    ctc_crf_base.init_env(f"{args.data}/den_meta/den_lm.fst", gpus)
+    # init ctc-crf, args.iscrf is set in build_model
+    if args.iscrf:
+        gpus = torch.IntTensor([args.gpu])
+        ctc_crf_base.init_env(f"{args.data}/den_meta/den_lm.fst", gpus)
 
     # training
     manager.run(train_sampler, trainloader, testloader, args)
     if args.rank == 0:
         plot_monitor(args.dir.split('/')[-1])
 
-    ctc_crf_base.release_env(gpus)
+    if args.iscrf:
+        ctc_crf_base.release_env(gpus)
 
 
 class Manager(object):
