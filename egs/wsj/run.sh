@@ -7,7 +7,7 @@
 . ./cmd.sh ## You'll want to change cmd.sh to something that will work on your system.
            ## This relates to the queue.
 . ./path.sh
-stage=8
+stage=1
 wsj0=/data/csr_1
 wsj1=/data/csr_2_comp
 
@@ -112,18 +112,17 @@ if [ $stage -le 5 ]; then
 fi
 
 PARENTDIR='.'
-dir="exp/test_blstm"
+dir="exp/test_blstm2"
 DATAPATH=$PARENTDIR/data/
 
-if [ $stage -le 6 ]; then
-unset CUDA_VISIBLE_DEVICES
-
 NODE=$1
-
 if [ ! $NODE ]
 then
     NODE=0
 fi
+
+if [ $stage -le 6 ]; then
+unset CUDA_VISIBLE_DEVICES
 
 if [[ $NODE == 0 && ! -f $dir/scripts.tar.gz ]]
 then
@@ -143,6 +142,11 @@ python3 ctc-crf/train_v2.py --seed=0            \
     --config=$dir/config.json                   \
     --data=$DATAPATH                            \
     || exit 1
+fi
+
+if [ $NODE -ne 0 ]
+then
+  exit 0
 fi
 
 if [ $stage -le 7 ]; then

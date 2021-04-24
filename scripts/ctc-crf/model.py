@@ -74,7 +74,7 @@ class BLSTM(nn.Module):
             packed_output, batch_first=True)
         return lstm_out, ilens
 
-class myBLSTM(nn.Module):
+class BLSTMv2(nn.Module):
     def __init__(self, idim,  hdim, n_layers, num_classes, dropout):
         super().__init__()
         self.lstm1 = nn.LSTM(idim, hdim, num_layers=n_layers,
@@ -124,6 +124,17 @@ class VGGBLSTM(torch.nn.Module):
         xs_pad, ilens = self.VGG(xs_pad, ilens)
         xs_pad, ilens = self.BLSTM(xs_pad, ilens)
         return xs_pad, ilens
+
+class VGGBLSTMv2(VGGBLSTM):
+    def __init__(self, idim, hdim, n_layers, num_classes, dropout, in_channel):
+        super().__init__(idim, hdim, n_layers, dropout, in_channel=in_channel)
+
+        self.linear = nn.Linear(hdim*2, num_classes)
+    
+    def forward(self, xs_pad, ilens):
+        lstm_out, len_out =  super().forward(xs_pad, ilens)
+        linear_out = self.linear(lstm_out)
+        return linear_out, len_out
 
 
 class VGGLSTM(torch.nn.Module):

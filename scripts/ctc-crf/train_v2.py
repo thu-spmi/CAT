@@ -84,12 +84,12 @@ def main_worker(gpu, ngpus_per_node, args):
     trainloader = DataLoader(
         tr_set, batch_size=args.batch_size, shuffle=(train_sampler is None),
         num_workers=args.workers, pin_memory=True,
-        sampler=train_sampler, collate_fn=DataSet.sortedPadCollate)
+        sampler=train_sampler, collate_fn=DataSet.sortedPadCollate())
 
     testloader = DataLoader(
         test_set, batch_size=args.batch_size, shuffle=(test_sampler is None),
         num_workers=args.workers, pin_memory=True,
-        sampler=test_sampler, collate_fn=DataSet.sortedPadCollate)
+        sampler=test_sampler, collate_fn=DataSet.sortedPadCollate())
 
     logger = OrderedDict({
         'log_train': ['epoch,loss,loss_real,net_lr,time'],

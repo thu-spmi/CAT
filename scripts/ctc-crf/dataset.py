@@ -77,10 +77,10 @@ class SpeechDataset(Dataset):
         hdf5_file = h5py.File(h5py_path, 'r')
         self.keys = hdf5_file.keys()
         hdf5_file.close()
-        
+
     def __len__(self):
         return len(self.keys)
-    
+
     def __getitem__(self, idx):
         hdf5_file = h5py.File(self.h5py_path, 'r')
         dataset = hdf5_file[self.keys[idx]]
@@ -89,6 +89,7 @@ class SpeechDataset(Dataset):
         weight = dataset.attrs['weight']
         hdf5_file.close()
         return torch.FloatTensor(mat), torch.IntTensor(label), torch.FloatTensor(weight)
+
 
 class SpeechDatasetMem(Dataset):
     def __init__(self, h5py_path):
@@ -100,7 +101,8 @@ class SpeechDatasetMem(Dataset):
           mat = dataset[()]
           label = dataset.attrs['label']
           weight = dataset.attrs['weight']
-          self.data_batch.append([torch.FloatTensor(mat), torch.IntTensor(label), torch.FloatTensor(weight)])
+          self.data_batch.append(
+              [torch.FloatTensor(mat), torch.IntTensor(label), torch.FloatTensor(weight)])
 
         hdf5_file.close()
         print("read all data into memory")
@@ -110,6 +112,7 @@ class SpeechDatasetMem(Dataset):
 
     def __getitem__(self, idx):
         return self.data_batch[idx]
+
 
 class SpeechDatasetPickle(Dataset):
     def __init__(self, pickle_path):
@@ -217,6 +220,7 @@ class PadCollateChunk:
         weights = torch.FloatTensor([x[2] for x in batch])
         return logits, input_lengths, label_padded, label_lengths, weights
 
+
 def pad_list(xs, pad_value=0, dim=0):
     """Perform padding for the list of tensors.
 
@@ -245,30 +249,31 @@ def pad_list(xs, pad_value=0, dim=0):
         return padded.transpose(1, dim+1).contiguous()
 
 
-def sortedPadCollate(batch):
-    """Collect data into batch by desending order and add padding.
+class sortedPadCollate():
+    def __call__(self, batch):
+        """Collect data into batch by desending order and add padding.
 
-    Args: 
-        batch  : list of (mat, label, weight)
-        mat    : torch.FloatTensor
-        label  : torch.IntTensor
-        weight : torch.FloatTensor
+        Args: 
+            batch  : list of (mat, label, weight)
+            mat    : torch.FloatTensor
+            label  : torch.IntTensor
+            weight : torch.FloatTensor
 
-    Return: 
-        (logits, input_lengths, labels, label_lengths, weights)
-    """
-    batch_sorted = [(mat, label, weight, mat.size(0))
-                    for mat, label, weight in batch]
-    batch_sorted = sorted(batch_sorted, key=lambda item: item[3], reverse=True)
+        Return: 
+            (logits, input_lengths, labels, label_lengths, weights)
+        """
+        batches = [(mat, label, weight, mat.size(0))
+                   for mat, label, weight in batch]
+        batch_sorted = sorted(batches, key=lambda item: item[3], reverse=True)
 
-    mats = pad_list([x[0] for x in batch_sorted])
+        mats = pad_list([x[0] for x in batch_sorted])
 
-    labels = torch.cat([x[1] for x in batch_sorted])
+        labels = torch.cat([x[1] for x in batch_sorted])
 
-    input_lengths = torch.LongTensor([x[3] for x in batch_sorted])
+        input_lengths = torch.LongTensor([x[3] for x in batch_sorted])
 
-    label_lengths = torch.IntTensor([x[1].size(0) for x in batch_sorted])
+        label_lengths = torch.IntTensor([x[1].size(0) for x in batch_sorted])
 
-    weights = torch.cat([x[2] for x in batch_sorted])
+        weights = torch.cat([x[2] for x in batch_sorted])
 
-    return mats, input_lengths, labels, label_lengths, weights
+        return mats, input_lengths, labels, label_lengths, weights
