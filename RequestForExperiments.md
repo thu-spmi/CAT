@@ -46,7 +46,7 @@ exp/myexp/
 3. Ensure that the training script is `train_v2.py` in `run.sh`.
 4. Run `./run.sh`. If everything goes well, go to next step.
 5. Manually add the WER results into the section of WER in `exp/myexp/readme.md` (See [HOWTO](#howto-sr-readme)).
-6. [OPTIONAL] If this running of experiment gives some significant results, add them to the result page `RESULT.md` (In our example, it is `CAT/egs/wsj/README.md`, See [HOWTO](#howto-sup-readme)).
+6. [OPTIONAL] If this running of experiment gives some significant results, add them to the result page `RESULT.md` (In our example, it is `CAT/egs/wsj/RESULT.md`, See [HOWTO](#howto-sup-readme)).
 7. [OPTIONAL] Commit your results and publish to GitHub. Add the directory `exp/myexp` to be tracked, but exclude large checkpoint and log files in `exp/myexp/ckpt`. Feel free to make a pull-request.
 
 ## HOWTO
@@ -55,7 +55,7 @@ exp/myexp/
 
 We don't place any restriction to RESULT.md.
 
-It is a good practice to include a well-maintained results table as follows:![sup-README](assets/sup-README.png)
+It is a good practice to include a well-maintained results table as follows:![sup-result](assets/sup-result-wsj.png)
 
 ### Configure readme.md for a single-running experiment<a name='howto-sr-readme'></a>
 
