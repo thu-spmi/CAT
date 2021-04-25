@@ -1,8 +1,8 @@
 ## To begin with
 
-* For well maintaining of experiments and assuring the reproduciblity,  this guideline introduces our **strongly recommened** way of conducting experiments using **CAT**.
-* We (and PyTorch officially) recommend  to use DistributedDataParallel (DDP) instead of DataParallel.
-* In this guideline, we take the *Wall Street Journal* dataset as example, and working at directory `CAT/egs/wsj` if no other statement.
+* For easy maintenance of experiments and enforcing the reproduciblity, this guideline introduces our **strongly recommened** way of conducting experiments using **CAT**.
+* We (and PyTorch officially) recommend to use DistributedDataParallel (DDP) instead of DataParallel.
+* In this guideline, we take the experiment on the *Wall Street Journal* dataset as an example, which works at directory `CAT/egs/wsj` unless otherwise stated.
 
 ## File tree
 
@@ -20,14 +20,14 @@
 │   └── ...
 ├── path.sh
 ├── run.sh
-├── README.md
+├── RESULT.md
 ├── steps -> /opt/kaldi/egs/wsj/s5/steps
 └── utils -> /opt/kaldi/egs/wsj/s5/utils
 ```
 
 `exp/` dir is what we care about. 
 
-In this dir, we define our own experiments as sub-directories, liked `exp/<myexp1>`, `exp/<myexp2>`, etc. Inside the experiment dir, files tree and their meaning are
+In this dir, you define your own experiments as sub-directories, liked `exp/<myexp1>`, `exp/<myexp2>`, etc. Inside the experiment dir, the files and their meanings are as follows:
 
 ```
 exp/myexp/
@@ -42,38 +42,38 @@ exp/myexp/
 ## Workflow
 
 1. Create dir `exp/myexp` and configuration file `exp/myexp/config.json` (See [HOWTO](#howto-config)).
-2. In `run.sh`, set the variable `dir=exp/myexp` and other arguments parsed to training script (`--seed`, `--batch_size`, etc.).
-3. Assure the training script is `train_v2.py` in `run.sh`.
+2. In `run.sh`, set the variable `dir=exp/myexp` and other arguments (`--seed`, `--batch_size`, etc.), which are passed to training script `train_v2.py`.
+3. Ensure that the training script is `train_v2.py` in `run.sh`.
 4. Run `./run.sh`. If everything goes well, go to next step.
-5. Manually add the WER results into section WER of `exp/myexp/readme.md` (See [HOWTO](#howto-sr-readme)).
-6. [OPTIONAL] If this running of experiment gets some significant results, add them in the sup-result page `README.md` (In our example, it is `CAT/egs/wsj/README.md`, See [HOWTO](#howto-sup-readme)).
-7. [OPTIONAL] Commit your results and publish to GitHub. Add the directory `exp/myexp` excluding large checkpoint and log files in `exp/myexp/ckpt` to be tracked. Feel free to make a pull-request.
+5. Manually add the WER results into the section of WER in `exp/myexp/readme.md` (See [HOWTO](#howto-sr-readme)).
+6. [OPTIONAL] If this running of experiment gives some significant results, add them to the result page `RESULT.md` (In our example, it is `CAT/egs/wsj/README.md`, See [HOWTO](#howto-sup-readme)).
+7. [OPTIONAL] Commit your results and publish to GitHub. Add the directory `exp/myexp` to be tracked, but exclude large checkpoint and log files in `exp/myexp/ckpt`. Feel free to make a pull-request.
 
 ## HOWTO
 
-### Configure sup README<a name='howto-sup-readme'></a>
+### Configure RESULT.md<a name='howto-sup-readme'></a>
 
-We don't place any restriction to this file. You can consider it as the `result` file of Kaldi. 
+We don't place any restriction to RESULT.md.
 
-A well-maintained results table is better.![sup-README](assets/sup-README.png)
+It is a good practice to include a well-maintained results table as follows:![sup-README](assets/sup-README.png)
 
-### Configure single-running readme<a name='howto-sr-readme'></a>
+### Configure single-running readme.md<a name='howto-sr-readme'></a>
 
-As we mentioned, this file can be auto-generated, but there are still something you need to manually fill in. The auto-generated one looks like
+As we mentioned, this file can be auto-generated, but there are still something you need to manually fill in. The auto-generated one looks like:
 
 ![sr-readme](assets/sr-readme.png)
 
-Paste the results you get in **WER** blank.
+Paste the results you get in the **WER** block.
 
-Add anything you think is helpful in **Appendix**. Though most of the details are included in `config.json` and `scripts.tar.gz`, additional information helping people understand is encouraged.
+Add anything you think is helpful in **Appendix**. Although most of the details are included in `config.json` and `scripts.tar.gz`, additional information for people to understand your experiments, like those in the following, is encouraged.
 
 * WHY you conduct this experiment.
-* WHAT improvement you make compared to previous experiment.
-* \[OPTIONAL\] HOW others reproduce your experiment if you use any ad-hoc trick beyond the configuration file `config.json` and archived files `scripts.tar.gz`.
+* WHAT improvement you make compared to previous experiments.
+* \[OPTIONAL\] HOW others can reproduce your experiment. Please add necessary details if you use any ad-hoc trick beyond the configuration file `config.json` and archived files `scripts.tar.gz`.
 
 ### Configure json file<a name='howto-config'></a>
 
-Normally, we name the json file `config.json`.  It contains all arguments to construct model, optimizer and learning rate scheduler.
+Normally, we name the json file as `config.json`.  It contains all the arguments to construct the model, the optimizer and the learning rate scheduler.
 
 ```json
 {
