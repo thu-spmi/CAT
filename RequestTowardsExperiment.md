@@ -57,7 +57,7 @@ We don't place any restriction to RESULT.md.
 
 It is a good practice to include a well-maintained results table as follows:![sup-README](assets/sup-README.png)
 
-### Configure single-running readme.md<a name='howto-sr-readme'></a>
+### Configure readme.md for a single-running experiment<a name='howto-sr-readme'></a>
 
 As we mentioned, this file can be auto-generated, but there are still something you need to manually fill in. The auto-generated one looks like:
 
