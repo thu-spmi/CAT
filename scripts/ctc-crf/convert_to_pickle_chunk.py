@@ -4,14 +4,16 @@ import argparse
 import sys
 import os
 import math
+import utils
 if sys.version > '3':
     import pickle
 else:
     import cPickle as pickle
-from tqdm import tqdm 
+from tqdm import tqdm
+
 
 def ctc_len(label):
-    extra = 0 
+    extra = 0
     for i in range(len(label)-1):
         if label[i] == label[i+1]:
             extra += 1
@@ -28,6 +30,9 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    utils.highlight_msg(
+        "Calculation of CTC loss requires the input sequence to be longer than ctc_len(labels).\nCheck that in 'ctc-crf/convert_to_*.py' if your model does subsampling on seq.\nMake your modify at line 'if feature.shape[0] < ctc_len(label):'.\nIf you have already done, ignore this.")
+
     label_dict = {}
     with open(args.label, encoding="utf-8") as f:
         lines = f.readlines()
@@ -42,7 +47,7 @@ if __name__ == "__main__":
             sp = line.split()
             weight_dict[sp[0]] = np.asarray([float(sp[1])])
 
-    dataset_dict={}
+    dataset_dict = {}
     with open(args.scp, encoding="utf-8") as f:
         lines = f.readlines()
         for line in tqdm(lines):
@@ -52,11 +57,11 @@ if __name__ == "__main__":
             weight = weight_dict[key]
             feature = kaldi_io.read_mat(value)
             feature = np.asarray(feature)
-	  
+
             if feature.shape[0] < ctc_len(label):
                 #print('{} is too short'.format(key))
                 continue
-            
+
             cate = str(math.ceil(feature.shape[0]/args.chunk_size))+'.pkl'
             if cate in dataset_dict:
                 dataset_dict[cate].append([key, value, label, weight])
@@ -64,7 +69,7 @@ if __name__ == "__main__":
                 dataset = []
                 dataset.append([key, value, label, weight])
                 dataset_dict[cate] = dataset
-    
-    for k,v in dataset_dict.items():
+
+    for k, v in dataset_dict.items():
         pkl_file = open(os.path.join(args.pickle_path, k), 'wb')
-        pickle.dump(v, pkl_file, 2)                
+        pickle.dump(v, pkl_file, 2)

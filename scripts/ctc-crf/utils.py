@@ -144,7 +144,12 @@ def highlight_msg(msg: str):
     len_str = len(msg)
     if '\n' in msg:
         msg = msg.split('\n')
-        msg = '\n'.join(['# ' + line + ' #' for line in msg])
+        len_str = max([len(line) for line in msg])
+        for i, line in enumerate(msg):
+            left_pad = (len_str-len(line))//2
+            right_pad = len_str-len(line) - left_pad
+            msg[i] = '# ' + left_pad*' ' + line + right_pad*' ' + ' #'
+        msg = '\n'.join(msg)
     else:
         msg = '# ' + msg + ' #'
     print('\n' + "#"*(len_str + 4))

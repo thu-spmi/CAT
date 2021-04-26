@@ -2,9 +2,11 @@ import h5py
 import kaldi_io
 import numpy as np
 import argparse
+import utils
+
 
 def ctc_len(label):
-    extra = 0 
+    extra = 0
     for i in range(len(label)-1):
         if label[i] == label[i+1]:
             extra += 1
@@ -18,6 +20,9 @@ if __name__ == "__main__":
     parser.add_argument("weight", type=str)
     parser.add_argument("hdf5", type=str)
     args = parser.parse_args()
+
+    utils.highlight_msg(
+        "Calculation of CTC loss requires the input sequence to be longer than ctc_len(labels).\nCheck that in 'ctc-crf/convert_to_*.py' if your model does subsampling on seq.\nMake your modify at line 'if feature.shape[0] < ctc_len(label):'.\nIf you have already done, ignore this.")
 
     label_dict = {}
     with open(args.label) as f:
@@ -43,7 +48,7 @@ if __name__ == "__main__":
             weight = weight_dict[key]
             feature = kaldi_io.read_mat(value)
             feature = np.asarray(feature)
-	  
+
             if feature.shape[0] < ctc_len(label):
                 print('{} is too short'.format(key))
                 continue
