@@ -7,6 +7,7 @@ import kaldi_io
 import argparse
 import json
 import utils
+from tqdm import tqdm
 from train_v2 import build_model
 
 if __name__ == "__main__":
@@ -53,7 +54,7 @@ if __name__ == "__main__":
         lines = f.readlines()
 
     with torch.no_grad():
-        for i, line in enumerate(lines):
+        for i, line in enumerate(tqdm(lines)):
             utt, feature_path = line.split()
             feature = np.array(kaldi_io.read_mat(feature_path))
             input_lengths = torch.IntTensor([feature.shape[0]])
