@@ -1,5 +1,5 @@
 '''
-Copyright 2018-2019 Tsinghua University, Author: Hongyu Xiang
+Copyright 2018-2019 Tsinghua University, Author: Hongyu Xiang, Keyu An
 Apache 2.0.
 This script shows how to excute CTC-CRF neural network training with PyTorch.
 '''
@@ -21,6 +21,7 @@ from model import BLSTM, LSTM, VGGBLSTM, VGGLSTM, LSTMrowCONV, TDNN_LSTM, BLSTMN
 from dataset import SpeechDataset, SpeechDatasetMem, SpeechDatasetPickle, SpeechDatasetMemPickle, PadCollate
 import ctc_crf_base
 from torch.utils.tensorboard import SummaryWriter
+from utils import save_ckpt, optimizer_to
 
 TARGET_GPUS = [i for i in range(len(os.environ['CUDA_VISIBLE_DEVICES'].split(",")))]
 gpus = torch.IntTensor(TARGET_GPUS)
@@ -107,22 +108,29 @@ def train():
         }
         json.dump(config, fout)
 
+    epoch = 0   
     model = Model(args.arch, args.feature_size, args.hdim, args.output_unit,
                   args.layers, args.dropout, args.lamb)
+    lr = args.lr
+    optimizer = optim.Adam(model.parameters(), lr=lr)
+    min_cv_loss = np.inf
     
+    device = torch.device("cuda:0")
+
     if args.resume:
         print("resume from {}".format(args.pretrained_model_path))
         pretrained_dict = torch.load(args.pretrained_model_path)
-        model.load_state_dict(pretrained_dict)
-        
-    device = torch.device("cuda:0")
+        epoch = pretrained_dict['epoch']
+        model.load_state_dict(pretrained_dict['model'])
+        lr = pretrained_dict['lr']
+        optimizer.load_state_dict(pretrained_dict['optimizer'])
+        optimizer_to(optimizer, device)
+        min_cv_loss = pretrained_dict['cv_loss']
+
     model.cuda()
     model = nn.DataParallel(model)
     model.to(device)
-
-    lr = args.lr
-    optimizer = optim.Adam(model.parameters(), lr=lr)
-    
+       
     if args.pkl:
         tr_dataset = SpeechDatasetMemPickle(args.data_path + "/tr.pkl") 
     else:
@@ -133,7 +141,7 @@ def train():
         batch_size=args.batch_size,
         shuffle=True,
         pin_memory=True,
-        num_workers=0,
+        num_workers=16,
         collate_fn=PadCollate())
 
     if args.pkl:
@@ -150,14 +158,11 @@ def train():
         collate_fn=PadCollate())
 
     prev_t = 0
-    epoch = 0
-    prev_cv_loss = np.inf
     model.train()
     while True:
-        # training stage
-        torch.save(model.module.state_dict(), args.dir + "/best_model")
-        epoch += 1
 
+        # training stage
+        epoch += 1
         for i, minibatch in enumerate(tr_dataloader):
             print("training epoch: {}, step: {}".format(epoch, i))
             logits, input_lengths, labels_padded, label_lengths, path_weights = minibatch
@@ -181,11 +186,7 @@ def train():
                             (epoch-1) * len(tr_dataloader) + i)
             print("time: {}, tr_real_loss: {}, lr: {}".format(t2 - prev_t, real_loss.item(), optimizer.param_groups[0]['lr']))
             prev_t = t2
-
-        # save model
-        torch.save(model.module.state_dict(),
-                   args.dir + "/model.epoch.{}".format(epoch))
-
+            
         # cv stage
         model.eval()
         cv_losses_sum = []
@@ -207,11 +208,19 @@ def train():
 
         cv_loss = np.sum(np.asarray(cv_losses_sum)) / count
         print("mean_cv_loss: {}".format(cv_loss))
-        
         writer.add_scalar('mean_cv_loss',cv_loss,epoch)
-        if epoch < args.min_epoch or cv_loss <= prev_cv_loss:
-            torch.save(model.module.state_dict(), args.dir + "/best_model")
-            prev_cv_loss = cv_loss
+        
+        # save model
+        save_ckpt({
+            'epoch': epoch,
+            'model': model.module.state_dict(),
+            'lr': lr,
+            'optimizer': optimizer.state_dict(),
+            'cv_loss': cv_loss
+            }, epoch < args.min_epoch or cv_loss <= min_cv_loss, args.dir, "model.epoch.{}".format(epoch))
+        
+        if epoch < args.min_epoch or cv_loss <= min_cv_loss:
+            min_cv_loss = cv_loss                
         else:
             print(
                 "cv loss does not improve, decay the learning rate from {} to {}"
