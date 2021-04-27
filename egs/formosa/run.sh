@@ -6,6 +6,8 @@
 # For more detail, please check:
 # 1. Formosa Speech in the Wild (FSW) project (https://sites.google.com/speech.ntut.edu.tw/fsw/home/corpus)
 # 2. Formosa Speech Recognition Challenge (FSW) 2018 (https://sites.google.com/speech.ntut.edu.tw/fsw/home/challenge)
+echo "WARNING: Not implement in CAT v2 yet. Try CAT v1 or help with the implementation."                                                                        
+exit 0
 stage=-3
 num_jobs=20
 

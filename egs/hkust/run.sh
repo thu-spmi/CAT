@@ -1,6 +1,8 @@
 #!/bin/bash
 
 # Copyright 2020 Keyu An ankeyuthu@gmail.com
+echo "WARNING: Not implement in CAT v2 yet. Try CAT v1 or help with the implementation."                                                                        
+exit 0
 
 . ./cmd.sh
 

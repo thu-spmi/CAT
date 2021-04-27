@@ -8,7 +8,7 @@
 
 ### Appendix
 
-* 
+* This is a demo showing how to train a BLSTM model on WSJ dataset.
 
 ### WER
 ```

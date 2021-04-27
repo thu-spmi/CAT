@@ -1,43 +1,16 @@
 """
-copyright to espnet
+Copyright to espnet
 https://github.com/espnet/espnet/blob/master/espnet2/asr/specaug/specaug.py
-Modified into spec aug with masking by length ratio by Zheng Huahuan (zhh20@mails.tsinghua.edu.cn)
+
+Modified into spec aug with masking by ratio by Huahuan Zheng (zhh20@mails.tsinghua.edu.cn) in 2021.
 """
 
-from ._layers import StackDelta, UnStackDelta
+from _layers import StackDelta, UnStackDelta
 from typing import Union, Sequence
+import utils
 
 import torch
 import torch.nn as nn
-from torch.nn.utils.rnn import pad_sequence
-
-
-def pad_list(xs, pad_value=0, dim=0):
-    """Perform padding for the list of tensors.
-
-    Args:
-        xs (`list`): List of Tensors [(T_1, `*`), (T_2, `*`), ..., (T_B, `*`)].
-        pad_value (float): Value for padding.
-
-    Returns:
-        Tensor: Padded tensor (B, Tmax, `*`).
-
-    Examples:
-        >>> x = [torch.ones(4), torch.ones(2), torch.ones(1)]
-        >>> x
-        [tensor([1., 1., 1., 1.]), tensor([1., 1.]), tensor([1.])]
-        >>> pad_list(x, 0)
-        tensor([[1., 1., 1., 1.],
-                [1., 1., 0., 0.],
-                [1., 0., 0., 0.]])
-
-    """
-    if dim == 0:
-        return pad_sequence(xs, batch_first=True, padding_value=pad_value)
-    else:
-        xs = [x.transpose(0, dim) for x in xs]
-        padded = pad_sequence(xs, batch_first=True, padding_value=pad_value)
-        return padded.transpose(1, dim+1).contiguous()
 
 
 class MaskFreq(nn.Module):
@@ -198,7 +171,7 @@ class MaskTime(nn.Module):
                     _out = self.mask_by_batch(
                         spec[i*ch+j][None, :spec_length[i], :])
                     outs.append(_out)
-            out = pad_list(outs, 0.0, dim=1)
+            out = utils.pad_list(outs, 0.0, dim=1)
             out = out.view(*org_size)
         return out
 
@@ -306,12 +279,12 @@ class SpecAug(nn.Module):
     def __init__(
         self,
         apply_time_warp: bool = True,
-        time_warp_window: float = 0.1,
+        time_warp_window: float = 0.2,
         apply_freq_mask: bool = True,
         freq_mask_width_range: Union[float, Sequence[float]] = (0., 0.15),
         num_freq_mask: int = 2,
         apply_time_mask: bool = True,
-        time_mask_width_range: Union[float, Sequence[float]] = (0., 0.15),
+        time_mask_width_range: Union[float, Sequence[float]] = (0., 0.1),
         num_time_mask: int = 2,
         delta_feats=False
     ):

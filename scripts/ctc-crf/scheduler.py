@@ -1,14 +1,15 @@
-"""Scheduler module
+"""
+Copyright 2021 Tsinghua University
+Apache 2.0.
+Author: Zheng Huahuan (zhh20@mails.tsinghua.edu.cn)
 
 This is the script implementing all schedulers
 """
 
-__author__ = "Zheng Huahuan (zhh20@mails.tsinghua.edu.cn)"
-
-from collections import OrderedDict
-import numpy as np
 import math
 import torch
+import numpy as np
+from collections import OrderedDict
 
 
 def SetupOptim(type_optim: str, paramlist, **kwargs) -> torch.optim.Optimizer:
@@ -76,6 +77,8 @@ class Scheduler(object):
         """
         if self.best_metric is None:
             self.best_metric = metric
+        elif not (self._reverse_ ^ (metric < self.best_metric)):
+            self.best_metric = metric
 
         self.epoch_cur = global_epoch
         return self.impl_step(metric)
@@ -102,10 +105,8 @@ class SchedulerEarlyStop(Scheduler):
 
         state = 0
         if self.epoch_cur <= self.epoch_min:
-            if not (self._reverse_ ^ (metric < self.best_metric)):
-                self.best_metric = metric
+            pass
         elif not (self._reverse_ ^ (metric < self.best_metric)):
-            self.best_metric = metric
             self.count_worse = 0
             state = 1
         else:
@@ -145,7 +146,6 @@ class SchedulerFixedStop(Scheduler):
     def impl_step(self, metric):
         state = 0
         if not (self._reverse_ ^ (metric < self.best_metric)):
-            self.best_metric = metric
             state = 1
         elif self.epoch_cur >= self.epoch_max:
             state = 2

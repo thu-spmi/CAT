@@ -1,12 +1,17 @@
 """
-Copyright 2020 Tsinghua University
-Author: Zheng Huahuan (zhh20@mails.tsinghua.edu.cn)
+Copyright 2021 Tsinghua University
+Apache 2.0.
+Author: Hongyu Xiang, Keyu An, Zheng Huahuan
 """
 
 import math
+from collections import OrderedDict
+from maskedbatchnorm1d import MaskedBatchNorm1d
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 
 
 class StackDelta(nn.Module):
@@ -309,3 +314,223 @@ class RelPositionMultiHeadAttention(nn.Module):
         attn_out = attn_out.transpose(0, 1).contiguous()
 
         return attn_out
+
+
+class FFModule(nn.Module):
+    """Feed-forward module
+
+    default output dimension = idim
+    x0 -> LayerNorm -> FC -> Swish -> Dropout -> FC -> Dropout -> x1
+    x0 + res_factor * x1 -> output
+    """
+
+    def __init__(self, idim: int, res_factor: float = 0.5, dropout: float = 0.0) -> None:
+        super().__init__()
+        assert res_factor > 0. and dropout >= 0.
+        self._res_factor = res_factor
+
+        self.ln = nn.LayerNorm([idim])
+        self.fc0 = nn.Linear(idim, idim*4)
+        self.swish = nn.SiLU()
+        self.dropout0 = nn.Dropout(dropout)
+        self.fc1 = nn.Linear(idim*4, idim)
+        self.dropout1 = nn.Dropout(dropout)
+
+    def forward(self, x: torch.Tensor):
+        output = self.ln(x)
+        output = self.fc0(output)
+        output = self.swish(output)
+        output = self.dropout0(output)
+        output = self.fc1(output)
+        output = self.dropout1(output)
+        output = x + self._res_factor * output
+
+        return output
+
+
+class ConvModule(nn.Module):
+    def __init__(self, idim: int, kernel_size: int = 32, dropout: float = 0.0, multiplier: int = 1) -> None:
+        super().__init__()
+
+        self.ln = nn.LayerNorm([idim])
+        self.pointwise_conv0 = nn.Conv1d(
+            idim, 2 * idim, kernel_size=1, stride=1)
+        self.glu = nn.GLU(dim=1)
+        cdim = idim
+        padding = (kernel_size-1)//2
+        self.padding = nn.ConstantPad2d(
+            (padding, kernel_size-1-padding, 0, 0), 0.)
+        self.depthwise_conv = nn.Conv1d(
+            cdim, multiplier*cdim, kernel_size=kernel_size, stride=1, groups=cdim, padding=0)
+        cdim = multiplier * cdim
+        self.bn = nn.BatchNorm1d(cdim)
+        self.swish = nn.SiLU()
+        self.pointwise_conv1 = nn.Conv1d(cdim, idim, kernel_size=1, stride=1)
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, x: torch.Tensor):
+        # [B, T, D]
+        output = self.ln(x)
+        # [B, T, D] -> [B, D, T]
+        output = output.transpose(1, 2)
+        # [B, D, T] -> [B, 2*D, T]
+        output = self.pointwise_conv0(output)
+        # [B, 2D, T] -> [B, D, T]
+        output = self.glu(output)
+        # [B, D, T] -> [B, multiplier*D, T]
+        output = self.padding(output)
+        output = self.depthwise_conv(output)
+        if output.size(0) > 1 or output.size(2) > 1:
+            # Doing batchnorm with [1, D, 1] tensor raise error.
+            output = self.bn(output)
+        output = self.swish(output)
+        # [B, multiplier*D, T] -> [B, D, T]
+        output = self.pointwise_conv1(output)
+        output = self.dropout(output)
+        # [B, D, T] -> [B, T, D]
+        output = output.transpose(1, 2)
+
+        return x + output
+
+
+class MHSAModule(nn.Module):
+    def __init__(self, idim, d_head: int, num_heads: int, dropout: float = 0.0):
+        super().__init__()
+
+        self.ln = nn.LayerNorm(idim)
+        self.mha = RelPositionMultiHeadAttention(
+            idim, num_heads, d_head)
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, x: torch.Tensor, lens: torch.Tensor, mems=None):
+        x_norm = self.ln(x)
+        attn_out = self.mha(x_norm, lens, mems)
+        attn_out = self.dropout(attn_out)
+        return x + attn_out, lens
+
+
+class ConformerCell(nn.Module):
+    def __init__(
+            self,
+            idim: int,
+            res_factor: float = 0.5,
+            d_head: int = 36,
+            num_heads: int = 4,
+            kernel_size: int = 32,
+            multiplier: int = 1,
+            dropout: float = 0.1):
+        super().__init__()
+
+        self.ffm0 = nnlayers.FFModule(idim, res_factor, dropout)
+        self.mhsam = nnlayers.MHSAModule(idim, d_head, num_heads, dropout)
+        self.convm = nnlayers.ConvModule(
+            idim, kernel_size, dropout, multiplier)
+        self.ffm1 = nnlayers.FFModule(idim, res_factor, dropout)
+        self.ln = nn.LayerNorm(idim)
+
+    def forward(self, x: torch.Tensor, lens: torch.Tensor):
+
+        ffm0_out = self.ffm0(x)
+        attn_out, attn_ls = self.mhsam(ffm0_out, lens)
+        conv_out = self.convm(attn_out)
+        ffm1_out = self.ffm1(conv_out)
+        out = self.ln(ffm1_out)
+        return out, attn_ls
+
+
+class VGG2L(torch.nn.Module):
+    def __init__(self, in_channel=4):
+        super(VGG2L, self).__init__()
+        kernel_size = 3
+        padding = 1
+        self.conv1_1 = torch.nn.Conv2d(
+            in_channel, 64, kernel_size, stride=1, padding=padding)
+        self.conv1_2 = torch.nn.Conv2d(
+            64, 64, kernel_size, stride=1, padding=padding)
+        self.bn1 = torch.nn.BatchNorm2d(64)
+        self.conv2_1 = torch.nn.Conv2d(
+            64, 128, kernel_size, stride=1, padding=padding)
+        self.conv2_2 = torch.nn.Conv2d(
+            128, 128, kernel_size, stride=1, padding=padding)
+        self.bn2 = torch.nn.BatchNorm2d(128)
+        self.in_channel = in_channel
+
+    def forward(self, xs_pad, ilens):
+        xs_pad = xs_pad.view(xs_pad.size(0), xs_pad.size(1), self.in_channel,
+                             xs_pad.size(2) // self.in_channel).transpose(1, 2)
+        xs_pad = F.relu(self.conv1_1(xs_pad))
+        xs_pad = F.relu(self.conv1_2(xs_pad))
+        xs_pad = self.bn1(xs_pad)
+        xs_pad = F.max_pool2d(xs_pad, [1, 2], stride=[1, 2], ceil_mode=True)
+        xs_pad = F.relu(self.conv2_1(xs_pad))
+        xs_pad = F.relu(self.conv2_2(xs_pad))
+        xs_pad = self.bn2(xs_pad)
+        xs_pad = F.max_pool2d(xs_pad, [1, 2], stride=[1, 2], ceil_mode=True)
+        xs_pad = xs_pad.transpose(1, 2)
+        xs_pad = xs_pad.contiguous().view(
+            xs_pad.size(0), xs_pad.size(1), xs_pad.size(2) * xs_pad.size(3))
+        return xs_pad, ilens
+
+
+class Lookahead(nn.Module):
+    def __init__(self, n_features, context):
+        super(Lookahead, self).__init__()
+        assert context > 0
+        self.context = context
+        self.n_features = n_features
+        self.pad = (0, self.context - 1)
+        self.conv = nn.Conv1d(self.n_features, self.n_features, kernel_size=self.context, stride=1,
+                              groups=self.n_features, padding=0, bias=None)
+
+    def forward(self, x):
+        x = x.transpose(1, 2)
+        x = F.pad(x, pad=self.pad, value=0)
+        x = self.conv(x)
+        x = x.transpose(1, 2).contiguous()
+        return x
+
+
+class TDNN(torch.nn.Module):
+    def __init__(self, idim: int, odim: int, half_context: int = 1, dilation: int = 1, stride: int = 1):
+        super().__init__()
+
+        self.stride = stride
+        if stride > 1:
+            dilation = 1
+            padding = 0
+        else:
+            padding = half_context * dilation
+
+        self.conv = torch.nn.Conv1d(
+            idim, odim, 2*half_context+1, stride=stride, padding=padding, dilation=dilation)
+        # FIXME: (Huahuan) I think we should use layernorm instead of batchnorm
+        # self.bn = MaskedBatchNorm1d(odim, eps=1e-5, affine=True)
+        self.ln = nn.LayerNorm(odim)
+
+    def forward(self, x: torch.Tensor, ilens: torch.Tensor):
+        tdnn_in = x.transpose(1, 2)
+        if self.stride > 1:
+            ilens = ilens // self.stride
+
+        tdnn_out = self.conv(tdnn_in)
+
+        output = F.relu(tdnn_out)
+        output = output.transpose(1, 2)
+        output = self.ln(output)
+        return output, ilens
+
+
+class _LSTM(nn.Module):
+    def __init__(self, idim, hdim, n_layers, dropout=0.0, bidirectional=False):
+        super().__init__()
+        self.lstm = nn.LSTM(idim, hdim, num_layers=n_layers,
+                            bidirectional=bidirectional, batch_first=True, dropout=dropout)
+
+    def forward(self, x: torch.Tensor, ilens: torch.Tensor, hidden=None):
+        self.lstm.flatten_parameters()
+
+        packed_input = pack_padded_sequence(x, ilens, batch_first=True)
+        packed_output, _ = self.lstm(packed_input, hidden)
+        out, olens = pad_packed_sequence(packed_output, batch_first=True)
+
+        return out, olens

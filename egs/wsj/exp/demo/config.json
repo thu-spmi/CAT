@@ -1,6 +1,6 @@
 {
     "net": {
-        "type": "BLSTMv2",
+        "type": "BLSTM",
         "lossfn": "crf",
         "lamb": 0.01,
         "kwargs": {

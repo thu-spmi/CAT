@@ -1,13 +1,12 @@
 """
-Using jupyter notebook: (in working directory)
-    %matplotlib widget
-    from scripts.common.monitor import plot_monitor
-    task=<my exp>
-    plot_monitor(task, True)
+Copyright 2021 Tsinghua University
+Apache 2.0.
+Author: Zheng Huahuan (zhh20@mails.tsinghua.edu.cn)
 
 Directly execute: (in working directory)
-    python3 scripts/common/monitor.py <my exp>
+    python3 ctc-crf/monitor.py <path to my exp>
 """
+
 import sys
 import os
 import pandas as pd
@@ -19,8 +18,8 @@ def plot_monitor(task: str, interactive_show=False):
     train_log = f'exp/{task}/ckpt/log_train.csv'
     dev_log = f'exp/{task}/ckpt/log_eval.csv'
 
-    assert os.path.isfile(train_log)
-    assert os.path.isfile(dev_log)
+    assert os.path.isfile(train_log), f'exp/{task}/ckpt/log_train.csv is not a valid file.'
+    assert os.path.isfile(dev_log), f'exp/{task}/ckpt/log_eval.csv is not a valid file.'
 
     df_train = pd.read_csv(train_log)
     df_eval = pd.read_csv(dev_log)
@@ -76,7 +75,7 @@ def plot_monitor(task: str, interactive_show=False):
     axes[1][1].set_ylabel('Dev set loss')
     axes[1][1].set_xlabel('Epoch')
 
-    plt.suptitle(f"\'{task.strip('dev_')}\' ({len(df_eval)} epochs)" + '\n' +
+    plt.suptitle(f"\'{task.replace('dev_', '')}\' ({len(df_eval)} epochs)" + '\n' +
                  '{:.2f}s/step or {:.2f}h/epoch'.format(3600*accum_time[-1]/len(accum_time), accum_time[-1]/len(df_eval)) +
                  '\n' + "min loss={:.2f}".format(min_loss))
     plt.tight_layout()
@@ -89,10 +88,10 @@ def plot_monitor(task: str, interactive_show=False):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 1:
+    if len(sys.argv) < 2:
         raise ValueError("Please input the experiment name.")
 
-    task = sys.argv[1].strip('exp/')
+    task = sys.argv[1].strip('/').split('/')[-1]
     assert os.path.isdir(
         f'exp/{task}'), f"\'exp/{task}\' is not a valid directory!"
 

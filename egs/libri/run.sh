@@ -3,6 +3,8 @@
 # Copyright 2018-2019 Tsinghua University, Author: Hongyu Xiang
 # Apache 2.0.
 # This script implements CTC-CRF training on LibriSpeech dataset.
+echo "WARNING: Not implement in CAT v2 yet. Try CAT v1 or help with the implementation."                                                                        
+exit 0
 
 # base url for downloads.
 data_url=www.openslr.org/resources/12

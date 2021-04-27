@@ -6,6 +6,9 @@
 
 # This script implements CTC-CRF training on Aishell dataset.
 
+echo "WARNING: Not implement in CAT v2 yet. Try CAT v1 or help with the implementation."
+exit 0
+
 . ./cmd.sh ## You'll want to change cmd.sh to something that will work on your system.
            ## This relates to the queue.
 
