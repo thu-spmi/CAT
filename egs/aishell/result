@@ -1,7 +1,0 @@
-#13M 6layer-BLSTM results, lamb=0.01, hdim=320, lr=0.001
-# sp   unit      test set
-# Y    phone     7.30%
-
-#16M VGG+6layer-BLSTM results, lamb=0.01, hdim=320, lr=0.001
-# sp   unit      test set
-# Y    phone     6.34%

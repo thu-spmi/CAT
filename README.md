@@ -46,9 +46,11 @@ Please cite CAT using:
 ## Dependencies
 
 * kaldi
-* pytorch 0.4+
+* pytorch 1.1+
 * openfst
-* python 2.7+ or python3
+* python3
+
+For older torch and python support, please refer to branch v1.
 
 ## Installation
 
@@ -59,8 +61,6 @@ Please cite CAT using:
 ```
 CC=gcc-6 CXX=g++-6 make OPENFST=/path/to/your/openfst
 ```
-
-For pytorch version 1.0+, use `python setup_1_0.py install` in the `ctc_crf/Makefile`.
 
 **Step 3.** Change the path to kaldi  in `egs/wsj/path.sh` to your local path, taking WSJ experiment as an example.
 
@@ -196,7 +196,7 @@ Sub-sample the input feature sequence (default sampling rate: 3).
 Note that the potential function (as shown in the [CTC-CRF paper](http://oa.ee.tsinghua.edu.cn/~ouzhijian/pdf/ctc-crf.pdf))
 
  ![pot](assets/potential.png)
- 
+
 consists of the denominator LM weight for each training utterance, in addition to the log-softmax weights from the bottom neural neural network.  We need to calculate and save the weight for the label sequence, by the following steps:
 
 - Construct a `linearFST` for each label sequence in `text_number` file;
