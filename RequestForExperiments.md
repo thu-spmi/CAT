@@ -31,19 +31,18 @@ In this dir, you define your own experiments as sub-directories, liked `exp/<mye
 
 ```
 exp/myexp/
-├── ckpt	# auto-gen, containing training checkpoint, log files.
+├── ckpt            # auto-gen, containing training checkpoint, log files.
 │   └── ...
-├── config.json			# the configuration file, you need to manually create it.
-├── monitor.png			# auto-gen, visualization of log files.
-├── readme.md				# would be auto-gen if not exist, you can add comments in it.
-└── scripts.tar.gz	# auto-gen, archive of all scripts running current experiment.
+├── config.json     # the configuration file, you need to manually create it.
+├── monitor.png     # auto-gen, visualization of log files.
+├── readme.md       # would be auto-gen if not exist, you can add comments in it.
+└── scripts.tar.gz  # auto-gen, archive of all scripts running current experiment.
 ```
 
 ## Workflow
 
 1. Create dir `exp/myexp` and configuration file `exp/myexp/config.json` (See [HOWTO](#howto-config)).
-2. In `run.sh`, set the variable `dir=exp/myexp` and other arguments (`--seed`, `--batch_size`, etc.), which are passed to training script `train_v2.py`.
-3. Ensure that the training script is `train_v2.py` in `run.sh`.
+2. In `run.sh`, set the variable `dir=exp/myexp` and other arguments (`--seed`, `--batch_size`, etc.), which are passed to training script `train.py`.
 4. Run `./run.sh`. If everything goes well, go to next step.
 5. Manually add the WER results into the section of WER in `exp/myexp/readme.md` (See [HOWTO](#howto-sr-readme)).
 6. [OPTIONAL] If this running of experiment gives some significant results, add them to the result page `RESULT.md` (In our example, it is `CAT/egs/wsj/RESULT.md`, See [HOWTO](#howto-sup-readme)).
@@ -78,7 +77,7 @@ Normally, we name the json file as `config.json`.  It contains all the arguments
 ```json
 {
     "net": {
-        "type": "myBLSTM",
+        "type": "BLSTM",
         "lossfn": "crf",
         "lamb": 0.01,
         "kwargs": {

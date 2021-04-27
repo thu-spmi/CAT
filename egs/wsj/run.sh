@@ -128,12 +128,10 @@ DATAPATH=$PARENTDIR/data/
 if [ $stage -le 6 ]; then
 unset CUDA_VISIBLE_DEVICES
 
-if [[ $NODE == 0 && ! -f $dir/scripts.tar.gz ]]
-then
+if [[ $NODE == 0 && ! -f $dir/scripts.tar.gz ]]; then
     echo ""
     tar -zcf $dir/scripts.tar.gz $(readlink ctc-crf) $0
-elif [ $NODE == 0 ]
-then
+elif [ $NODE == 0 ]; then
     echo ""
     echo "'$dir/scripts.tar.gz' already exists."
     echo "If you want to update it, please manually rm it then re-run this script."
@@ -150,8 +148,7 @@ python3 ctc-crf/train.py --seed=0               \
     || exit 1
 fi
 
-if [ $NODE -ne 0 ]
-then
+if [ $NODE -ne 0 ]; then
   exit 0
 fi
 
