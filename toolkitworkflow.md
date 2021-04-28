@@ -125,9 +125,9 @@ Sub-sample the input feature sequence (default sampling rate: 3).
 **4) `path_weight/build/path_weight`**
 
 Note that the potential function (as shown in the [CTC-CRF paper](http://oa.ee.tsinghua.edu.cn/~ouzhijian/pdf/ctc-crf.pdf))
-$$
-\phi(\pi, x)=\sum_{t=1}^T\log p(\pi_t|x)+\log p(l)
-$$
+
+<img src="assets/potential.png" alt="potential" style="zoom:20%;" />
+
 consists of the denominator LM weight for each training utterance, in addition to the log-softmax weights from the bottom neural neural network.  We need to calculate and save the weight for the label sequence, by the following steps:
 
 - Construct a `linearFST` for each label sequence in `text_number` file;
@@ -151,9 +151,8 @@ The definition of our neural network is in **model.py**. The default models in o
 **3) Loss function**
 
 The output of BLSTM is passed through a fully-conneted layer and a log-softmax layer, which is then used together with the labels to calculate the following loss[^loss] --- Eq (4) in the [CAT paper](https://arxiv.org/abs/1911.08747), by `class CTC_CRF_LOSS` in **ctc_crf.py**.
-$$
-\mathcal{J}_{CRF}(\theta)=\log \frac{\sum_{\pi\in\mathcal{B}^{-1}(l)}\exp(\phi_\theta(\pi,x))}{\sum_{\pi'}\exp(\phi_\theta(\pi',x))}
-$$
+
+<img src="assets/loss.png" alt="loss" style="zoom:20%;" />
 
 [^loss]: As convention, loss is the negative of log-likelihood.
 
