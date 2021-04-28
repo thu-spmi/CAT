@@ -1,240 +1,244 @@
-'''
-Copyright 2018-2019 Tsinghua University, Author: Hongyu Xiang, Keyu An
+"""
+Copyright 2021 Tsinghua University
 Apache 2.0.
-This script shows how to excute CTC-CRF neural network training with PyTorch.
-'''
-from ctc_crf import CTC_CRF_LOSS
+Author: Zheng Huahuan (zhh20@mails.tsinghua.edu.cn)
+
+This script uses DistributedDataParallel (DDP) to train model within framework of CAT.
+Differed from `train_dist.py`, this one supports read configurations from json file
+and is more non-hard-coding style.
+"""
+
+import utils
+import os
+import argparse
+import numpy as np
+import model as model_zoo
+import dataset as DataSet
+from _specaug import SpecAug
+from collections import OrderedDict
+
 import torch
 import torch.nn as nn
-import torch.optim as optim
-import torch.nn.functional as F
-from torch.autograd import Variable
-import numpy as np
-import timeit
-import os
-import sys
-import argparse
-import json
-from torch.autograd import Function
-from torch.utils.data import Dataset, DataLoader
-from model import BLSTM, LSTM, VGGBLSTM, VGGLSTM, LSTMrowCONV, TDNN_LSTM, BLSTMN
-from dataset import SpeechDataset, SpeechDatasetMem, SpeechDatasetPickle, SpeechDatasetMemPickle, PadCollate
+import torch.distributed as dist
+import torch.multiprocessing as mp
+from torch.utils.data.distributed import DistributedSampler
+from torch.utils.data import DataLoader
+
 import ctc_crf_base
-from torch.utils.tensorboard import SummaryWriter
-from utils import save_ckpt, optimizer_to
 
-TARGET_GPUS = [i for i in range(len(os.environ['CUDA_VISIBLE_DEVICES'].split(",")))]
-gpus = torch.IntTensor(TARGET_GPUS)
-ctc_crf_base.init_env('data/den_meta/den_lm.fst', gpus)
+# This line in rid of some conditional errors.
+# torch.multiprocessing.set_sharing_strategy('file_system')
 
 
-class Model(nn.Module):
-    def __init__(self, net, idim, hdim, K, n_layers, dropout, lamb):
-        super(Model, self).__init__()
-        self.net = eval(net)(idim, hdim, n_layers, dropout=dropout)
-        if net in ['BLSTM', 'BLSTMN', 'VGGBLSTM']:
-            self.linear = nn.Linear(hdim * 2, K)
+def main(args):
+    if not torch.cuda.is_available():
+        utils.highlight_msg("CPU only training is unsupported.")
+        return None
+
+    os.makedirs(args.dir+'/ckpt', exist_ok=True)
+    setattr(args, 'ckptpath', args.dir+'/ckpt')
+
+    ngpus_per_node = torch.cuda.device_count()
+    args.world_size = ngpus_per_node * args.world_size
+    print(f"Global number of GPUs: {args.world_size}")
+    mp.spawn(main_worker, nprocs=ngpus_per_node, args=(ngpus_per_node, args))
+
+
+def main_worker(gpu, ngpus_per_node, args):
+    args.gpu = gpu
+
+    args.rank = args.rank * ngpus_per_node + gpu
+    print(f"Use GPU: local[{args.gpu}] | global[{args.rank}]")
+
+    dist.init_process_group(
+        backend=args.dist_backend, init_method=args.dist_url,
+        world_size=args.world_size, rank=args.rank)
+
+    args.batch_size = args.batch_size // ngpus_per_node
+
+    print("> Data prepare")
+    if args.h5py:
+        data_format = "hdf5"
+        utils.highlight_msg("H5py reading might cause error with Multi-GPUs.")
+        Dataset = DataSet.SpeechDataset
+    else:
+        data_format = "pickle"
+        Dataset = DataSet.SpeechDatasetPickle
+
+    tr_set = Dataset(
+        f"{args.data}/{data_format}/tr.{data_format}")
+    test_set = Dataset(
+        f"{args.data}/{data_format}/cv.{data_format}")
+    print("Data prepared.")
+
+    train_sampler = DistributedSampler(tr_set)
+    test_sampler = DistributedSampler(test_set)
+    test_sampler.set_epoch(1)
+
+    trainloader = DataLoader(
+        tr_set, batch_size=args.batch_size, shuffle=(train_sampler is None),
+        num_workers=args.workers, pin_memory=True,
+        sampler=train_sampler, collate_fn=DataSet.sortedPadCollate())
+
+    testloader = DataLoader(
+        test_set, batch_size=args.batch_size, shuffle=(test_sampler is None),
+        num_workers=args.workers, pin_memory=True,
+        sampler=test_sampler, collate_fn=DataSet.sortedPadCollate())
+
+    logger = OrderedDict({
+        'log_train': ['epoch,loss,loss_real,net_lr,time'],
+        'log_eval': ['loss_real,time']
+    })
+    manager = utils.Manager(logger, build_model, args)
+
+    # get GPU info
+    gpu_info = utils.gather_all_gpu_info(args.gpu)
+
+    if args.rank == 0:
+        print("> Model built.")
+        print("Model size:{:.2f}M".format(
+            utils.count_parameters(manager.model)/1e6))
+
+        utils.gen_readme(args.dir+'/readme.md',
+                         model=manager.model, gpu_info=gpu_info)
+
+    # init ctc-crf, args.iscrf is set in build_model
+    if args.iscrf:
+        gpus = torch.IntTensor([args.gpu])
+        ctc_crf_base.init_env(f"{args.data}/den_meta/den_lm.fst", gpus)
+
+    # training
+    manager.run(train_sampler, trainloader, testloader, args)
+
+    if args.iscrf:
+        ctc_crf_base.release_env(gpus)
+
+
+class CAT_Model(nn.Module):
+    def __init__(self, NET=None, fn_loss='crf', lamb: float = 0.1, net_kwargs: dict = None, sepcaug: nn.Module = None):
+        super().__init__()
+        if NET is None:
+            return None
+
+        self.infer = NET(**net_kwargs)
+        self.specaug = sepcaug
+
+        if fn_loss == "ctc":
+            self.loss_fn = utils.CTCLoss()
+        elif fn_loss == "crf":
+            self.loss_fn = utils.CRFLoss(lamb=lamb)
         else:
-            self.linear = nn.Linear(hdim, K)
-        self.loss_fn = CTC_CRF_LOSS(lamb=lamb)
+            raise ValueError(f"Unknown loss function: {fn_loss}")
 
-    def forward(self, logits, labels_padded, input_lengths, label_lengths):
-        # rearrange by input_lengths
-        input_lengths, indices = torch.sort(input_lengths, descending=True)
-        assert indices.dim() == 1, "input_lengths should have only 1 dim"
-        logits = torch.index_select(logits, 0, indices)
-        labels_padded = torch.index_select(labels_padded, 0, indices)
-        label_lengths = torch.index_select(label_lengths, 0, indices)
-
-        labels_padded = labels_padded.cpu()
+    def forward(self, logits, labels, input_lengths, label_lengths):
+        labels = labels.cpu()
         input_lengths = input_lengths.cpu()
         label_lengths = label_lengths.cpu()
 
-        label_list = [
-            labels_padded[i, :x] for i, x in enumerate(label_lengths)
-        ]
-        labels = torch.cat(label_list)
-        netout, input_lengths = self.net(logits, input_lengths)
-        input_lengths = input_lengths.to(dtype=torch.int32)
-        netout = self.linear(netout)
-        netout = F.log_softmax(netout, dim=2)
-        loss = self.loss_fn(netout, labels, input_lengths, label_lengths)
+        netout, lens_o = self.infer(logits, input_lengths)
+        netout = torch.log_softmax(netout, dim=-1)
+
+        loss = self.loss_fn(netout, labels, lens_o.to(
+            torch.int32).cpu(), label_lengths)
+
         return loss
 
 
-def adjust_lr(optimizer, lr):
-    for param_group in optimizer.param_groups:
-        param_group['lr'] = lr
+def build_model(args, configuration, train=True) -> nn.Module:
+
+    netconfigs = configuration['net']
+    net_kwargs = netconfigs['kwargs']
+    net = getattr(model_zoo, netconfigs['type'])
+
+    if not train:
+        infer_model = net(**net_kwargs)
+        return infer_model
 
 
-def train():
-    parser = argparse.ArgumentParser(description="recognition argument")
-    parser.add_argument("dir", default="models")
-    parser.add_argument(
-        "--arch",
-        choices=[
-            'BLSTM', 'LSTM', 'VGGBLSTM', 'VGGLSTM', 'LSTMrowCONV', 'TDNN_LSTM',
-            'BLSTMN', 'TDNN_downsample'
-        ],
-        default='BLSTM')
-    parser.add_argument("--min_epoch", type=int, default=5)
-    parser.add_argument("--output_unit", type=int)
-    parser.add_argument("--lamb", type=float, default=0.1)
-    parser.add_argument("--hdim", type=int, default=512)
-    parser.add_argument("--layers", type=int, default=6)
-    parser.add_argument("--dropout", type=float, default=0.5)
-    parser.add_argument("--batch_size", type=int, default=256)
-    parser.add_argument("--feature_size", type=int, default=120)
-    parser.add_argument("--data_path")
-    parser.add_argument("--lr", type=float,default=0.001)
-    parser.add_argument("--stop_lr", type=float,default=0.00001)
-    parser.add_argument("--resume", action="store_true")
-    parser.add_argument("--clip_grad", action="store_true")
-    parser.add_argument("--pkl", action="store_true")
-    parser.add_argument("--pretrained_model_path")
-    args = parser.parse_args()
-
-    os.makedirs(args.dir + '/board', exist_ok=True)
-    writer = SummaryWriter(args.dir +'/board')
-    # save configuration
-    with open(args.dir + '/config.json', "w") as fout:
-        config = {
-            "arch": args.arch,
-            "output_unit": args.output_unit,
-            "hdim": args.hdim,
-            "layers": args.layers,
-            "dropout": args.dropout,
-            "feature_size": args.feature_size,
-        }
-        json.dump(config, fout)
-
-    epoch = 0   
-    model = Model(args.arch, args.feature_size, args.hdim, args.output_unit,
-                  args.layers, args.dropout, args.lamb)
-    lr = args.lr
-    optimizer = optim.Adam(model.parameters(), lr=lr)
-    min_cv_loss = np.inf
-    
-    device = torch.device("cuda:0")
-
-    if args.resume:
-        print("resume from {}".format(args.pretrained_model_path))
-        pretrained_dict = torch.load(args.pretrained_model_path)
-        epoch = pretrained_dict['epoch']
-        model.load_state_dict(pretrained_dict['model'])
-        lr = pretrained_dict['lr']
-        optimizer.load_state_dict(pretrained_dict['optimizer'])
-        optimizer_to(optimizer, device)
-        min_cv_loss = pretrained_dict['cv_loss']
-
-    model.cuda()
-    model = nn.DataParallel(model)
-    model.to(device)
-       
-    if args.pkl:
-        tr_dataset = SpeechDatasetMemPickle(args.data_path + "/tr.pkl") 
+    if 'lossfn' not in netconfigs:
+        lossfn = 'crf'
+        utils.highlight_msg(
+            "Warning: not specified \'lossfn\' in configuration.\nDefaultly set to \'crf\'")
     else:
-        tr_dataset = SpeechDatasetMem(args.data_path + "/tr.hdf5")
+        lossfn = netconfigs['lossfn']
 
-    tr_dataloader = DataLoader(
-        tr_dataset,
-        batch_size=args.batch_size,
-        shuffle=True,
-        pin_memory=True,
-        num_workers=16,
-        collate_fn=PadCollate())
-
-    if args.pkl:
-        cv_dataset = SpeechDatasetMemPickle(args.data_path + "/cv.pkl") 
+    if 'lamb' not in netconfigs:
+        lamb = 0.01
+        if lossfn == 'crf':
+            utils.highlight_msg(
+                "Warning: not specified \'lamb\' in configuration.\nDefaultly set to 0.01")
     else:
-        cv_dataset = SpeechDatasetMem(args.data_path + "/cv.hdf5")
+        lamb = netconfigs['lamb']
 
-    cv_dataloader = DataLoader(
-        cv_dataset,
-        batch_size=args.batch_size,
-        shuffle=False,
-        pin_memory=True,
-        num_workers=0,
-        collate_fn=PadCollate())
+    if 'specaug' not in netconfigs:
+        specaug = None
+        if args.rank == 0:
+            utils.highlight_msg("Disable SpecAug.")
+    else:
+        specaug = SpecAug(**netconfigs['specaug'])
 
-    prev_t = 0
-    model.train()
-    while True:
+    setattr(args, 'iscrf', lossfn == 'crf')
+    model = CAT_Model(net, lossfn, lamb, net_kwargs, specaug)
 
-        # training stage
-        epoch += 1
-        for i, minibatch in enumerate(tr_dataloader):
-            print("training epoch: {}, step: {}".format(epoch, i))
-            logits, input_lengths, labels_padded, label_lengths, path_weights = minibatch
-
-            sys.stdout.flush()
-            model.zero_grad()
-            optimizer.zero_grad()
-
-            loss = model(logits, labels_padded, input_lengths, label_lengths)
-            partial_loss = torch.mean(loss.cpu())
-            weight = torch.mean(path_weights)
-            real_loss = partial_loss - weight
-
-            loss.backward(loss.new_ones(loss.shape[0]))
-            if args.clip_grad:
-                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=20, norm_type=2)
-            optimizer.step()
-            t2 = timeit.default_timer()
-            writer.add_scalar('training loss',
-                            real_loss.item(),
-                            (epoch-1) * len(tr_dataloader) + i)
-            print("time: {}, tr_real_loss: {}, lr: {}".format(t2 - prev_t, real_loss.item(), optimizer.param_groups[0]['lr']))
-            prev_t = t2
-            
-        # cv stage
-        model.eval()
-        cv_losses_sum = []
-        count = 0
-
-        for i, minibatch in enumerate(cv_dataloader):
-            print("cv epoch: {}, step: {}".format(epoch, i))
-            logits, input_lengths, labels_padded, label_lengths, path_weights = minibatch
-
-            loss = model(logits, labels_padded, input_lengths, label_lengths)
-            loss_size = loss.size(0)
-            count = count + loss_size
-            partial_loss = torch.mean(loss.cpu())
-            weight = torch.mean(path_weights)
-            real_loss = partial_loss - weight
-            real_loss_sum = real_loss * loss_size
-            cv_losses_sum.append(real_loss_sum.item())
-            print("cv_real_loss: {}".format(real_loss.item()))
-
-        cv_loss = np.sum(np.asarray(cv_losses_sum)) / count
-        print("mean_cv_loss: {}".format(cv_loss))
-        writer.add_scalar('mean_cv_loss',cv_loss,epoch)
-        
-        # save model
-        save_ckpt({
-            'epoch': epoch,
-            'model': model.module.state_dict(),
-            'lr': lr,
-            'optimizer': optimizer.state_dict(),
-            'cv_loss': cv_loss
-            }, epoch < args.min_epoch or cv_loss <= min_cv_loss, args.dir, "model.epoch.{}".format(epoch))
-        
-        if epoch < args.min_epoch or cv_loss <= min_cv_loss:
-            min_cv_loss = cv_loss                
-        else:
-            print(
-                "cv loss does not improve, decay the learning rate from {} to {}"
-                .format(lr, lr / 10.0))
-            adjust_lr(optimizer, lr / 10.0)
-            lr = lr / 10.0
-            if (lr < args.stop_lr):
-                print("learning rate is too small, finish training")
-                break
-
-        model.train()
-
-    ctc_crf_base.release_env(gpus)
+    torch.cuda.set_device(args.gpu)
+    model.cuda(args.gpu)
+    model = torch.nn.parallel.DistributedDataParallel(
+        model, device_ids=[args.gpu])
+    return model
 
 
 if __name__ == "__main__":
-    train()
+    parser = argparse.ArgumentParser(description="recognition argument")
+
+    parser.add_argument('--batch_size', default=256, type=int, metavar='N',
+                        help='mini-batch size (default: 256), this is the total '
+                        'batch size of all GPUs on the current node when '
+                        'using Distributed Data Parallel')
+
+    parser.add_argument("--seed", type=int, default=0,
+                        help="Manual seed.")
+
+    parser.add_argument("--resume", type=str, default=None,
+                        help="Path to location of checkpoint.")
+
+    parser.add_argument("--debug", action="store_true",
+                        help="Configure to debug settings, would overwrite most of the options.")
+    parser.add_argument("--h5py", action="store_true",
+                        help="Load data with H5py, defaultly use pickle (recommended).")
+
+    parser.add_argument("--config", type=str, default=None, metavar='PATH',
+                        help="Path to configuration file of training procedure.")
+
+    parser.add_argument("--data", type=str, default=None,
+                        help="Location of training/testing data.")
+    parser.add_argument("--dir", type=str, default=None, metavar='PATH',
+                        help="Directory to save the log and model files.")
+
+    parser.add_argument('-p', '--print-freq', default=10, type=int,
+                        metavar='N', help='print frequency (default: 10)')
+
+    parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
+                        help='number of data loading workers (default: 4)')
+    parser.add_argument('--rank', default=-1, type=int,
+                        help='node rank for distributed training')
+    parser.add_argument('--dist-url', default='tcp://127.0.0.1:13943', type=str,
+                        help='url used to set up distributed training')
+    parser.add_argument('--dist-backend', default='nccl', type=str,
+                        help='distributed backend')
+    parser.add_argument('--world-size', default=-1, type=int,
+                        help='number of nodes for distributed training')
+    parser.add_argument('--gpu', default=None, type=int,
+                        help='GPU id to use.')
+
+    args = parser.parse_args()
+
+    SEED = args.seed
+    torch.manual_seed(SEED)
+    torch.cuda.manual_seed_all(SEED)
+    np.random.seed(SEED)
+    torch.backends.cudnn.deterministic = True
+
+    if args.debug:
+        utils.highlight_msg("Debugging.")
+
+    main(args)
