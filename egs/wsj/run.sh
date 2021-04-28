@@ -122,7 +122,7 @@ fi
 fi
 
 PARENTDIR='.'
-dir="exp/demo2"
+dir="exp/demo"
 DATAPATH=$PARENTDIR/data/
 
 if [ $stage -le 6 ]; then
@@ -161,7 +161,7 @@ if [ $stage -le 7 ]; then
     python3 ctc-crf/calculate_logits.py             \
       --resume=$dir/ckpt/infer.pt                   \
       --config=$dir/config.json                     \
-      --nj=$nj                                      \ 
+      --nj=$nj                                      \
       --input_scp=data/test_data/${set}.scp         \
       --output_dir=$ark_dir                         \
       || exit 1
