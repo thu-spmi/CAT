@@ -1,6 +1,6 @@
 ## To begin with
 
-* For easy maintenance of experiments and enforcing the reproduciblity, this guideline introduces our **strongly recommened** way of conducting experiments using **CAT**.
+* For easy maintenance of experiments and enforcing the reproducibility, this guideline introduces our **strongly recommend** way of conducting experiments using **CAT**.
 * We (and PyTorch officially) recommend to use DistributedDataParallel (DDP) instead of DataParallel.
 * In this guideline, we take the experiment on the *Wall Street Journal* dataset as an example, which works at directory `CAT/egs/wsj` unless otherwise stated.
 
