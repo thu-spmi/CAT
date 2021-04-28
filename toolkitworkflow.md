@@ -124,7 +124,7 @@ Sub-sample the input feature sequence (default sampling rate: 3).
 
 Note that the potential function (as shown in the [CTC-CRF paper](http://oa.ee.tsinghua.edu.cn/~ouzhijian/pdf/ctc-crf.pdf))
 
-<img src="assets/potential.png" alt="potential" style="zoom:20%;" />
+<img src="assets/potential.png" alt="potential" width="294.4" height="68">
 
 consists of the denominator LM weight for each training utterance, in addition to the log-softmax weights from the bottom neural neural network.  We need to calculate and save the weight for the label sequence, by the following steps:
 
@@ -150,7 +150,7 @@ The definition of our neural network is in **model.py**. The default models in o
 
 The output of BLSTM is passed through a fully-conneted layer and a log-softmax layer, which is then used together with the labels to calculate the following loss[^loss] --- Eq (4) in the [CAT paper](https://arxiv.org/abs/1911.08747), by `class CTC_CRF_LOSS` in **ctc_crf.py**.
 
-<img src="assets/loss.png" alt="loss" style="zoom:20%;" />
+<img src="assets/loss.png" alt="loss" width="326.5" height="70">
 
 [^loss]: As convention, loss is the negative of log-likelihood.
 
