@@ -10,8 +10,6 @@ To begin, go to an example directory under the `egs` directory, e.g. `egs/wsj`, 
 4. [Neural network training preparation](#Neural-network-training-preparation)
 5. [Model training](#Model-training)
 6. [Decoding](#Decoding)
-7. [Low latency acoustic modeling](#Low-latency-acoustic-modeling)
-8. [Distributed Model training](#Distributed-Model-training)
 
 ### Data preparation
 
