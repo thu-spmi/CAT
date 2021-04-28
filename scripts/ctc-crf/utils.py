@@ -297,8 +297,6 @@ class Manager(object):
         self.log = checkpoint['log']
 
     def log_update(self, msg=[], loc="log_train"):
-        assert loc in self.log
-
         self.log[loc].append(msg)
 
     def log_export(self, PATH):
@@ -338,14 +336,12 @@ def train(trainloader, epoch: int, args, manager: Manager):
             break
         # measure data loading time
         logits, input_lengths, labels, label_lengths, path_weights = minibatch
+        logits, labels, input_lengths, label_lengths = logits.cuda(
+            args.gpu, non_blocking=True), labels, input_lengths, label_lengths
 
         data_time.update(time.time() - end)
 
         optimizer.zero_grad()
-
-        logits, labels, input_lengths, label_lengths = logits.cuda(
-            args.gpu, non_blocking=True), labels, input_lengths, label_lengths
-
         loss = model(logits, labels, input_lengths, label_lengths)
 
         with torch.no_grad():
@@ -356,23 +352,23 @@ def train(trainloader, epoch: int, args, manager: Manager):
             else:
                 real_loss = loss.cpu()
 
-        # measure accuracy and record loss
-        losses.update(loss.item(), logits.size(0))
-        losses_real.update(real_loss.item(), logits.size(0))
-
         loss.backward()
 
         optimizer.step()
         scheduler.update_lr((epoch - 1) * len(trainloader) + i + 1)
 
-        # measure elapsed time
-        batch_time.update(time.time() - end)
-        manager.log_update(
-            [epoch, loss.item(), real_loss.item(), optimizer.param_groups[0]['lr'], time.time() - end], loc='log_train')
-
+        # measure accuracy and record loss; item() can sync all processes.
+        tolog = [loss.item(), real_loss.item(),
+                 logits.size(0), time.time()-end]
         end = time.time()
+        losses.update(tolog[0], tolog[2])
+        losses_real.update(tolog[1], tolog[2])
+        # measure elapsed time
+        batch_time.update(tolog[-1])
+        manager.log_update(
+            [epoch, tolog[0], tolog[1], scheduler.lr_cur, tolog[-1]], loc='log_train')
 
-        if i % args.print_freq == 0 or args.debug:
+        if (i % args.print_freq == 0 or args.debug) and args.gpu == 0:
             progress.display(i)
 
 
@@ -398,11 +394,11 @@ def test(testloader, args, manager: Manager):
                 break
             # measure data loading time
             logits, input_lengths, labels, label_lengths, path_weights = minibatch
-            data_time.update(time.time() - end)
-
             logits, labels, input_lengths, label_lengths = logits.cuda(
                 args.gpu, non_blocking=True), labels, input_lengths, label_lengths
             path_weights = path_weights.cuda(args.gpu, non_blocking=True)
+
+            data_time.update(time.time() - end)
 
             loss = model(logits, labels, input_lengths, label_lengths)
 
@@ -423,7 +419,7 @@ def test(testloader, args, manager: Manager):
 
             end = time.time()
 
-            if i % args.print_freq == 0 or args.debug:
+            if (i % args.print_freq == 0 or args.debug) and args.gpu == 0:
                 progress.display(i)
 
     manager.log_update(
