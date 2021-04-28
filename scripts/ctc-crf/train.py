@@ -26,9 +26,6 @@ from torch.utils.data import DataLoader
 
 import ctc_crf_base
 
-# This line in rid of some conditional errors.
-# torch.multiprocessing.set_sharing_strategy('file_system')
-
 
 def main(args):
     if not torch.cuda.is_available():
@@ -37,6 +34,10 @@ def main(args):
 
     os.makedirs(args.dir+'/ckpt', exist_ok=True)
     setattr(args, 'ckptpath', args.dir+'/ckpt')
+    if os.listdir(args.ckptpath) != [] and not args.debug and args.resume is None:
+        utils.highlight_msg(
+            f"WARNING:\nCheckpoint path `{args.ckptpath}` is not empty!\nRefuse to run the experiment, otherwise previous files would be overwritten.")
+        raise AssertionError
 
     ngpus_per_node = torch.cuda.device_count()
     args.world_size = ngpus_per_node * args.world_size
@@ -153,7 +154,6 @@ def build_model(args, configuration, train=True) -> nn.Module:
     if not train:
         infer_model = net(**net_kwargs)
         return infer_model
-
 
     if 'lossfn' not in netconfigs:
         lossfn = 'crf'

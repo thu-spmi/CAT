@@ -28,7 +28,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     assert args.resume is not None
-    print("Load whole model")
+
     with open(args.config, 'r') as fi:
         configures = json.load(fi)
 
@@ -36,15 +36,15 @@ if __name__ == "__main__":
 
     if torch.cuda.is_available():
         device = "cuda:0"
-        print("Using GPU0.")
+        utils.highlight_msg("Using GPU0.")
     else:
         device = "cpu"
-        print("Using CPU.")
+        utils.highlight_msg("Using CPU.")
 
     model = model.to(device)
     model.load_state_dict(torch.load(args.resume, map_location=device))
-    print(f"Model loaded from checkpoint: {args.resume}.")
-    print("Model size:{:.2f}M".format(utils.count_parameters(model)/1e6))
+    print(f"> Model loaded from checkpoint: {args.resume}.")
+    print("  Model size:{:.2f}M".format(utils.count_parameters(model)/1e6))
 
     model.eval()
     n_jobs = args.nj
