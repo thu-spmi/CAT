@@ -26,7 +26,6 @@ from torch.utils.data import DataLoader
 
 import ctc_crf_base
 
-
 # This line in rid of some conditional errors.
 # torch.multiprocessing.set_sharing_strategy('file_system')
 
@@ -154,6 +153,7 @@ def build_model(args, configuration, train=True) -> nn.Module:
     if not train:
         infer_model = net(**net_kwargs)
         return infer_model
+
 
     if 'lossfn' not in netconfigs:
         lossfn = 'crf'
