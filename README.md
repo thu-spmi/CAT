@@ -4,7 +4,7 @@
 * [Overview](#Overview)
 * [Key Features](#Key-Features)
 * [Installation](#Installation)
-* [Quick start](#Quick start)
+* [Quick start](#Quick-start)
 * [Changelog](#Changelog)
 
 ## Overview
