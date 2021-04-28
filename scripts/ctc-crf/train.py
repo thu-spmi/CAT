@@ -36,7 +36,7 @@ def main(args):
     setattr(args, 'ckptpath', args.dir+'/ckpt')
     if os.listdir(args.ckptpath) != [] and not args.debug and args.resume is None:
         utils.highlight_msg(
-            f"WARNING:\nCheckpoint path `{args.ckptpath}` is not empty!\nRefuse to run the experiment, otherwise previous files would be overwritten.")
+            f"ERROR:\nCheckpoint path `{args.ckptpath}` is not empty!\nRefuse to run the experiment, otherwise previous files would be overwritten.")
         raise AssertionError
 
     ngpus_per_node = torch.cuda.device_count()
