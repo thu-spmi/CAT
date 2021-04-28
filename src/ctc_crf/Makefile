@@ -19,5 +19,4 @@ PATHWEIGHT:
 	cd path_weight/build && cmake -D openfst_dir:STRING=${openfst_dir} ..
 	cd path_weight/build && make
 CTCCRF: GPUCTC GPUDEN PATHWEIGHT
-	python setup.py
-# python setup_1_0.py install for python3 and torch 1.0+
+	python3 setup_1_0.py install
