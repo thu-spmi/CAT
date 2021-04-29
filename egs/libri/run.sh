@@ -50,7 +50,7 @@ fi
 
 if [ $stage -le 2 ]; then
   # copy the LM resources
-  #local/copy_lm.sh $lm_src_dir data/local/lm
+  local/copy_lm.sh $lm_src_dir data/local/lm
   local/prepare_dict_ctc.sh data/local/lm data/local/dict_phn
   ctc-crf/ctc_compile_dict_token.sh data/local/dict_phn data/local/lang_phn_tmp data/lang_phn || exit 1;
   local/format_lms.sh --src-dir data/lang_phn data/local/lm
