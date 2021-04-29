@@ -174,7 +174,10 @@ class AverageMeter(object):
 
 
 def highlight_msg(msg: str):
-    terminal_col = os.get_terminal_size().columns
+    try:
+        terminal_col = os.get_terminal_size().columns
+    except:
+        terminal_col = 200
     max_len = terminal_col-4
     if max_len <= 0:
         print(msg)
