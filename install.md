@@ -39,6 +39,19 @@ And note that CAT is relied on CUDA availability. Directly running with CPU is n
    For previous version of PyTorch or if your CUDA version not listed, refer to [this](https://pytorch.org/get-started/previous-versions/) and find your suitable version. 
 
    Python3 with PyTorch 1.1+ are supported by CAT. For previous Python and PyTorch support, please refer to CAT v1 branch.
+   
+3. Check the CUDA environment used to build PyTorch.
+
+   ```
+   $ python3 -m torch.utils.collect_env
+   Collecting environment information...
+   PyTorch version: 1.8.1
+   Is debug build: False
+   CUDA used to build PyTorch: 10.2
+   ...
+   ```
+
+   
 
 ### Kaldi<a id="kaldi"></a>
 
@@ -163,8 +176,8 @@ The directory of kaldi is needed in following steps, denoted as `<path to kaldi>
 
    ```shell
    $ cd $PATH_CAT/egs/wsj
-   $ link -snf $PATH_Kaldi/egs/wsj/s5/steps steps
-   $ link -snf $PATH_Kaldi/egs/wsj/s5/utils utils
+   $ ln -snf $PATH_Kaldi/egs/wsj/s5/steps steps
+   $ ln -snf $PATH_Kaldi/egs/wsj/s5/utils utils
    ```
 
 6. Enjoy it! :rocket:

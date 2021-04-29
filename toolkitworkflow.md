@@ -156,12 +156,12 @@ The output of BLSTM is passed through a fully-conneted layer and a log-softmax l
 
 Note that in the python code, the path weights are not included in the loss for back-propagation because they behave as constants during back-propagation, so we call the loss `partial_loss` for sake of clarity.
 
-The loss function is defined by `class CTC_CRF_LOSS` in **ctc_crf.py**, which calls two functions --- `gpu_ctc` (for the numerator `costs_ctc` calculation) and `gpu_den` (for the denominator `costs_alpha_den` calculation, including  weights for all possible paths). Both functions are implemented with CUDA. The interface definitions for the two functions are in **src\ctc_crf\binding.cpp** and **src\ctc_crf\binding.h**, and the implementations are in **src\ctc_crf\gpu_den** and **src\ctc_crf\gpu_ctc**. For the numerator calculation, we borrowed some codes from [warp-ctc](https://github.com/baidu-research/warp-ctc)。
+The loss function is defined by `class CTC_CRF_LOSS` in **ctc_crf.py**, which calls two functions --- `gpu_ctc` (for the numerator `costs_ctc` calculation) and `gpu_den` (for the denominator `costs_alpha_den` calculation, including  weights for all possible paths). Both functions are implemented with CUDA. The interface definitions for the two functions are in `src/ctc_crf/binding.cpp` and `src/ctc_crf/binding.h`, and the implementations are in `src/ctc_crf/gpu_den` and `src/ctc_crf/gpu_ctc`. For the numerator calculation, we borrowed some codes from [warp-ctc](https://github.com/baidu-research/warp-ctc)。
 
 `costs_ctc` and `costs_alpha_den` are used to calculate the `partial_loss` as follows: 
 
 ```
-(- costs_ctc + costs_alpha_den) - lamb * costs_ctc
+partial_loss = (- costs_ctc + costs_alpha_den) - lamb * costs_ctc
 ```
 
 where `lamb` is the weight for the CTC Loss, which is employed to stabilize the training.

@@ -39,6 +39,19 @@ CAT主要的依赖工具有两个：PyTorch和Kaldi。一些其他的依赖例�
    如果要安装旧版PyTorch或者当前最新稳定版支持的CUDA版本中没有你的版本，可以在[这个页面](https://pytorch.org/get-started/previous-versions/)内寻找适合你的PyTorch版本。
 
    CAT当前支持Python3和PyTorch1.1+。更早的Python与PyTorch版本支持请参考CAT v1分支。
+   
+3. 检查编译安装PyTorch使用的CUDA版本
+
+   ```
+   $ python3 -m torch.utils.collect_env
+   Collecting environment information...
+   PyTorch version: 1.8.1
+   Is debug build: False
+   CUDA used to build PyTorch: 10.2
+   ...
+   ```
+
+   
 
 ### Kaldi<a id="kaldi"></a>
 
@@ -161,8 +174,8 @@ $ cd kaldi && cat INSTALL
 
    ```shell
    $ cd $PATH_CAT/egs/wsj
-   $ link -snf $PATH_Kaldi/egs/wsj/s5/steps steps
-   $ link -snf $PATH_Kaldi/egs/wsj/s5/utils utils
+   $ ln -snf $PATH_Kaldi/egs/wsj/s5/steps steps
+   $ ln -snf $PATH_Kaldi/egs/wsj/s5/utils utils
    ```
 
 6. Enjoy it! :rocket:
