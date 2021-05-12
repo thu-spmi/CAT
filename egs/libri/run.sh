@@ -120,7 +120,6 @@ if [ $stage -le 5 ]; then
     $dir
 fi
 
-graphdir=data/lang_phn_tgsmall
 
 if [ $stage -le 6 ]; then
   for set in test_clean test_other dev_clean dev_other; do
@@ -131,7 +130,7 @@ if [ $stage -le 6 ]; then
 
     CUDA_VISIBLE_DEVICES=0 \
     ctc-crf/decode.sh --cmd "$decode_cmd" --nj 20 --acwt 1.0 \
-      data/lang_phn_test $data_test data/all_ark/${set}.scp $dir/decode_${set}
+      data/lang_phn_tgsmall $data_test data/all_ark/${set}.scp $dir/decode_${set}_tgsmall
   done
 fi
 
@@ -140,14 +139,14 @@ if [ $stage -le 7 ]; then
   for set in test_clean test_other dev_clean dev_other; do
     nj=20
     lm=tgmed
-    rescore_dir=$dir/decode_${set}/lattice_${lm}
+    rescore_dir=$dir/decode_${set}_${lm}
     mkdir -p $rescore_dir
-    ./local/lmrescore.sh --cmd "$train_cmd" data/lang_phn_{tgsmall,$lm} data/$set $dir/decode_${set}/lattice_{tgsmall,$lm} $nj || exit 1;
+    ./local/lmrescore.sh --cmd "$train_cmd" data/lang_phn_{tgsmall,$lm} data/$set $dir/decode_${set}_{tgsmall,$lm} $nj || exit 1;
 
     for lm in tglarge fglarge; do
-      rescore_dir=$dir/decode_${set}/lattice_${lm}
+      rescore_dir=$dir/decode_${set}_${lm}
       mkdir -p $rescore_dir
-      ./local/lmrescore_const_arpa.sh --cmd "$train_cmd" data/lang_phn_{tgsmall,$lm} data/$set $dir/decode_${set}/lattice_{tgsmall,$lm} $nj || exit 1;
+      ./local/lmrescore_const_arpa.sh --cmd "$train_cmd" data/lang_phn_{tgsmall,$lm} data/$set $dir/decode_${set}_{tgsmall,$lm} $nj || exit 1;
     done
   done
 fi
