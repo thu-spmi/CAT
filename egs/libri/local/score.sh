@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Copyright 2012  Johns Hopkins University (Author: Daniel Povey)
 #           2014  Guoguo Chen
 # Apache 2.0
@@ -45,7 +45,7 @@ cat $data/text | sed 's:<NOISE>::g' | sed 's:<SPOKEN_NOISE>::g' > $dir/scoring/t
 
 for wip in $(echo $word_ins_penalty | sed 's/,/ /g'); do
   $cmd LMWT=$min_lmwt:$max_lmwt $dir/scoring/log/best_path.LMWT.$wip.log \
-    lattice-scale --acoustic-scale=10 --lm-scale=LMWT "ark:gunzip -c $dir/lat.*.gz|" ark:- \| \
+    lattice-scale --inv-acoustic-scale=LMWT "ark:gunzip -c $dir/lat.*.gz|" ark:- \| \
     lattice-add-penalty --word-ins-penalty=$wip ark:- ark:- \| \
     lattice-best-path --word-symbol-table=$symtab \
       ark:- ark,t:$dir/scoring/LMWT.$wip.tra || exit 1;
