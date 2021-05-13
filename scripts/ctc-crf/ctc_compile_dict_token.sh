@@ -16,6 +16,7 @@
 
 # This script compiles the lexicon and CTC tokens into FSTs. FST compiling slightly differs between the
 # phoneme and character-based lexicons.
+# Note: We correct ctc_token_fst.py in eesen as it makes mistakes.
 
 dict_type="phn"        # the type of lexicon, either "phn" or "char"
 space_char="<SPACE>"   # the character you have used to represent spaces
