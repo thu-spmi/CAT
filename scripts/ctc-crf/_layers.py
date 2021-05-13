@@ -421,11 +421,11 @@ class ConformerCell(nn.Module):
             dropout: float = 0.1):
         super().__init__()
 
-        self.ffm0 = nnlayers.FFModule(idim, res_factor, dropout)
-        self.mhsam = nnlayers.MHSAModule(idim, d_head, num_heads, dropout)
-        self.convm = nnlayers.ConvModule(
+        self.ffm0 = FFModule(idim, res_factor, dropout)
+        self.mhsam = MHSAModule(idim, d_head, num_heads, dropout)
+        self.convm = ConvModule(
             idim, kernel_size, dropout, multiplier)
-        self.ffm1 = nnlayers.FFModule(idim, res_factor, dropout)
+        self.ffm1 = FFModule(idim, res_factor, dropout)
         self.ln = nn.LayerNorm(idim)
 
     def forward(self, x: torch.Tensor, lens: torch.Tensor):
@@ -529,7 +529,7 @@ class _LSTM(nn.Module):
     def forward(self, x: torch.Tensor, ilens: torch.Tensor, hidden=None):
         self.lstm.flatten_parameters()
 
-        packed_input = pack_padded_sequence(x, ilens, batch_first=True)
+        packed_input = pack_padded_sequence(x, ilens.to("cpu"), batch_first=True)
         packed_output, _ = self.lstm(packed_input, hidden)
         out, olens = pad_packed_sequence(packed_output, batch_first=True)
 

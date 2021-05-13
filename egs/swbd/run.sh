@@ -121,8 +121,7 @@ if [ $NODE == 0 ]; then
     data_eval2000=data/eval2000
     for set in eval2000 cv tr; do
       tmp_data=`eval echo '$'data_$set`
-      feats="ark,s,cs:apply-cmvn --norm-vars=true --utt2spk=ark:$tmp_data/utt2spk scp:$tmp_data/cmvn.scp scp:$tmp_data/feats.scp ark:- \
-        | add-deltas ark:- ark:- | subsample-feats --n=3 ark:- ark:- |"
+      feats="ark,s,cs:apply-cmvn --norm-vars=true --utt2spk=ark:$tmp_data/utt2spk scp:$tmp_data/cmvn.scp scp:$tmp_data/feats.scp ark:- |"
   
       ark_dir=$(readlink -f data/all_ark)/$set.ark
       copy-feats "$feats" "ark,scp:$ark_dir,data/all_ark/$set.scp" || exit 1
@@ -175,7 +174,6 @@ if [ $stage -le 7 ] && [ $stop_stage -ge 7 ]; then
   for set in eval2000; do
     ark_dir=$dir/logits/$set
     mkdir -p $ark_dir
-    CUDA_VISIBLE_DEVICES=0                            \
     python3 ctc-crf/calculate_logits.py               \
       --resume=$dir/ckpt/infer.pt                     \
       --config=$dir/config.json                       \

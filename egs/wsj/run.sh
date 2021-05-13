@@ -149,7 +149,6 @@ if [ $stage -le 7 ] && [ $stop_stage -ge 7 ]; then
   for set in dev93 eval92; do
     ark_dir=$dir/logits/$set
     mkdir -p $ark_dir
-    CUDA_VISIBLE_DEVICES=0                          \
     python3 ctc-crf/calculate_logits.py             \
       --resume=$dir/ckpt/infer.pt                   \
       --config=$dir/config.json                     \

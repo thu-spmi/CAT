@@ -1,5 +1,4 @@
 # CAT toolkit
-export CUDA_VISIBLE_DEVICES=0
 export CAT_ROOT=../../
 export PATH=$CAT_ROOT/src/ctc_crf/path_weight/build:$PATH
 export PATH=$PWD/ctc-crf:$PATH

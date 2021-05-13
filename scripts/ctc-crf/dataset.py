@@ -91,6 +91,22 @@ class SpeechDatasetMemPickle(Dataset):
         return self.data_batch[idx]
 
 
+class InferDataset(Dataset):
+    def __init__(self, scp_path) -> None:
+        super().__init__()
+        with open(scp_path, 'r') as fi:
+            lines = fi.readlines()
+        self.dataset = [x.split() for x in lines]
+
+    def __len__(self):
+        return len(self.dataset)
+
+    def __getitem__(self, index):
+        key, feature_path = self.dataset[index]
+        mat = np.array(kaldi_io.read_mat(feature_path))
+        return key, torch.FloatTensor(mat), torch.LongTensor([mat.shape[0]])
+
+
 class sortedPadCollate():
     def __call__(self, batch):
         """Collect data into batch by desending order and add padding.

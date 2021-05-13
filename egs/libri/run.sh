@@ -13,10 +13,10 @@ lm_url=www.openslr.org/resources/11
 . ./cmd.sh
 . ./path.sh
 
-stage=5
-stop_stage=5
-data=/home/ouzj02/data_0907//librispeech
-lm_src_dir=/home/ouzj02/data_0907/librispeech_lm
+stage=1
+stop_stage=100
+data=data/librispeech
+lm_src_dir=data/librispeech_lm
 
 NODE=$1
 if [ ! $NODE ]; then
@@ -160,7 +160,6 @@ if [ $stage -le 7 ] && [ $stop_stage -ge 7 ]; then
   for set in test_clean test_other dev_clean dev_other; do
     ark_dir=$dir/logits/$set
     mkdir -p $ark_dir
-    CUDA_VISIBLE_DEVICES=0                            \
     python3 ctc-crf/calculate_logits.py               \
       --resume=$dir/ckpt/infer.pt                     \
       --config=$dir/config.json                       \
