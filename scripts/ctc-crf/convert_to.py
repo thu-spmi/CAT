@@ -57,6 +57,7 @@ if __name__ == "__main__":
     else:
         pickle_dataset = []
 
+    count = 0
     with open(args.scp, 'r') as fi:
         lines = fi.readlines()
         for line in tqdm(lines):
@@ -68,6 +69,7 @@ if __name__ == "__main__":
             feature = np.asarray(feature)
 
             if feature.shape[0] < ctc_len(label):
+                count += 1
                 continue
 
             if args.format == "hdf5":
@@ -77,6 +79,7 @@ if __name__ == "__main__":
             else:
                 pickle_dataset.append([key, value, label, weight])
 
+    print(f"Remove {count} unqualified sequences in total.")
     if args.format == "pickle":
         with open(args.output_path, 'wb') as fo:
             pickle.dump(pickle_dataset, fo)
