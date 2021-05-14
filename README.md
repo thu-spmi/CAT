@@ -62,5 +62,5 @@ Please cite CAT using:
 | Branch     | Flexible configuration | Easily reproduce | Distributed training | Chunk streaming model | Recipes                                            |
 | ---------- | ---------------------- | ---------------- | -------------------- | --------------------- | -------------------------------------------------- |
 | v1         |                        |                  | ✅                    | ✅                     | aishell, formosa, hkust, libri, swbd, thchs30, wsj |
-| v2(master) | ✅                      | ✅                | ✅                    |                       | swbd, wsj                                          |
+| v2(master) | ✅                      | ✅                | ✅                    |                       | swbd, wsj, libri                                          |
 
