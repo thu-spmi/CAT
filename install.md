@@ -100,7 +100,7 @@ The directory of kaldi is needed in following steps, denoted as `<path to kaldi>
 5. [OPTIONAL] Remove the temporary directory.
 
    ```shell
-   $ cd ../
+   $ cd ../../
    $ rm -r tmpfst/
    ```
 
