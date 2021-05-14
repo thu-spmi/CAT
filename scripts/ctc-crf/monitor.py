@@ -85,6 +85,7 @@ def plot_monitor(task: str, interactive_show=False):
     else:
         print("Current lr: {:.2e} | Speed: {:.2f} hour / epoch.".format(
             df_train['net_lr'].values[-1], accum_time[-1]/len(df_eval)))
+    plt.close()
 
 
 if __name__ == "__main__":

@@ -22,7 +22,7 @@ if [ ! $NODE ]; then
 fi
 
 if [ $NODE == 0 ]; then
-  if [ $stage -le 1 ] && [ ${stop_stage} -ge 1 ]; then
+  if [ $stage -le 1 ] && [ $stop_stage -ge 1 ]; then
     echo "Data Preparation and FST Construction"
     # Use the same data preparation script from Kaldi
 
@@ -60,12 +60,12 @@ if [ $NODE == 0 ]; then
     # Compile the language-model FST and the final decoding graph TLG.fst
 
     langdir=data/lang_phn_sw1_tg
-    fsttablecompose ${langdir}/L.fst $langdir/G.fst | fstdeterminizestar --use-log=true | \
+    fsttablecompose $langdir/L.fst $langdir/G.fst | fstdeterminizestar --use-log=true | \
       fstminimizeencoded | fstarcsort --sort_type=ilabel > $langdir/LG.fst || exit 1;
-    fsttablecompose ${langdir}/T.fst $langdir/LG.fst > $langdir/TLG.fst || exit 1;
+    fsttablecompose $langdir/T.fst $langdir/LG.fst > $langdir/TLG.fst || exit 1;
   fi
 
-  if [ $stage -le 2 ] && [ ${stop_stage} -ge 2 ]; then
+  if [ $stage -le 2 ] && [ $stop_stage -ge 2 ]; then
     echo "FBank Feature Generation"
 
     # Use the first 4k sentences as dev set, around 5 hours
@@ -77,7 +77,7 @@ if [ $NODE == 0 ]; then
 
     utils/data/perturb_data_dir_speed_3way.sh data/train_nodup data/train_nodup_sp || exit 1;
     utils/data/perturb_data_dir_speed_3way.sh data/train_dev data/train_dev_sp || exit 1;
-    echo " preparing directory for speed-perturbed data done"
+    echo "Preparing directory for speed-perturbed data done"
 
     # Generate the fbank features; by default 40-dimensional fbanks on each frame
     fbankdir=fbank
@@ -97,51 +97,43 @@ if [ $NODE == 0 ]; then
   data_tr=data/train_nodup_sp
   data_cv=data/train_dev_sp
 
-  if [ $stage -le 3 ] && [ ${stop_stage} -ge 3 ]; then
-    ctc-crf/prep_ctc_trans.py data/lang_phn/lexicon_numbers.txt $data_tr/text "<unk>" > $data_tr/text_number || exit 1;
-    ctc-crf/prep_ctc_trans.py data/lang_phn/lexicon_numbers.txt $data_cv/text "<unk>" > $data_cv/text_number || exit 1;
-    echo "convert text_number finished"
+  if [ $stage -le 3 ] && [ $stop_stage -ge 3 ]; then
+    python3 ctc-crf/prep_ctc_trans.py data/lang_phn/lexicon_numbers.txt $data_tr/text "<unk>" > $data_tr/text_number || exit 1;
+    python3 ctc-crf/prep_ctc_trans.py data/lang_phn/lexicon_numbers.txt $data_cv/text "<unk>" > $data_cv/text_number || exit 1;
+    echo "Convert text_number finished"
  
     # prepare denominator
-    ctc-crf/prep_ctc_trans.py data/lang_phn/lexicon_numbers.txt data/train_nodup/text "<unk>" > data/train_nodup/text_number || exit 1;
+    python3 ctc-crf/prep_ctc_trans.py data/lang_phn/lexicon_numbers.txt data/train_nodup/text "<unk>" > data/train_nodup/text_number || exit 1;
     cat data/train_nodup/text_number | sort -k 2 | uniq -f 1 > data/train_nodup/unique_text_number || exit 1;
     mkdir -p data/den_meta
     chain-est-phone-lm ark:data/train_nodup/unique_text_number data/den_meta/phone_lm.fst || exit 1;
-    ctc-crf/ctc_token_fst_corrected.py den data/lang_phn/tokens.txt | fstcompile | fstarcsort --sort_type=olabel > data/den_meta/T_den.fst || exit 1;
+    python3 ctc-crf/ctc_token_fst_corrected.py den data/lang_phn/tokens.txt | fstcompile | fstarcsort --sort_type=olabel > data/den_meta/T_den.fst || exit 1;
     fstcompose data/den_meta/T_den.fst data/den_meta/phone_lm.fst > data/den_meta/den_lm.fst || exit 1;
-    echo "prepare denominator finished"
+    echo "Prepare denominator finished"
  
     path_weight $data_tr/text_number data/den_meta/phone_lm.fst > $data_tr/weight || exit 1;
     path_weight $data_cv/text_number data/den_meta/phone_lm.fst > $data_cv/weight || exit 1;
-    echo "prepare weight finished"
+    echo "Prepare weight finished"
   fi 
 
-  if [ $stage -le 4 ] && [ ${stop_stage} -ge 4 ]; then
-    feats_tr="ark,s,cs:apply-cmvn --norm-vars=true --utt2spk=ark:$data_tr/utt2spk scp:$data_tr/cmvn.scp scp:$data_tr/feats.scp ark:- \
-      | add-deltas ark:- ark:- | subsample-feats --n=3 ark:- ark:- |"
-    feats_cv="ark,s,cs:apply-cmvn --norm-vars=true --utt2spk=ark:$data_cv/utt2spk scp:$data_cv/cmvn.scp scp:$data_cv/feats.scp ark:- \
-      | add-deltas ark:- ark:- | subsample-feats --n=3 ark:- ark:- |"
- 
-    mkdir -p data/all_ark 
-    ark_tr=$(readlink -f data/all_ark/tr.ark)
-    ark_cv=$(readlink -f data/all_ark/cv.ark)
-    copy-feats "$feats_tr" "ark,scp:"$ark_tr",data/all_ark/tr.scp" || exit 1;
-    copy-feats "$feats_cv" "ark,scp:"$ark_cv",data/all_ark/cv.scp" || exit 1;
-
-    mkdir -p data/pickle
-    python ctc-crf/convert_to.py -f=pickle -W data/all_ark/cv.scp $data_cv/text_number $data_cv/weight data/pickle/cv.pickle || exit 1
-    python ctc-crf/convert_to.py -f=pickle data/all_ark/tr.scp $data_tr/text_number $data_tr/weight data/pickle/tr.pickle || exit 1
+  if [ $stage -le 4 ] && [ $stop_stage -ge 4 ]; then
+    mkdir -p data/all_ark
+    data_eval2000=data/eval2000
+    for set in eval2000 cv tr; do
+      tmp_data=`eval echo '$'data_$set`
+      feats="ark,s,cs:apply-cmvn --norm-vars=true --utt2spk=ark:$tmp_data/utt2spk scp:$tmp_data/cmvn.scp scp:$tmp_data/feats.scp ark:- |"
+  
+      ark_dir=$(readlink -f data/all_ark)/$set.ark
+      copy-feats "$feats" "ark,scp:$ark_dir,data/all_ark/$set.scp" || exit 1
+    done
   fi
 
-  data_eval2000=data/eval2000
-  ark_dir=exp/decode_eval2000/ark
-
-  if [ $stage -le 5 ] && [ ${stop_stage} -ge 5 ]; then
-    feats_eval2000="ark,s,cs:apply-cmvn --norm-vars=true --utt2spk=ark:$data_eval2000/utt2spk scp:$data_eval2000/cmvn.scp scp:$data_eval2000/feats.scp ark:- \
-         | add-deltas ark:- ark:- | subsample-feats --n=3 ark:- ark:- |"
-
-    mkdir data/test_data
-    copy-feats "$feats_eval2000" ark,scp:data/test_data/eval2000.ark,data/test_data/eval2000.scp || exit 1;
+  if [ $stage -le 5 ] && [ $stop_stage -ge 5 ]; then
+    mkdir -p data/pickle
+    python3 ctc-crf/convert_to.py -f=pickle -W \
+      data/all_ark/cv.scp $data_cv/text_number $data_cv/weight data/pickle/cv.pickle || exit 1
+    python3 ctc-crf/convert_to.py -f=pickle \
+      data/all_ark/tr.scp $data_tr/text_number $data_tr/weight data/pickle/tr.pickle || exit 1
   fi
 fi
 
@@ -149,7 +141,7 @@ PARENTDIR='.'
 dir="exp/demo"
 DATAPATH=$PARENTDIR/data/
 
-if [ $stage -le 6 ] && [ ${stop_stage} -ge 6 ]; then
+if [ $stage -le 6 ] && [ $stop_stage -ge 6 ]; then
   unset CUDA_VISIBLE_DEVICES
 
   if [[ $NODE == 0 && ! -f $dir/scripts.tar.gz ]]; then
@@ -178,26 +170,25 @@ fi
 
 
 nj=$(nproc)
-if [ $stage -le 7 ] && [ ${stop_stage} -ge 7 ]; then
+if [ $stage -le 7 ] && [ $stop_stage -ge 7 ]; then
   for set in eval2000; do
-    ark_dir=$dir/logits/${set}
+    ark_dir=$dir/logits/$set
     mkdir -p $ark_dir
-    CUDA_VISIBLE_DEVICES=0                            \
     python3 ctc-crf/calculate_logits.py               \
       --resume=$dir/ckpt/infer.pt                     \
       --config=$dir/config.json                       \
-      --nj=$nj --input_scp=data/test_data/${set}.scp  \
+      --nj=$nj --input_scp=data/all_ark/$set.scp      \
       --output_dir=$ark_dir                           \
       || exit 1
  done
 fi
 
-if [ $stage -le 8 ] && [ ${stop_stage} -ge 8 ]; then
+if [ $stage -le 8 ] && [ $stop_stage -ge 8 ]; then
   mkdir -p $dir/decode_eval2000_sw1_tg
   ln -s $(readlink -f $dir/logits/eval2000) $dir/decode_eval2000_sw1_tg/logits
   ctc-crf/decode.sh --stage 1 \
       --cmd "$decode_cmd" --nj $nj --acwt 1.0 --post_decode_acwt 1.0\
-      data/lang_phn_sw1_tg data/eval2000 data/test_data/eval2000.scp $dir/decode_eval2000_sw1_tg
+      data/lang_phn_sw1_tg data/eval2000 data/all_ark/eval2000.scp $dir/decode_eval2000_sw1_tg
 
   steps/lmrescore_const_arpa.sh --cmd "$cmd" data/lang_phn_sw1_{tg,fsh_fg} data/eval2000 $dir/decode_eval2000_sw1_{tg,fsh_fg}  || exit 1;
 fi

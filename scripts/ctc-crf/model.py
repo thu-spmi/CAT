@@ -200,6 +200,7 @@ class ConformerNet(nn.Module):
             multiplier: int = 1,
             dropout: float = 0.1,
             delta_feats=True):
+        super().__init__()
 
         if delta_feats:
             idim = idim // 3
@@ -230,5 +231,5 @@ class ConformerNet(nn.Module):
         return logits, ls
 
 
-# TODO: (Huahuan) I removed all chunk-related modules. 
+# TODO: (Huahuan) I removed all chunk-related modules.
 #       cc @aky15 you may need to add it in v2 standard
