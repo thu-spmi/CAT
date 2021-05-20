@@ -191,8 +191,9 @@ if [ $stage -le 8 ] && [ $stop_stage -ge 8 ]; then
       data/lang_phn_sw1_tg data/eval2000 data/all_ark/eval2000.scp $dir/decode_eval2000_sw1_tg
 
   steps/lmrescore_const_arpa.sh --cmd "$cmd" data/lang_phn_sw1_{tg,fsh_fg} data/eval2000 $dir/decode_eval2000_sw1_{tg,fsh_fg}  || exit 1;
+  
+  
+  grep Sum $dir/decode_eval2000_sw1_fsh_fg/score_*/eval2000.ctm.filt.sys | utils/best_wer.sh
+  grep Sum $dir/decode_eval2000_sw1_fsh_fg/score_*/eval2000.ctm.swbd.filt.sys | utils/best_wer.sh
+  grep Sum $dir/decode_eval2000_sw1_fsh_fg/score_*/eval2000.ctm.callhm.filt.sys | utils/best_wer.sh
 fi
-
-grep Sum exp/demo/decode_eval2000_sw1_fsh_fg/score_*/eval2000.ctm.filt.sys | utils/best_wer.sh
-grep Sum exp/demo/decode_eval2000_sw1_fsh_fg/score_*/eval2000.ctm.swbd.filt.sys | utils/best_wer.sh
-grep Sum exp/demo/decode_eval2000_sw1_fsh_fg/score_*/eval2000.ctm.callhm.filt.sys | utils/best_wer.sh
