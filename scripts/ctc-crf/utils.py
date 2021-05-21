@@ -412,7 +412,7 @@ def test(testloader, args, manager: Manager):
                 real_loss = loss
 
             dist.all_reduce(real_loss, dist.ReduceOp.SUM)
-            real_loss = real_loss / torch.cuda.device_count()
+            real_loss = real_loss / dist.get_world_size()
 
             # measure accuracy and record loss
             losses_real.update(real_loss.item(), logits.size(0))
