@@ -67,7 +67,7 @@
 	需要固定随机数种子。一个实验里可能用到的随机数有很多，例如：
 	torch.manual_seed(123) 
 	torch.cuda.manual_seed(123) 
-	np.ranom.seed(123) 
+	np.random.seed(123) 
 	random.seed(123) 
 	torch.backends.cudnn.deterministic=True
 
