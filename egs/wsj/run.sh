@@ -116,7 +116,23 @@ fi
 PARENTDIR='.'
 dir="exp/demo"
 DATAPATH=$PARENTDIR/data/
-
+########################################################################
+# For multi-nodes training,                                            #
+# assure numbers of available GPUs in each node are the same           #
+#                                                                      #
+# Add the following arguments to python3 ctc-crf/train.py              #
+# '--dist-url="tcp://<IP of node 0>:<port>"'                           #
+# And change the '--world-size' to number of nodes                     #
+#                                                                      #
+# In node 0: execute                                                   #
+# $ ./run.sh 0                                                         #
+# In node 1: execute                                                   #
+# $ ./run.sh 1                                                         #
+# ...                                                                  #
+# NOTE: the '--dist-url' MUST be the same across nodes and binding to  #
+# node 0 address.                                                      #
+# '--rank' is the index of node (No need of manual modification).      #
+########################################################################
 if [ $stage -le 6 ] && [ $stop_stage -ge 6 ]; then
   unset CUDA_VISIBLE_DEVICES
 

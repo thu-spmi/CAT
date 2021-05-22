@@ -98,7 +98,7 @@ $ cd kaldi && cat INSTALL
 5. [可选] 删除临时文件夹
 
    ```shell
-   $ cd ../
+   $ cd ../../
    $ rm -r tmpfst/
    ```
 
