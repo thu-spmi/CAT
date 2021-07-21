@@ -1,3 +1,5 @@
+<div align="center"><img src="https://user-images.githubusercontent.com/29671696/126465498-1dfe6db1-8725-4b35-95d0-428ea8777b7f.png" width=300></div>
+
 # CAT: Crf-based Asr Toolkit
 **CAT provides a complete workflow for CRF-based data-efficient end-to-end speech recognition.**
 
