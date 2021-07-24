@@ -1,0 +1,12 @@
+grep WER $dir/wer_* | utils/best_wer.sh
+
+# 25M Conformer results, lamb=0.01
+# sp    sa    unit    LM       test
+# Y     Y     char    4-gram   12.7
+# Y     Y     char    Trans.   11.6 [N-best with N=20, weight=0.8]
+# Y     Y     phone   4-gram   10.7
+# Y     Y     phone   Trans.   10.0 [N-best with N=60, weight=0.8]
+# Y     Y     wp      4-gram   10.5
+# Y     Y     wp      Trans.   9.8  [N-best with N=20, weight=0.8]
+
+

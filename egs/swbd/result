@@ -10,3 +10,10 @@ grep Sum exp/decode_eval2000/lattice_sw1_fsh_fg/score_*/eval2000.ctm.filt.sys | 
 #16M VGG+6layer-BLSTM results, lamb=0.1, hdim=320, lr=0.001
 # sp   unit      SW      CH
 # Y    phone     9.9%    19.4%
+
+#51.82M Conformer results, lamb = 0.01
+# sp    sa    unit    LM        SW    CH    Eval2000
+# Y     Y     phone   4-gram    7.9   16.1  12.1
+# Y     Y     phone   Trans.    6.9   14.5  10.7 [N-best rescoring, N=40, weight=0.8]
+# Y     Y     wp      4-gram    8.7   16.5  12.7
+# Y     Y     wp      Trans.    7.2   14.8  11.1 [N-best rescoring, N=60, weight=0.8]

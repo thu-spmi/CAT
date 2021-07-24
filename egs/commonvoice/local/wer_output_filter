@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+sed '
+s:<NOISE>::g
+s:<SPOKEN_NOISE>::g
+s:<UNK>::g
+s:<SPN>::g
+s/\*//g
+'

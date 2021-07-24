@@ -85,7 +85,7 @@ token_disambig_symbol=`grep \#0 $dir/tokens.txt | awk '{print $2}'`
 word_disambig_symbol=`grep \#0 $dir/words.txt | awk '{print $2}'`
 
 case $dict_type in
-  phn)
+  phn | bpe)
      utils/make_lexicon_fst.pl --pron-probs $tmpdir/lexiconp_disambig.txt 0 "sil" '#'$ndisambig | \
        fstcompile --isymbols=$dir/tokens.txt --osymbols=$dir/words.txt \
        --keep_isymbols=false --keep_osymbols=false |   \
