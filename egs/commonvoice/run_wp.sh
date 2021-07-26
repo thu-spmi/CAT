@@ -1,19 +1,16 @@
 #!/bin/bash
 
 # Copyright 2018-2021 Tsinghua University
-# Author: Hongyu Xiang, Huahuan Zheng
+# Author: Chengrui Zhu, Huahuan Zheng
 # Apache 2.0.
-# This script implements CTC-CRF training on SwitchBoard dataset.
-# It's updated to v2 by Huahuan Zheng in 2021, based on CAT branch v1 egs/wsj/run.sh
+# This script implements CTC-CRF training on Mozilla Commonvoice dataset.
 
-. ./cmd.sh ## You'll want to change cmd.sh to something that will work on your system.
-           ## This relates to the queue.
+. ./cmd.sh
 . ./path.sh
 
-stage=3
+stage=1
 stop_stage=100
-data=/mnt/workspace/pengwenjie/espnet/egs/commonvoice/asr1/download/de_data/cv-corpus-5.1-2020-06-22/de
-data_url=de.tar.gz
+data=cv-corpus-5.1-2020-06-22/de
 lang=de
 train_set=train_$(echo $lang | tr - _)
 dev=dev_$(echo $lang | tr - _)
@@ -32,18 +29,16 @@ if [ $NODE == 0 ]; then
   if [ $stage -le 1 ] && [ ${stop_stage} -ge 1 ]; then
     echo "Data Preparation and FST Construction"
     # Use the same data preparation script from Kaldi
-    #local/download_and_untar.sh $(dirname $data) $data_url
     for part in "validated" "test" "dev"; do
         # use underscore-separated names in data directories.
         local/data_prep.pl "${data}" ${part} data/"$(echo "${part}_${lang}" | tr - _)" || exit 1;
     done
-#
-#    # remove test&dev data from validated sentences
+
+    # remove test&dev data from validated sentences
     utils/copy_data_dir.sh data/"$(echo "validated_${lang}" | tr - _)" data/${train_set}
     utils/filter_scp.pl --exclude data/dev_de/wav.scp data/train_de/wav.scp > data/train_de/temp_wav.scp
     utils/filter_scp.pl --exclude data/test_de/wav.scp data/train_de/temp_wav.scp > data/train_de/wav.scp
     utils/fix_data_dir.sh data/train_de
-
 
     utils/perturb_data_dir_speed.sh 0.9 data/${train_set} data/temp1
     utils/perturb_data_dir_speed.sh 0.9 data/${train_set} data/temp1
