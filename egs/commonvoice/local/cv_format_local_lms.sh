@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright 2018-2021 Tsinghua University
+# Copyright 2021 Tsinghua University
 # Apache 2.0.
 # Author: Wenjie Peng (wenjayep@gmail.com)
 

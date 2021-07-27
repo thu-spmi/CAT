@@ -1,10 +1,12 @@
 #!/bin/bash
 
-# This script comes from Kaldi. It retrains the language models using the expanded
-# lexicon/vocabulary.
-# It demonstrates how to build LMs using the kaldi_lm, SRILM, IRSTLM toolkits. Although
-# we use the LMs built by kaldi_lm in the subsequent steps, LMs built by the other two
-# toolkits can be used as well.
+# This script is adopted from the wsj recipe of Kaldi, modified by Wenjie Peng (wenjayep@gmail.com).
+
+# This script trains LMs on the WSJ LM-training data.
+# It requires that you have already run wsj_extend_dict.sh,
+# to get the larger-size dictionary including all of CMUdict
+# plus any OOVs and possible acronyms that we could easily
+# derive pronunciations for.
 
 . ./path.sh
 . ./cmd.sh

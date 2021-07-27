@@ -9,6 +9,7 @@ Before runing the Pytorch-based NNLM rescoring, make sure
 
 Then, to run the Pytorch-based NNLM rescoring, one just simply type:
 `bash local/pytorchnn/run_nnlm.sh`
+
 If you encounter anything wrong, the first thing is to check whether some parameters are configured
 properly(i.e. make sure the dir exists in your disk.). Otherwise, feel free to file an issue 
 and we will fix it ASAP.
