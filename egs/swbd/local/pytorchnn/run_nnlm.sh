@@ -2,15 +2,15 @@
 # Copyright 2012  Johns Hopkins University (author: Daniel Povey)
 #           2021  Ke Li
 
+# The following results come from the paper https://www.danielpovey.com/files/2021_icassp_parallel_lattice_rescoring.pdf
+# commented by Wenjie Peng (wenjayep@gmail.com)
+
 # This script trains an RNN (LSTM and GRU) or Transformer-based
 # language model with PyTorch and performs N-best and lattice rescoring.
 # More details about the lattice rescoring can be found in the paper:
 # https://www.danielpovey.com/files/2021_icassp_parallel_lattice_rescoring.pdf
 # The N-best rescoring is in a batch computation mode as well. It is thus much
 # faster than N-best rescoring in local/rnnlm/run_tdnn_lstm.sh.
-
-# The following results come from the paper https://www.danielpovey.com/files/2021_icassp_parallel_lattice_rescoring.pdf
-# commented by Wenjie Peng (wenjayep@gmail.com)
 
 # Baseline WERs with a 4-gram LM:
 # %WER 12.8 | 4459 42989 | 88.8 7.7 3.5 1.6 12.8 46.7 | exp/chain/tdnn7q_sp/decode_eval2000_sw1_fsh_fg//score_10_0.0/eval2000_hires.ctm.filt.sys
@@ -40,10 +40,10 @@
 
 # Begin configuration section.
 stage=0
-ac_model_dir=exp/chain/tdnn7q_sp
-decode_dir_suffix=pytorch_transformer
-pytorch_path=exp/pytorch_transformer
-nn_model=$pytorch_path/model.pt
+ac_model_dir=exp/swbd_phone # parent dir for ngram decoding results
+decode_dir_suffix=pytorch_transformer # decode dir suffix
+pytorch_path=exp/pytorch_transformer # dir for training Pytorch-based nnlm
+nn_model=$pytorch_path/model.pt # specify the trained nnlm model
 
 model_type=Transformer # LSTM, GRU or Transformer
 embedding_dim=512 # 650 for LSTM (for reproducing perplexities and WERs above)
@@ -61,7 +61,7 @@ dropout=0.1
 
 set -e
 
-data_dir=data/pytorchnn
+data_dir=data/pytorchnn # dir to store data for Pytorch-based nnlm rescoirng.
 
 # Check if PyTorch is installed to use with python
 if python3 steps/pytorchnn/check_py.py 2>/dev/null; then
@@ -80,12 +80,11 @@ if [ $stage -le 0 ]; then
   local/pytorchnn/data_prep.sh $data_dir
 fi
 
-exit 0
 
 if [ $stage -le 1 ]; then
   # Train a PyTorch neural network language model.
   echo "Start neural network language model training."
-  #$cuda_cmd $pytorch_path/log/train.log utils/parallel/limit_num_gpus.sh \
+  $cuda_cmd $pytorch_path/log/train.log utils/parallel/limit_num_gpus.sh \
     python3 steps/pytorchnn/train.py --data $data_dir \
             --model $model_type \
             --emsize $embedding_dim \
@@ -103,7 +102,7 @@ if [ $stage -le 1 ]; then
             --cuda
 fi
 
-exit 0
+
 LM=sw1_fsh_fg # Using the 4-gram const arpa file as old lm
 if [ $stage -le 2 ]; then
   echo "$0: Perform N-best rescoring on $ac_model_dir with a $model_type LM."
@@ -119,10 +118,12 @@ if [ $stage -le 2 ]; then
         --nhead $nhead \
         --weight 0.8 \
         data/lang_$LM $nn_model $data_dir/words.txt \
-        data/${decode_set}_hires ${decode_dir} \
+        data/${decode_set} ${decode_dir} \
         ${decode_dir}_${decode_dir_suffix}_nbest
   done
 fi
+
+exit 0 # comment this line to further conduct lattice-based rescoring.
 
 if [ $stage -le 3 ]; then
   echo "$0: Perform lattice rescoring on $ac_model_dir with a $model_type LM."
@@ -139,7 +140,7 @@ if [ $stage -le 3 ]; then
         --beam 5 \
         --epsilon 0.5 \
         data/lang_$LM $nn_model $data_dir/words.txt \
-        data/${decode_set}_hires ${decode_dir} \
+        data/${decode_set} ${decode_dir} \
         ${decode_dir}_${decode_dir_suffix}
   done
 fi

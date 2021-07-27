@@ -2,15 +2,15 @@
 # Copyright 2012  Johns Hopkins University (author: Daniel Povey)
 #           2021  Ke Li
 
+# The following results come from swbd recipe of Kaldi with the paper https://www.danielpovey.com/files/2021_icassp_parallel_lattice_rescoring.pdf
+# commented by Wenjie Peng (wenjayep@gmail.com)
+
 # This script trains an RNN (LSTM and GRU) or Transformer-based
 # language model with PyTorch and performs N-best and lattice rescoring.
 # More details about the lattice rescoring can be found in the paper:
 # https://www.danielpovey.com/files/2021_icassp_parallel_lattice_rescoring.pdf
 # The N-best rescoring is in a batch computation mode as well. It is thus much
 # faster than N-best rescoring in local/rnnlm/run_tdnn_lstm.sh.
-
-# The following results come from swbd recipe of Kaldi with the paper https://www.danielpovey.com/files/2021_icassp_parallel_lattice_rescoring.pdf
-# commented by Wenjie Peng (wenjayep@gmail.com)
 
 # Baseline WERs with a 4-gram LM:
 # %WER 12.8 | 4459 42989 | 88.8 7.7 3.5 1.6 12.8 46.7 | exp/chain/tdnn7q_sp/decode_eval2000_sw1_fsh_fg//score_10_0.0/eval2000_hires.ctm.filt.sys
@@ -39,11 +39,11 @@
 # %WER 14.4 | 2628 21594 | 87.6 8.2 4.2 2.0 14.4 45.9 | exp/chain/tdnn7q_sp/decode_eval2000_sw1_fsh_fg_pytorch_transformer//score_10_0.0/eval2000_hires.ctm.callhm.filt.sys
 
 # Begin configuration section.
-stage=0
-ac_model_dir=exp/chain/tdnn7q_sp
-decode_dir_suffix=pytorch_transformer
-pytorch_path=exp/pytorch_transformer
-nn_model=$pytorch_path/model.pt
+stage=2 # we don't need to prepare data and train NNLM once we have the pretrained NNLM.
+ac_model_dir=exp/chain/tdnn7q_sp # parent dir for ngram decoding results
+decode_dir_suffix=pytorch_transformer # decode dir suffix
+pytorch_path=exp/pytorch_transformer # dir for training Pytorch-based NNLM. note: we don't train the Transformer LM in this recipe.
+nn_model=$pytorch_path/model.pt # specify the trained NNLM model.
 
 model_type=Transformer # LSTM, GRU or Transformer
 embedding_dim=512 # 650 for LSTM (for reproducing perplexities and WERs above)
@@ -76,40 +76,38 @@ else
   exit 1
 fi
 
-if [ $stage -le 0 ]; then
-  local/pytorchnn/data_prep.sh $data_dir
-fi
+#if [ $stage -le 0 ]; then
+#  local/pytorchnn/data_prep.sh $data_dir
+#fi
 
-exit 0
 
-if [ $stage -le 1 ]; then
-  # Train a PyTorch neural network language model.
-  echo "Start neural network language model training."
-  #$cuda_cmd $pytorch_path/log/train.log utils/parallel/limit_num_gpus.sh \
-    python3 steps/pytorchnn/train.py --data $data_dir \
-            --model $model_type \
-            --emsize $embedding_dim \
-            --nhid $hidden_dim \
-            --nlayers $nlayers \
-            --nhead $nhead \
-            --lr $learning_rate \
-            --dropout $dropout \
-            --seq_len $seq_len \
-            --clip 1.0 \
-            --batch-size 32 \
-            --epoch 64 \
-            --save $nn_model \
-            --tied \
-            --cuda
-fi
+#if [ $stage -le 1 ]; then
+#  # Train a PyTorch neural network language model.
+#  echo "Start neural network language model training."
+#  $cuda_cmd $pytorch_path/log/train.log utils/parallel/limit_num_gpus.sh \
+#    python3 steps/pytorchnn/train.py --data $data_dir \
+#            --model $model_type \
+#            --emsize $embedding_dim \
+#            --nhid $hidden_dim \
+#            --nlayers $nlayers \
+#            --nhead $nhead \
+#            --lr $learning_rate \
+#            --dropout $dropout \
+#            --seq_len $seq_len \
+#            --clip 1.0 \
+#            --batch-size 32 \
+#            --epoch 64 \
+#            --save $nn_model \
+#            --tied \
+#            --cuda
+#fi
 
-exit 0
 LM=sw1_fsh_fg # Using the 4-gram const arpa file as old lm
 if [ $stage -le 2 ]; then
   echo "$0: Perform N-best rescoring on $ac_model_dir with a $model_type LM."
-  for decode_set in eval2000; do
+  for decode_set in dev_clean dev_other test_clean test_other; do
       decode_dir=${ac_model_dir}/decode_${decode_set}_${LM}
-      steps/pytorchnn/lmrescore_nbest_pytorchnn.sh \
+      steps/pytorchnn/lmrescore_nbest_pytorchnn_rwth.sh \
         --cmd "$cmd --mem 4G" \
         --N 20 \
         --model-type $model_type \
@@ -119,29 +117,29 @@ if [ $stage -le 2 ]; then
         --nhead $nhead \
         --weight 0.8 \
         data/lang_$LM $nn_model $data_dir/words.txt \
-        data/${decode_set}_hires ${decode_dir} \
+        data/${decode_set} ${decode_dir} \
         ${decode_dir}_${decode_dir_suffix}_nbest
   done
 fi
 
-if [ $stage -le 3 ]; then
-  echo "$0: Perform lattice rescoring on $ac_model_dir with a $model_type LM."
-  for decode_set in eval2000; do
-      decode_dir=${ac_model_dir}/decode_${decode_set}_${LM}
-      steps/pytorchnn/lmrescore_lattice_pytorchnn.sh \
-        --cmd "$cmd --mem 4G" \
-        --model-type $model_type \
-        --embedding_dim $embedding_dim \
-        --hidden_dim $hidden_dim \
-        --nlayers $nlayers \
-        --nhead $nhead \
-        --weight 0.8 \
-        --beam 5 \
-        --epsilon 0.5 \
-        data/lang_$LM $nn_model $data_dir/words.txt \
-        data/${decode_set}_hires ${decode_dir} \
-        ${decode_dir}_${decode_dir_suffix}
-  done
-fi
+#if [ $stage -le 3 ]; then
+#  echo "$0: Perform lattice rescoring on $ac_model_dir with a $model_type LM."
+#  for decode_set in eval2000; do
+#      decode_dir=${ac_model_dir}/decode_${decode_set}_${LM}
+#      steps/pytorchnn/lmrescore_lattice_pytorchnn.sh \
+#        --cmd "$cmd --mem 4G" \
+#        --model-type $model_type \
+#        --embedding_dim $embedding_dim \
+#        --hidden_dim $hidden_dim \
+#        --nlayers $nlayers \
+#        --nhead $nhead \
+#        --weight 0.8 \
+#        --beam 5 \
+#        --epsilon 0.5 \
+#        data/lang_$LM $nn_model $data_dir/words.txt \
+#        data/${decode_set} ${decode_dir} \
+#        ${decode_dir}_${decode_dir_suffix}
+#  done
+#fi
 
 exit 0

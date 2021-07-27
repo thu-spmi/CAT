@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# This script is adopted from `kaldi/egs/swbd/s5c/local/pytorchnn/data_prep.sh`, 
+# modified by Wenjie Peng (wenjayep@gmail.com).
+
 # This script prepares the data directory for PyTorch based neural LM training.
 # It prepares the following files in a output directory:
 # 1. Vocabulary: $dir/words.txt copied from data/lang/words.txt.
