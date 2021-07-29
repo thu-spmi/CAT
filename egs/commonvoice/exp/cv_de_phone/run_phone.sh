@@ -21,13 +21,14 @@ data_de=cv-corpus-5.1-2020-06-22/de
 g2p_lexicon=local/lexicon.txt
 lexicon=local/lexicon_ge.txt
 
+mkdir -p data/
 awk '{print $1}' $lexicon > data/pure_word
 pure_word=$DIR/data/pure_word
 
 lang=de
-train_set=train_"$(echo "${lang}" | tr - _)"
-dev_set=dev_"$(echo "${lang}" | tr - _)"
-test_set=test_"$(echo "${lang}" | tr - _)"
+train_set=train
+dev_set=dev
+test_set=test
 recog_set="${dev_set} ${test_set}"
 
 NODE=$1
@@ -43,18 +44,18 @@ if [ $NODE == 0 ]; then
 
         for part in "test" "resampled_dev" "resampled_tr"; do
             # use underscore-separated names in data directories.
-            local/data_prep.pl $data_de ${part} data/"$(echo "${part}_${lang}" | tr - _)" || exit 1;
+            local/data_prep.pl $data_de ${part} data/${part} || exit 1;
 
             # rm punctuations
-            cat data/"$(echo "${part}_${lang}" | tr - _)"/text | sed 's/"//g' | \
+            cat data/${part}/text | sed 's/"//g' | \
                 sed 's/,//g' | sed 's/\.//g' | sed 's/\?//g' | sed 's/\!//g' | sed 's/…//g' | \
                 sed 's/;//g' | sed 's/  / /g' | sed 's/  / /g' | sed 's/ $//g' | \
-                sed "s/’/'/g" > data/"$(echo "${part}_${lang}" | tr - _)"/text_fil || exit 1;
-            mv data/"$(echo "${part}_${lang}" | tr - _)"/text_fil data/"$(echo "${part}_${lang}" | tr - _)"/text || exit 1;
+                sed "s/’/'/g" > data/${part}/text_fil || exit 1;
+            mv data/${part}/text_fil data/${part}/text || exit 1;
         done
 
-        utils/copy_data_dir.sh data/"$(echo "resampled_tr_${lang}" | tr - _)" data/${train_set} || exit 1;
-        utils/copy_data_dir.sh data/"$(echo "resampled_dev_${lang}" | tr - _)" data/${dev_set} || exit 1;
+        utils/copy_data_dir.sh data/resampled_tr data/${train_set} || exit 1;
+        utils/copy_data_dir.sh data/resampled_dev data/${dev_set} || exit 1;
         utils/filter_scp.pl --exclude data/${dev_set}/wav.scp data/${train_set}/wav.scp > data/${train_set}/temp_wav.scp || exit 1;
         utils/filter_scp.pl --exclude data/${test_set}/wav.scp data/${train_set}/temp_wav.scp > data/${train_set}/wav.scp || exit 1;
         utils/fix_data_dir.sh data/${train_set} || exit 1;
@@ -83,7 +84,7 @@ if [ $NODE == 0 ]; then
         fi
 
         fbankdir=fbank
-        for set in ${test_set} ${dev_set} ${train_set} ${train_set}_sp; do
+        for set in ${test_set} ${dev_set} ${train_set}_sp; do
             steps/make_fbank.sh --cmd "$train_cmd" --nj $nj data/$set exp/make_fbank/$set $fbankdir || exit 1;
             utils/fix_data_dir.sh data/$set || exit;
             steps/compute_cmvn_stats.sh data/$set exp/make_fbank/$set $fbankdir || exit 1;
@@ -162,7 +163,7 @@ if [ $stage -le 6 ] && [ $stop_stage -ge 6 ]; then
     # CUDA_VISIBLE_DEVICES="0"                      \
     python3 ctc-crf/train.py --seed=0               \
         --world-size 1 --rank $NODE                 \
-        --batch_size=128                            \
+        --batch_size=256                            \
         --dir=$dir                                  \
         --config=$dir/config.json                   \
         --data=$DATAPATH                            \
@@ -174,13 +175,14 @@ if [ $NODE -ne 0 ]; then
 fi
 
 if [ $stage -le 7 ] && [ $stop_stage -ge 7 ]; then
-    for set in test_de; do
+    for set in test; do
         ark_dir=$dir/logits/${set}
         mkdir -p $ark_dir
+        ark_dir=$(readlink -f $ark_dir)
         python3 ctc-crf/calculate_logits.py                 \
             --resume=$dir/ckpt/infer.pt                     \
             --config=$dir/config.json                       \
-            --nj=$nj --input_scp=data/test_data/${set}.scp  \
+            --nj=$nj --input_scp=data/all_ark/${set}.scp    \
             --output_dir=$ark_dir                           \
             || exit 1
         echo "Logits generated."

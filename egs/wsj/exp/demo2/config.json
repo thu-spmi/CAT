@@ -3,7 +3,7 @@
         "type": "BLSTM",
         "lossfn": "crf",
         "lamb": 0.01,
-        "specaug": {
+        "specaug_config": {
             "time_warp_window": 0.2,
             "freq_mask_width_range": 0.15,
             "num_freq_mask": 2,

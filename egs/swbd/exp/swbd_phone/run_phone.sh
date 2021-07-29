@@ -15,13 +15,9 @@ stop_stage=100
 # Specify data path here #
 DATAHOME=/data/
 ##########################
-# swbd=$DATAHOME/LDC97S62
-# fisher_dirs="$DATAHOME/LDC2004T19/fe_03_p1_tran/ $DATAHOME/LDC2005T19/fe_03_p2_tran/"
-# eval2000_dirs="$DATAHOME/LDC2002S09/hub5e_00 $DATAHOME/LDC2002T43"
-
-swbd=/mnt/nas_workspace2/spmiData/LDC/LDC97S62_Switchboard-1-Release-2-complete
-fisher_dirs="/mnt/nas_workspace2/spmiData/LDC/LDC2004T19_Fisher-English-Training-Part-1-Transcripts/fe_03_p1_tran/ /mnt/nas_workspace2/spmiData/LDC/LDC2005T19_Fisher-English-Training-Part-2-Transcripts/fe_03_p2_tran/"
-eval2000_dirs="/mnt/nas_workspace2/spmiData/LDC/LDC2002S09_2000-HUB5-English-Evaluation-Speech/hub5e_00 /mnt/nas_workspace2/spmiData/LDC/LDC2002T43_2000-HUB5-English-Evaluation-Transcripts/2000_hub5_eng_eval_tr/"
+swbd=$DATAHOME/LDC97S62
+fisher_dirs="$DATAHOME/LDC2004T19/fe_03_p1_tran/ $DATAHOME/LDC2005T19/fe_03_p2_tran/"
+eval2000_dirs="$DATAHOME/LDC2002S09/hub5e_00 $DATAHOME/LDC2002T43"
 
 NODE=$1
 if [ ! $NODE ]; then
@@ -164,7 +160,7 @@ if [ $stage -le 6 ] && [ $stop_stage -ge 6 ]; then
   # CUDA_VISIBLE_DEVICES="0"                    \
   python3 ctc-crf/train.py --seed=0             \
     --world-size 1 --rank $NODE                 \
-    --batch_size=128                            \
+    --batch_size=80                            \
     --dir=$dir                                  \
     --config=$dir/config.json                   \
     --data=$DATAPATH                            \

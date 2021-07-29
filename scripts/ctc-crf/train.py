@@ -35,9 +35,7 @@ def main(args):
     os.makedirs(args.dir+'/ckpt', exist_ok=True)
     setattr(args, 'ckptpath', args.dir+'/ckpt')
     if os.listdir(args.ckptpath) != [] and not args.debug and args.resume is None:
-        utils.highlight_msg(
-            f"ERROR:\nCheckpoint path `{args.ckptpath}` is not empty!\nRefuse to run the experiment, otherwise previous files would be overwritten.")
-        raise AssertionError
+        raise FileExistsError(f"{args.ckptpath} is not empty! Refuse to run the experiment.")
 
     ngpus_per_node = torch.cuda.device_count()
     args.world_size = ngpus_per_node * args.world_size
@@ -170,12 +168,12 @@ def build_model(args, configuration, train=True) -> nn.Module:
     else:
         lamb = netconfigs['lamb']
 
-    if 'specaug' not in netconfigs:
+    if 'specaug_config' not in netconfigs:
         specaug = None
         if args.rank == 0:
             utils.highlight_msg("Disable SpecAug.")
     else:
-        specaug = SpecAug(**netconfigs['specaug'])
+        specaug = SpecAug(**netconfigs['specaug_config'])
 
     setattr(args, 'iscrf', lossfn == 'crf')
     model = CAT_Model(net, lossfn, lamb, net_kwargs, specaug)

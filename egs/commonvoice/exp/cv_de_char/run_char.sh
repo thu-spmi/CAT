@@ -14,9 +14,9 @@ nj=$(nproc)
 data=cv-corpus-5.1-2020-06-22/de
 lang=de
 train_set=train_$(echo $lang | tr - _)
-dev=dev_$(echo $lang | tr - _)
+dev_set=dev_$(echo $lang | tr - _)
 test_set=test_$(echo $lang | tr - _)
-recog_set="${dev} $test_set"
+recog_set="$dev_set $test_set"
 nbpe=150
 bpemode=char
 
@@ -29,8 +29,8 @@ fi
 if [ $NODE == 0 ]; then
     if [ $stage -le 1 ] && [ ${stop_stage} -ge 1 ]; then
     echo "Data Preparation and FST Construction"
-    python3 local/resample.py --prev_tr $data_de/validated.tsv --prev_dev $data_de/dev.tsv \
-        --to_tr $data_de/resampled_tr.tsv --to_dev $data_de/resampled_dev.tsv
+    python3 local/resample.py --prev_tr $data/validated.tsv --prev_dev $data/dev.tsv \
+        --to_tr $data/resampled_tr.tsv --to_dev $data/resampled_dev.tsv || exit 1;
 
     # Use the same data preparation script from Kaldi
     for part in "test" "resampled_dev" "resampled_tr"; do
@@ -41,25 +41,26 @@ if [ $NODE == 0 ]; then
     # remove test&dev data from validated sentences
     utils/copy_data_dir.sh data/"$(echo "resampled_tr_${lang}" | tr - _)" data/${train_set} || exit 1;
     utils/copy_data_dir.sh data/"$(echo "resampled_dev_${lang}" | tr - _)" data/${dev_set} || exit 1;
-    utils/filter_scp.pl --exclude data/dev_de/wav.scp data/train_de/wav.scp > data/train_de/temp_wav.scp
-    utils/filter_scp.pl --exclude data/test_de/wav.scp data/train_de/temp_wav.scp > data/train_de/wav.scp
-    utils/fix_data_dir.sh data/train_de
+    utils/filter_scp.pl --exclude data/dev_de/wav.scp data/train_de/wav.scp > data/train_de/temp_wav.scp || exit 1;
+    utils/filter_scp.pl --exclude data/test_de/wav.scp data/train_de/temp_wav.scp > data/train_de/wav.scp || exit 1;
+    utils/fix_data_dir.sh data/train_de || exit 1;
 
-    utils/perturb_data_dir_speed.sh 0.9 data/${train_set} data/temp1
-    utils/perturb_data_dir_speed.sh 0.9 data/${train_set} data/temp1
-    utils/perturb_data_dir_speed.sh 1.0 data/${train_set} data/temp2
-    utils/perturb_data_dir_speed.sh 1.1 data/${train_set} data/temp3
-    utils/combine_data.sh --extra-files utt2uniq data/train_de data/temp1 data/temp2 data/temp3
-    rm -rf data/{temp1,temp2,temmp3}
+    utils/perturb_data_dir_speed.sh 0.9 data/${train_set} data/temp1 || exit 1;
+    utils/perturb_data_dir_speed.sh 0.9 data/${train_set} data/temp1 || exit 1;
+    utils/perturb_data_dir_speed.sh 1.0 data/${train_set} data/temp2 || exit 1;
+    utils/perturb_data_dir_speed.sh 1.1 data/${train_set} data/temp3 || exit 1;
+    utils/combine_data.sh --extra-files utt2uniq data/train_de data/temp1 data/temp2 data/temp3 || exit 1;
+    rm -rf data/{temp1,temp2,temp3}
 
     fi
 
-    if [ $stage -le 2 ] && [ $stage -ge 2 ]; then
+    if [ $stage -le 2 ] && [ ${stop_stage} -ge 2 ]; then
+        echo "Fbank Feature Generation"
         fbankdir=fbank
-        for x in train dev test; do
+        for x in dev test train; do
             mkdir -p data/$x
             cp -r data/${x}_de/* data/$x/
-            steps/make_fbank.sh --cmd "$train_cmd" --nj 20 data/${x} exp/make_fbank/$x \
+            steps/make_fbank.sh --cmd "$train_cmd" --nj $nj data/${x} exp/make_fbank/$x \
                 $fbankdir || exit 1;
             utils/fix_data_dir.sh data/${x} || exit 1;
             steps/compute_cmvn_stats.sh data/${x} exp/make_fbank/$x $fbankdir || exit 1
@@ -77,9 +78,9 @@ if [ $NODE == 0 ]; then
       echo "Building n-gram LM model."
       
       # train.txt without uttid for training n-gramm
-      cat data/train/text_pos | cut -f 2- -d " " - > data/local/dict_bpe/train.txt
+      cat data/train/text_pos | cut -f 2- -d " " - > data/local/dict_bpe/train.txt || exit 1;
       local/cv_train_lm.sh data/local/dict_bpe/train.txt data/local/dict_bpe/ data/local/local_lm || exit 1;
-      local/cv_format_local_lms.sh --lang-suffix "bpe" 
+      local/cv_format_local_lms.sh --lang-suffix "bpe"  || exit 1;
 
 
       for x in train dev; do
@@ -88,12 +89,12 @@ if [ $NODE == 0 ]; then
       done
       echo "convert text_number finished."
 
-      cat data/train/text_number | sort -k 2 | uniq -f 1 > data/train/unique_text_number
+      cat data/train/text_number | sort -k 2 | uniq -f 1 > data/train/unique_text_number || exit 1;
       mkdir -p data/den_meta
       chain-est-phone-lm ark:data/train/unique_text_number data/den_meta/phone_lm.fst || exit 1;
       ctc-crf/ctc_token_fst_corrected.py den data/lang_bpe/tokens.txt | fstcompile \
-          | fstarcsort --sort_type=olabel > data/den_meta/T_den.fst
-      fstcompose data/den_meta/T_den.fst data/den_meta/phone_lm.fst > data/den_meta/den_lm.fst
+          | fstarcsort --sort_type=olabel > data/den_meta/T_den.fst || exit 1;
+      fstcompose data/den_meta/T_den.fst data/den_meta/phone_lm.fst > data/den_meta/den_lm.fst || exit 1;
       echo "prepare denominator finished"
       path_weight data/train/text_number data/den_meta/phone_lm.fst > data/train/weight
       path_weight data/dev/text_number data/den_meta/phone_lm.fst > data/dev/weight
@@ -117,6 +118,9 @@ if [ $NODE == 0 ]; then
             python3 ctc-crf/convert_to.py -f=pickle --describe='L//4' --filer=1500 \
                 data/all_ark/${set}.scp data/${set}/text_number data/${set}/weight data/pickle/${set}.pickle || exit 1
         done
+        # To match the same path
+        mv data/pickle/train.pickle data/pickle/tr.pickle || exit 1
+        mv data/pickle/dev.pickle data/pickle/cv.pickle || exit 1
     fi
 fi
 
@@ -140,7 +144,7 @@ if [ $stage -le 6 ] && [ ${stop_stage} -ge 6 ]; then
     # CUDA_VISIBLE_DEVICES="0"                        \
     python3 ctc-crf/train.py --seed=0               \
         --world-size 1 --rank $NODE                 \
-        --batch_size=128                            \
+        --batch_size=256                            \
         --dir=$dir                                  \
         --config=$dir/config.json                   \
         --data=$DATAPATH                            \
@@ -156,10 +160,11 @@ if [ $stage -le 7 ] && [ ${stop_stage} -ge 7 ]; then
     for set in test; do
         ark_dir=$dir/logits/${set}
         mkdir -p $ark_dir
+        ark_dir=$(readlink -f $ark_dir)
         python3 ctc-crf/calculate_logits.py                 \
             --resume=$dir/ckpt/infer.pt                     \
             --config=$dir/config.json                       \
-            --nj=$nj --input_scp=data/test_data/${set}.scp  \
+            --nj=$nj --input_scp=data/all_ark/${set}.scp    \
             --output_dir=$ark_dir                           \
             || exit 1
         echo "Logits generated."

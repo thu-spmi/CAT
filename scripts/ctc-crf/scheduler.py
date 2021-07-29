@@ -105,6 +105,7 @@ class SchedulerEarlyStop(Scheduler):
         if self.epoch_cur <= self.epoch_min:
             if not (self._reverse_ ^ (metric < self.best_metric)):
                 self.best_metric = metric
+                state = 1
         elif not (self._reverse_ ^ (metric < self.best_metric)):
             self.best_metric = metric
             self.count_worse = 0
@@ -198,13 +199,15 @@ class SchedulerWarmupMileStone(SchedulerEarlyStop):
 
     def impl_step(self, metric):
         if self.epoch_cur <= self.epoch_warmup:
+            state = 0
             if not (self._reverse_ ^ (metric < self.best_metric)):
                 self.best_metric = metric
+                state = 1
             cur_lr = self.lr_cur
             self._adjust_lr_(cur_lr+self.lr_addon)
             print("Epoch: [{}/{}] | best={:.2f} | current={:.2f} | lr={:.2e}".format(
                 self.epoch_cur, self.epoch_warmup, self.best_metric, metric, self.lr_cur))
-            return 0
+            return state
         else:
             return super().impl_step(metric)
 

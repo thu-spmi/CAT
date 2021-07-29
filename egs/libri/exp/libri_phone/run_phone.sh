@@ -157,8 +157,8 @@ fi
 nj=$(nproc)
 if [ $stage -le 7 ] && [ $stop_stage -ge 7 ]; then
     for set in test_clean test_other dev_clean dev_other; do
-        ark_dir=$dir/logits/$set
-        mkdir -p $ark_dir
+        mkdir -p $dir/logits/$set
+        ark_dir=$(readlink -f $dir/logits/$set)
         python3 ctc-crf/calculate_logits.py                 \
             --resume=$dir/ckpt/infer.pt                     \
             --config=$dir/config.json                       \

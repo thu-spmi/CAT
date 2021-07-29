@@ -7,16 +7,16 @@
 # It's updated to v2 by Huahuan Zheng in 2021, based on CAT branch v1 egs/libri/run.sh
 
 # base url for downloads.
-data_url=/mnt/nas_workspace2/spmiData/librispeech
-lm_url=/mnt/nas_workspace2/spmiData/librispeech_lm
+data_url=www.openslr.org/resources/12
+lm_url=www.openslr.org/resources/11
 
 . ./cmd.sh
 . ./path.sh
 
 stage=1
 stop_stage=100
-data=/mnt/nas_workspace2/spmiData/librispeech
-lm_src_dir=/mnt/nas_workspace2/spmiData/librispeech_lm
+data=data/librispeech
+lm_src_dir=data/librispeech_lm
 
 NODE=$1
 if [ ! $NODE ]; then
@@ -165,28 +165,34 @@ fi
 nj=$(nproc)
 if [ $stage -le 7 ] && [ $stop_stage -ge 7 ]; then
     for set in test_clean test_other dev_clean dev_other; do
-        ark_dir=$dir/logits/$set
-        mkdir -p $ark_dir
+        mkdir -p $dir/logits/${set}
+        ark_dir=$(readlink -f $dir/logits/${set})
         python3 ctc-crf/calculate_logits.py                 \
             --resume=$dir/ckpt/infer.pt                     \
             --config=$dir/config.json                       \
-            --nj=$nj --input_scp=data/all_ark/$set.scp      \
+            --nj=$nj --input_scp=data/all_ark/${set}.scp      \
             --output_dir=$ark_dir                           \
             || exit 1
 
+        mkdir -p $dir/decode_${set}_tgsmall
+        ln -snf $ark_dir $dir/decode_${set}_tgsmall/logits
         ctc-crf/decode.sh  --stage 1 \
             --cmd "$decode_cmd" --nj $nj --acwt 1.0 \
-            data/lang_phn_tgsmall data/$set data/all_ark/$set.scp $dir/decode_$set_tgsmall || exit 1
+            data/lang_bpe_tgsmall data/${set} data/all_ark/${set}.scp $dir/decode_${set}_tgsmall || exit 1
 
         lm=tgmed
-        rescore_dir=$dir/decode_$set_$lm
+        rescore_dir=$dir/decode_${set}_$lm
         mkdir -p $rescore_dir
-        local/lmrescore.sh --cmd "$train_cmd" data/lang_phn_{tgsmall,$lm} data/$set $dir/decode_$set_{tgsmall,$lm} $nj || exit 1;
+        local/lmrescore.sh --cmd "$train_cmd" data/lang_bpe_{tgsmall,$lm} data/${set} $dir/decode_${set}_{tgsmall,$lm} $nj || exit 1;
 
         for lm in tglarge fglarge; do
-            rescore_dir=$dir/decode_$set_$lm
+            rescore_dir=$dir/decode_${set}_$lm
             mkdir -p $rescore_dir
-            local/lmrescore_const_arpa.sh --cmd "$train_cmd" data/lang_phn_{tgsmall,$lm} data/$set $dir/decode_$set_{tgsmall,$lm} $nj || exit 1;
+            local/lmrescore_const_arpa.sh --cmd "$train_cmd" data/lang_bpe_{tgsmall,$lm} data/${set} $dir/decode_${set}_{tgsmall,$lm} $nj || exit 1;
         done
+    done
+    
+    for set in test_clean test_other dev_clean dev_other; do
+        grep WER $dir/decode_${set}_*/wer_* | utils/best_wer.sh
     done
 fi
