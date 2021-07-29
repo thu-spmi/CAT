@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright 2018-2021 Tsinghua University
+# Copyright 2021 Tsinghua University
 # Author: Hongyu Xiang, Huahuan Zheng
 # Apache 2.0.
 # This script implements CTC-CRF training on LibriSpeech dataset.

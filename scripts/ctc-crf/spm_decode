@@ -5,6 +5,8 @@
 # This source code is licensed under the license found in the
 # https://github.com/pytorch/fairseq/blob/master/LICENSE
 
+# This script is modified by Wenjie Peng in line 46.
+
 
 import argparse
 import sys
@@ -41,7 +43,7 @@ def main():
     else:
         h = open(args.input, "r", encoding="utf-8")
     for line in h:
-        print(decode([ int(e) for e in line.split()]))
+        print(decode([ int(e) for e in line.split()])) # modified to decode with wp-id
 
 
 if __name__ == "__main__":

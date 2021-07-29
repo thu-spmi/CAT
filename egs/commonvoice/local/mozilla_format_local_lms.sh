@@ -3,6 +3,8 @@
 # Copyright Johns Hopkins University (Author: Daniel Povey) 2012
 #           Guoguo Chen 2014
 
+# This script is adopted from wsj of Kaldi, modified by Chengrui Zhu.
+
 lang_suffix=
 stage=1
 echo "$0 $@"  # Print the command line for logging

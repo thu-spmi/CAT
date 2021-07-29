@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Copyright 2021 Tsinghua University
+# Author: Chengrui Zhu
+# Apache 2.0.
+
 # This script prepares the phoneme-based lexicon. It also generates the list of lexicon units
 # and represents the lexicon using the indices of the units. 
 
