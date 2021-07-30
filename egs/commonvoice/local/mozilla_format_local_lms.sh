@@ -14,8 +14,8 @@ echo "$0 $@"  # Print the command line for logging
 [ ! -d data/lang_${lang_suffix} ] &&\
   echo "Expect data/lang_${lang_suffix} to exist" && exit 1;
 
-lm_srcdir_3g=data/lm_phn/3gram-mincount
-lm_srcdir_4g=data/lm_phn/4gram-mincount
+lm_srcdir_3g=data/local/local_lm/3gram-mincount
+lm_srcdir_4g=data/local/local_lm/4gram-mincount
 
 [ ! -d "$lm_srcdir_3g" ] && echo "No such dir $lm_srcdir_3g" && exit 1;
 [ ! -d "$lm_srcdir_4g" ] && echo "No such dir $lm_srcdir_4g" && exit 1;

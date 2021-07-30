@@ -46,10 +46,7 @@ mkdir -p $dir
 
 for x in train dev test; do
     mkdir -p data/$x
-    cut -f 2- -d ' ' data/${x}_de/text > data/$x/text
-    cat  data/${x}/text | sed 's/"//g' | sed 's/,//g' | sed 's/\.//g' | \
-        sed 's/\?//g' | sed 's/\!//g' | sed 's/…//g' | sed 's/;//g' | sed 's/  / /g' | \
-        sed 's/  / /g' | sed 's/ $//g' | sed "s/’/'/g" > $dir/${x}.txt
+    cut -f 2- -d " " data/$x/text_pos > $dir/${x}.txt
 done
 
 mv $dir/dev.txt $dir/valid.txt
@@ -85,7 +82,7 @@ rm $dir/train_total.txt
 
 # Symbol for unknown words
 echo "<UNK>" >$dir/config/oov.txt
-cp data/lang_phn/words.txt $dir/
+cp data/lang_bpe/words.txt $dir/
 # Make sure words.txt contains the symbol for unknown words
 if ! grep -w '<UNK>' $dir/words.txt >/dev/null; then
   n=$(cat $dir/words.txt | wc -l)

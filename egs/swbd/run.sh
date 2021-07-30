@@ -1,20 +1,23 @@
 #!/bin/bash
 
-# Copyright 2018-2021 Tsinghua University
+# Copyright 2021 Tsinghua University
 # Author: Hongyu Xiang, Huahuan Zheng
 # Apache 2.0.
 # This script implements CTC-CRF training on SwitchBoard dataset.
 # It's updated to v2 by Huahuan Zheng in 2021, based on CAT branch v1 egs/wsj/run.sh
 
-. ./cmd.sh ## You'll want to change cmd.sh to something that will work on your system.
-           ## This relates to the queue.
+. ./cmd.sh
 . ./path.sh
 
 stage=1
 stop_stage=100
-swbd=/data/LDC97S62
-fisher_dirs="/data/LDC2004T19/fe_03_p1_tran/ /data/LDC2005T19/fe_03_p2_tran/"
-eval2000_dirs="/data/LDC2002S09/hub5e_00 /data/LDC2002T43"
+
+# Specify data path here #
+DATAHOME=/data/
+##########################
+swbd=$DATAHOME/LDC97S62
+fisher_dirs="$DATAHOME/LDC2004T19/fe_03_p1_tran/ $DATAHOME/LDC2005T19/fe_03_p2_tran/"
+eval2000_dirs="$DATAHOME/LDC2002S09/hub5e_00 $DATAHOME/LDC2002T43"
 
 NODE=$1
 if [ ! $NODE ]; then
@@ -130,15 +133,15 @@ if [ $NODE == 0 ]; then
 
   if [ $stage -le 5 ] && [ $stop_stage -ge 5 ]; then
     mkdir -p data/pickle
-    python3 ctc-crf/convert_to.py -f=pickle -W \
+    python3 ctc-crf/convert_to.py -f=pickle --describe='L//4' --filer=1700 \
       data/all_ark/cv.scp $data_cv/text_number $data_cv/weight data/pickle/cv.pickle || exit 1
-    python3 ctc-crf/convert_to.py -f=pickle \
+    python3 ctc-crf/convert_to.py -f=pickle --describe='L//4' --filer=1700 \
       data/all_ark/tr.scp $data_tr/text_number $data_tr/weight data/pickle/tr.pickle || exit 1
   fi
 fi
 
 PARENTDIR='.'
-dir="exp/demo"
+dir="exp/swbd_phone"
 DATAPATH=$PARENTDIR/data/
 
 if [ $stage -le 6 ] && [ $stop_stage -ge 6 ]; then
@@ -157,7 +160,7 @@ if [ $stage -le 6 ] && [ $stop_stage -ge 6 ]; then
   # CUDA_VISIBLE_DEVICES="0"                    \
   python3 ctc-crf/train.py --seed=0             \
     --world-size 1 --rank $NODE                 \
-    --batch_size=128                            \
+    --batch_size=80                            \
     --dir=$dir                                  \
     --config=$dir/config.json                   \
     --data=$DATAPATH                            \
@@ -167,7 +170,6 @@ fi
 if [ $NODE -ne 0 ]; then
   exit 0
 fi
-
 
 nj=$(nproc)
 if [ $stage -le 7 ] && [ $stop_stage -ge 7 ]; then

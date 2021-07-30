@@ -103,11 +103,11 @@ if [ $stage -le 1 ]; then
 fi
 
 
-LM=sw1_fsh_fg # Using the 4-gram const arpa file as old lm
+LM=phn_sw1_fsh_fg # Using the 4-gram const arpa file as old lm
 if [ $stage -le 2 ]; then
   echo "$0: Perform N-best rescoring on $ac_model_dir with a $model_type LM."
   for decode_set in eval2000; do
-      decode_dir=${ac_model_dir}/decode_${decode_set}_${LM}
+      decode_dir=${ac_model_dir}/decode_${decode_set}_sw1_fsh_fg
       steps/pytorchnn/lmrescore_nbest_pytorchnn.sh \
         --cmd "$cmd --mem 4G" \
         --N 20 \

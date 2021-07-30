@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright 2018-2021 Tsinghua University
+# Copyright 2021 Tsinghua University
 # Author: Hongyu Xiang, Huahuan Zheng
 # Apache 2.0.
 # This script implements CTC-CRF training on LibriSpeech dataset.
@@ -15,8 +15,8 @@ lm_url=www.openslr.org/resources/11
 
 stage=1
 stop_stage=100
-data=data/librispeech
-lm_src_dir=data/librispeech_lm
+data=/mnt/nas_workspace2/spmiData/librispeech
+lm_src_dir=/mnt/nas_workspace2/spmiData/librispeech_lm
 
 NODE=$1
 if [ ! $NODE ]; then
@@ -39,6 +39,7 @@ if [ $NODE == 0 ]; then
             local/data_prep.sh $data/LibriSpeech/$part data/$(echo $part | sed s/-/_/g) || exit 1
         done
 
+        exit 0
         fbankdir=fbank
         for part in dev_clean test_clean dev_other test_other train_clean_100 train_clean_360 train_other_500; do
             steps/make_fbank.sh --cmd "$train_cmd" --nj 40 data/$part exp/make_fbank/$part $fbankdir || exit 1
@@ -114,16 +115,18 @@ if [ $NODE == 0 ]; then
 
     if [ $stage -le 5 ] && [ $stop_stage -ge 5 ]; then
         mkdir -p data/pickle
-        python3 ctc-crf/convert_to.py -f=pickle -W \
+        python3 ctc-crf/convert_to.py -f=pickle --describe='L//4' --filer=1750 \
             data/all_ark/cv.scp $data_cv/text_number $data_cv/weight data/pickle/cv.pickle || exit 1
-        python3 ctc-crf/convert_to.py -f=pickle \
+        python3 ctc-crf/convert_to.py -f=pickle --describe='L//4' --filer=1750 \
             data/all_ark/tr.scp $data_tr/text_number $data_tr/weight data/pickle/tr.pickle || exit 1
     fi
 
 fi
 
+exit 0
+
 PARENTDIR='.'
-dir="exp/demo"
+dir="exp/libri_phone"
 DATAPATH=$PARENTDIR/data/
 
 if [ $stage -le 6 ] && [ $stop_stage -ge 6 ]; then
@@ -157,8 +160,8 @@ fi
 nj=$(nproc)
 if [ $stage -le 7 ] && [ $stop_stage -ge 7 ]; then
     for set in test_clean test_other dev_clean dev_other; do
-        ark_dir=$dir/logits/$set
-        mkdir -p $ark_dir
+        mkdir -p $dir/logits/$set
+        ark_dir=$(readlink -f $dir/logits/$set)
         python3 ctc-crf/calculate_logits.py                 \
             --resume=$dir/ckpt/infer.pt                     \
             --config=$dir/config.json                       \

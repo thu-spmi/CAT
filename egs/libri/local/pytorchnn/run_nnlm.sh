@@ -40,7 +40,7 @@
 
 # Begin configuration section.
 stage=2 # we don't need to prepare data and train NNLM once we have the pretrained NNLM.
-ac_model_dir=exp/chain/tdnn7q_sp # parent dir for ngram decoding results
+ac_model_dir=exp/libri_phone  # parent dir for ngram decoding results
 decode_dir_suffix=pytorch_transformer # decode dir suffix
 pytorch_path=exp/pytorch_transformer # dir for training Pytorch-based NNLM. note: we don't train the Transformer LM in this recipe.
 nn_model=$pytorch_path/model.pt # specify the trained NNLM model.
@@ -64,17 +64,17 @@ set -e
 data_dir=data/pytorchnn
 
 # Check if PyTorch is installed to use with python
-if python3 steps/pytorchnn/check_py.py 2>/dev/null; then
-  echo PyTorch is ready to use on the python side. This is good.
-else
-  echo PyTorch not found on the python side.
-  echo Please install PyTorch first. For example, you can install it with conda:
-  echo "conda install pytorch torchvision cudatoolkit=10.2 -c pytorch", or
-  echo with pip: "pip install torch torchvision". If you already have PyTorch
-  echo installed somewhere else, you need to add it to your PATH.
-  echo Note: you need to install higher version than PyTorch 1.1 to train Transformer models
-  exit 1
-fi
+#if python3 steps/pytorchnn/check_py.py 2>/dev/null; then
+#  echo PyTorch is ready to use on the python side. This is good.
+#else
+#  echo PyTorch not found on the python side.
+#  echo Please install PyTorch first. For example, you can install it with conda:
+#  echo "conda install pytorch torchvision cudatoolkit=10.2 -c pytorch", or
+#  echo with pip: "pip install torch torchvision". If you already have PyTorch
+#  echo installed somewhere else, you need to add it to your PATH.
+#  echo Note: you need to install higher version than PyTorch 1.1 to train Transformer models
+#  exit 1
+#fi
 
 #if [ $stage -le 0 ]; then
 #  local/pytorchnn/data_prep.sh $data_dir
@@ -102,11 +102,11 @@ fi
 #            --cuda
 #fi
 
-LM=sw1_fsh_fg # Using the 4-gram const arpa file as old lm
+LM=phn_fglarge # Using the 4-gram const arpa file as old lm
 if [ $stage -le 2 ]; then
   echo "$0: Perform N-best rescoring on $ac_model_dir with a $model_type LM."
   for decode_set in dev_clean dev_other test_clean test_other; do
-      decode_dir=${ac_model_dir}/decode_${decode_set}_${LM}
+      decode_dir=${ac_model_dir}/decode_${decode_set}_fglarge
       steps/pytorchnn/lmrescore_nbest_pytorchnn_rwth.sh \
         --cmd "$cmd --mem 4G" \
         --N 20 \
@@ -114,6 +114,7 @@ if [ $stage -le 2 ]; then
         --embedding_dim $embedding_dim \
         --hidden_dim $hidden_dim \
         --nlayers $nlayers \
+        --oov_symbol '<UNK>' \
         --nhead $nhead \
         --weight 0.8 \
         data/lang_$LM $nn_model $data_dir/words.txt \

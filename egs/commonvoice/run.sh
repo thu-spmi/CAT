@@ -63,10 +63,10 @@ if [ $NODE == 0 ]; then
         local/mozilla_prepare_phn_dict.sh $g2p_lexicon || exit 1;
         ctc-crf/ctc_compile_dict_token.sh --dict-type "phn" \
             data/dict_phn data/local/lang_phn_tmp data/lang_phn || exit 1;
-        local/mozilla_train_lms.sh data/train_de/text data/dict_phn/lexicon.txt data/lm_phn || exit 1;
+        local/mozilla_train_lms.sh data/train_de/text data/dict_phn/lexicon.txt data/local/local_lm || exit 1;
 
         local/mozilla_format_local_lms.sh --lang-suffix "phn" || exit 1;
-        local/mozilla_decode_graph.sh data/lm_phn data/lang_phn data/lang_phn_test || exit 1;
+        local/mozilla_decode_graph.sh data/local/local_lm data/lang_phn data/lang_phn_test || exit 1;
     fi 
 
     if [ $stage -le 2 ] && [ $stop_stage -ge 2 ]; then

@@ -8,17 +8,17 @@
 . ./cmd.sh
 . ./path.sh
 
-stage=1
+stage=3
 stop_stage=100
 nj=$(nproc)
-data=cv-corpus-5.1-2020-06-22/de
+data=/mnt/workspace/pengwenjie/espnet/egs/commonvoice/asr1/download/de_data/cv-corpus-5.1-2020-06-22/de
 lang=de
 train_set=train_$(echo $lang | tr - _)
 dev_set=dev_$(echo $lang | tr - _)
 test_set=test_$(echo $lang | tr - _)
 recog_set="$dev_set $test_set"
 nbpe=150
-bpemode=unigram
+bpemode=unigram # `char` for char-based system.
 
 
 NODE=$1
@@ -71,21 +71,22 @@ if [ $NODE == 0 ]; then
     if [ $stage -le 3 ] && [ ${stop_stage} -ge 3 ]; then
 
       echo "stage 3: Dictionary and Json Data Preparation"
-      local/cv_prepare_bpe_dict.sh || exit 1
+#      local/mozilla_prepare_bpe_dict.sh || exit 1
 
-      ctc-crf/ctc_compile_dict_token.sh --dict_type "bpe" data/local/dict_bpe \
-          data/local/lang_bpe_tmp data/lang_bpe || exit 1;
+#      ctc-crf/ctc_compile_dict_token.sh --dict_type "bpe" data/local/dict_bpe \
+#          data/local/lang_bpe_tmp data/lang_bpe || exit 1;
       echo "Building n-gram LM model."
       
       # train.txt without uttid for training n-gramm
       cat data/train/text_pos | cut -f 2- -d " " - > data/local/dict_bpe/train.txt || exit 1;
-      local/cv_train_lm.sh data/local/dict_bpe/train.txt data/local/dict_bpe/ data/local/local_lm || exit 1;
-      local/cv_format_local_lms.sh --lang-suffix "bpe"  || exit 1;
+      local/mozilla_train_lms.sh data/local/dict_bpe/train.txt data/local/dict_bpe/ data/local/local_lm || exit 1;
+      local/mozilla_format_local_lms.sh --lang-suffix "bpe"  || exit 1;
+      local/mozilla_decode_graph.sh data/local/local_lm data/lang_bpe data/lang_bpe_test || exit 1;
 
 
       for x in train dev; do
           ctc-crf/prep_ctc_trans.py data/lang_bpe/lexicon_numbers.txt data/$x/text_pos \
-              "<SPN>" > data/${x}/text_number || exit 1;
+              "<UNK>" > data/${x}/text_number || exit 1;
       done
       echo "convert text_number finished."
 
@@ -124,8 +125,10 @@ if [ $NODE == 0 ]; then
     fi
 fi
 
+exit 0
+
 PARENTDIR='.'
-dir="exp/cv_de_wp"
+dir="exp/cv_de_wp" # `exp/cv_de_char` for char-based system
 DATAPATH=$PARENTDIR/data/
 
 if [ $stage -le 6 ] && [ ${stop_stage} -ge 6 ]; then
@@ -181,7 +184,7 @@ if [ $stage -le 7 ] && [ ${stop_stage} -ge 7 ]; then
 
         lm=fgconst
         mkdir -p $dir/decode_${set}_bd_$lm
-        steps/lmrescore_const_arpa.sh --cmd "$decode_cmd" data/lang_bpe_${set}_bd_{tgpr,$lm} data/${set} $dir/decode_${set}_bd_{tgpr,_$lm} || exit 1;
+        steps/lmrescore_const_arpa.sh --cmd "$decode_cmd" data/lang_bpe_${set}_bd_{tgpr,$lm} data/${set} $dir/decode_${set}_bd_{tgpr,$lm} || exit 1;
 
         echo "4-gram Rescoring done."
 

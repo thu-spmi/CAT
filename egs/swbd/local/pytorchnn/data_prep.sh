@@ -67,7 +67,7 @@ rm $dir/fisher.txt
 
 # Symbol for unknown words
 echo "<unk>" >$dir/config/oov.txt
-cp data/lang/words.txt $dir/
+cp data/lang_phn/words.txt $dir/
 # Make sure words.txt contains the symbol for unknown words
 if ! grep -w '<unk>' $dir/words.txt >/dev/null; then
   n=$(cat $dir/words.txt | wc -l)

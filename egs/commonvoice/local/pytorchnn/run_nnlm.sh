@@ -40,7 +40,7 @@
 
 # Begin configuration section.
 stage=0
-ac_model_dir=exp/libri_phone # parent dir for ngram decoding results
+ac_model_dir=exp/cv_de_phone # parent dir for ngram decoding results
 decode_dir_suffix=pytorch_transformer # decode dir suffix
 pytorch_path=exp/pytorch_transformer # dir for training Pytorch-based NNLM
 nn_model=$pytorch_path/model.pt # specify the trained NNLM model
@@ -95,6 +95,7 @@ if [ $stage -le 1 ]; then
             --dropout $dropout \
             --seq_len $seq_len \
             --clip 1.0 \
+            --oov '\<UNK\>' \
             --batch-size 32 \
             --epoch 64 \
             --save $nn_model \
@@ -103,10 +104,10 @@ if [ $stage -le 1 ]; then
 fi
 
 
-LM=sw1_fsh_fg # Using the 4-gram const arpa file as old lm
+LM=bd_fgconst # Using the 4-gram const arpa file as old lm
 if [ $stage -le 2 ]; then
   echo "$0: Perform N-best rescoring on $ac_model_dir with a $model_type LM."
-  for decode_set in eval2000; do
+  for decode_set in test; do
       decode_dir=${ac_model_dir}/decode_${decode_set}_${LM}
       steps/pytorchnn/lmrescore_nbest_pytorchnn.sh \
         --cmd "$cmd --mem 4G" \
@@ -117,7 +118,8 @@ if [ $stage -le 2 ]; then
         --nlayers $nlayers \
         --nhead $nhead \
         --weight 0.8 \
-        data/lang_$LM $nn_model $data_dir/words.txt \
+        --oov_symbol '<UNK>' \
+        data/lang_phn_${decode_set}_$LM $nn_model $data_dir/words.txt \
         data/${decode_set} ${decode_dir} \
         ${decode_dir}_${decode_dir_suffix}_nbest
   done
