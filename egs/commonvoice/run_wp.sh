@@ -8,7 +8,7 @@
 . ./cmd.sh
 . ./path.sh
 
-stage=3
+stage=1
 stop_stage=100
 nj=$(nproc)
 data=/mnt/workspace/pengwenjie/espnet/egs/commonvoice/asr1/download/de_data/cv-corpus-5.1-2020-06-22/de
@@ -71,10 +71,10 @@ if [ $NODE == 0 ]; then
     if [ $stage -le 3 ] && [ ${stop_stage} -ge 3 ]; then
 
       echo "stage 3: Dictionary and Json Data Preparation"
-#      local/mozilla_prepare_bpe_dict.sh || exit 1
+      local/mozilla_prepare_bpe_dict.sh || exit 1
 
-#      ctc-crf/ctc_compile_dict_token.sh --dict_type "bpe" data/local/dict_bpe \
-#          data/local/lang_bpe_tmp data/lang_bpe || exit 1;
+      ctc-crf/ctc_compile_dict_token.sh --dict_type "bpe" data/local/dict_bpe \
+          data/local/lang_bpe_tmp data/lang_bpe || exit 1;
       echo "Building n-gram LM model."
       
       # train.txt without uttid for training n-gramm
@@ -125,7 +125,6 @@ if [ $NODE == 0 ]; then
     fi
 fi
 
-exit 0
 
 PARENTDIR='.'
 dir="exp/cv_de_wp" # `exp/cv_de_char` for char-based system

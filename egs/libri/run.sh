@@ -123,7 +123,6 @@ if [ $NODE == 0 ]; then
 
 fi
 
-exit 0
 
 PARENTDIR='.'
 dir="exp/libri_phone"
