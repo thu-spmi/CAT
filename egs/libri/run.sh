@@ -15,8 +15,8 @@ lm_url=www.openslr.org/resources/11
 
 stage=1
 stop_stage=100
-data=/mnt/nas_workspace2/spmiData/librispeech
-lm_src_dir=/mnt/nas_workspace2/spmiData/librispeech_lm
+data=/path/to/librispeech
+lm_src_dir=/path/to/librispeech_lm
 
 NODE=$1
 if [ ! $NODE ]; then
@@ -39,7 +39,6 @@ if [ $NODE == 0 ]; then
             local/data_prep.sh $data/LibriSpeech/$part data/$(echo $part | sed s/-/_/g) || exit 1
         done
 
-        exit 0
         fbankdir=fbank
         for part in dev_clean test_clean dev_other test_other train_clean_100 train_clean_360 train_other_500; do
             steps/make_fbank.sh --cmd "$train_cmd" --nj 40 data/$part exp/make_fbank/$part $fbankdir || exit 1

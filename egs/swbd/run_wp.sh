@@ -14,7 +14,7 @@ stage=1
 stop_stage=100
 
 # Specify data path here #
-DATAHOME=/data/
+DATAHOME=/path/to/dataset
 ##########################
 swbd=$DATAHOME/LDC97S62
 fisher_dirs="$DATAHOME/LDC2004T19/fe_03_p1_tran/ $DATAHOME/LDC2005T19/fe_03_p2_tran/"

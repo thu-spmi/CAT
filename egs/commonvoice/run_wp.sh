@@ -11,7 +11,7 @@
 stage=1
 stop_stage=100
 nj=$(nproc)
-data=/mnt/workspace/pengwenjie/espnet/egs/commonvoice/asr1/download/de_data/cv-corpus-5.1-2020-06-22/de
+data=/path/to/commonvoice/de
 lang=de
 train_set=train_$(echo $lang | tr - _)
 dev_set=dev_$(echo $lang | tr - _)

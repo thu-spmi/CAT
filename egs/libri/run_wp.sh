@@ -15,8 +15,8 @@ lm_url=www.openslr.org/resources/11
 
 stage=1
 stop_stage=100
-data=data/librispeech
-lm_src_dir=data/librispeech_lm
+data=/path/to/librispeech
+lm_src_dir=/path/to/librispeech_lm
 
 NODE=$1
 if [ ! $NODE ]; then

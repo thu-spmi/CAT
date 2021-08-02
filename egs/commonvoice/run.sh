@@ -16,7 +16,7 @@ DIR=`pwd`
 # number of parallel jobs
 nj=20
 
-data_de=cv-corpus-5.1-2020-06-22/de
+data_de=/path/to/commonvoice/de
 
 g2p_lexicon=local/lexicon.txt
 lexicon=local/lexicon_ge.txt
