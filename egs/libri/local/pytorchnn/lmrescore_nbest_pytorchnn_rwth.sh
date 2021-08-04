@@ -190,11 +190,9 @@ fi
 
 if [ $stage -le 6 ]; then
   echo "$0: computing neural LM scores of the N-best list in parallel for each lattice."
-  run_script=/mnt/workspace/pengwenjie/returnn/rnn.py
-  #srcconfig=/mnt/workspace/pengwenjie/returnn/2019-lm-transformers/librispeech/word_200k_vocab/re_transfo_42_d00.sgd.lr1.cl1.small_batch.config
-  srcconfig=/mnt/workspace/pengwenjie/returnn/2019-lm-transformers/librispeech/word_200k_vocab/re_transfo_42_d00.sgd.lr1.cl1.small_batch.config
-  #nnmd=/mnt/workspace/pengwenjie/returnn/2019-lm-transformers/librispeech/exp/net-model/lm/network.050.meta
-  nnmd=/mnt/workspace/pengwenjie/returnn/2019-lm-transformers/librispeech/exp/net-model/lm/network.050.meta
+  run_script=/path/to/returnn/rnn.py
+  srcconfig=/path/to/returnn/2019-lm-transformers/librispeech/word_200k_vocab/re_transfo_42_d00.sgd.lr1.cl1.small_batch.config
+  nnmd=/path/to/returnn/2019-lm-transformers/librispeech/exp/net-model/lm/network.050.meta
   for j in $(seq 1 $nj); do
     cut -f 2- -d ' ' ${adir}.${j}/words_text > ${adir}.${j}/words_text.nouttid
     awk '{print $1}' ${adir}.${j}/words_text > ${adir}.${j}/words_text.uttid

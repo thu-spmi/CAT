@@ -1,7 +1,7 @@
 """
 Copyright 2021 Tsinghua University
 Apache 2.0.
-Author: Zheng Huahuan (zhh20@mails.tsinghua.edu.cn)
+Author: Huahuan Zheng (zhh20@mails.tsinghua.edu.cn)
 """
 
 import os
