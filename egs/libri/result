@@ -18,3 +18,9 @@ To reproduce our Trans. LM rescoring, you need to:
 
 references
 [1] https://github.com/rwth-i6/returnn-experiments/tree/master/2019-lm-transformers
+
+# phone
+$ bash run.sh
+
+# char or wordpiece
+$ bash run_wp.sh

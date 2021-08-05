@@ -10,11 +10,8 @@ grep WER $dir/wer_* | utils/best_wer.sh
 # Y     Y     wp      Trans.   9.8  [N-best with N=20, weight=0.8]
 
 
-# char
-$ bash exp/cv_de_char/run_char.sh
-
 # phone
-$ bash exp/cv_de_phone/run_phone.sh
+$ bash run.sh
 
-# wordpiece
-$ bash exp/cv_de_wp/run_wp.sh 
+# char or wordpiece
+$ bash run_wp.sh 
