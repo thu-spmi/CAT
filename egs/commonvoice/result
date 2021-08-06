@@ -1,5 +1,8 @@
 grep WER $dir/wer_* | utils/best_wer.sh
 
+# Reported in "Advancing CTC-CRF Based End-to-End Speech Recognition with Wordpieces and 
+# Conformers"
+
 # 25M Conformer results, lamb=0.01
 # sp    sa    unit    LM       test
 # Y     Y     char    4-gram   12.7

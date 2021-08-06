@@ -11,6 +11,9 @@ grep Sum exp/decode_eval2000/lattice_sw1_fsh_fg/score_*/eval2000.ctm.filt.sys | 
 # sp   unit      SW      CH
 # Y    phone     9.9%    19.4%
 
+# Reported in "Advancing CTC-CRF Based End-to-End Speech Recognition with Wordpieces and 
+# Conformers"
+
 #51.82M Conformer results, lamb = 0.01
 # sp    sa    unit    LM        SW    CH    Eval2000
 # Y     Y     phone   4-gram    7.9   16.1  12.1
