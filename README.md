@@ -53,7 +53,7 @@ Please cite CAT using:
 
 ## DevLog
 
-* 2021-07:  add support of [wordpieces](wordpieces.md) by Wenjie Peng.
+* 2021.01-2021.07:  add support of [wordpieces](wordpieces.md) by Wenjie Peng.
 
 * yyyy-mm-dd: add support of Conformers by Huahuan Zheng.
 
