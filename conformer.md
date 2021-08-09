@@ -4,6 +4,7 @@ We implement the Conformer architecture basically according to [TensorFlowASR](h
 
 * For implementation of **positional encoding**, **convolution subsampling**, **relative multi-head attention**, **feed-forward module**, **convolution module** and **multi-head attention module**, please refer to `scripts/ctc-crf/_layers.py`.
 * For top interface of Conformer model, please refer to the `ConformerNet` in `scripts/ctc-crf/model.py`
+* For results on swbd, librispeech, CommonVoice German, refer to ["Advancing CTC-CRF Based End-to-End Speech Recognition with Wordpieces and Conformers"](https://arxiv.org/abs/2107.03007).
 
 ## References
 
