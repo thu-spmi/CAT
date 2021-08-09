@@ -7,7 +7,7 @@ We implement the Conformer architecture basically according to [TensorFlowASR](h
 
 ## References
 
-* Anmol Gulati, James Qin, Chung-Cheng Chiu, et al., “Conformer: Convolution-augmented Transformer for speech recognition,” in INTERSPEECH, 2020, pp. 5036–5040.
+* Anmol Gulati, James Qin, Chung-Cheng Chiu, et al., “Conformer: Convolution-augmented Transformer for speech recognition,” in INTERSPEECH, 2020, pp. 5036–5040.
 * TensorFlowASR: https://github.com/TensorSpeech/TensorFlowASR
 * Huggingface: https://github.com/huggingface/transformers
 
