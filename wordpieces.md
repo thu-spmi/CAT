@@ -11,10 +11,3 @@ Concretely, we utilize `spm_train` to train a tokenization model. Once model tra
 ### References 
 
 - Huahuan Zheng, Wenjie Peng, Zhijian Ou and Jinsong Zhang, "Advancing CTC-CRF Based End-to-End Speech Recognition with Wordpieces and Conformers", arXiv:2107.03007.
-
-
-
-
-
-
-

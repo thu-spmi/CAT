@@ -55,7 +55,7 @@ Please cite CAT using:
 
 * 2021.01-2021.07:  add support of [wordpieces](wordpieces.md) by Wenjie Peng.
 
-* yyyy-mm-dd: add support of Conformers by Huahuan Zheng.
+* 2021.05: add support of [Conformer](conformer.md) and SpecAug by Huahuan Zheng.
 
 * yyyy-mm-dd: add support of Deformable TDNNs by Keyu An.
 
@@ -68,5 +68,5 @@ Please cite CAT using:
 | Branch     | Flexible configuration | Easily reproduce | Distributed training | Chunk streaming model | Recipes                                            |
 | ---------- | ---------------------- | ---------------- | -------------------- | --------------------- | -------------------------------------------------- |
 | v1         |                        |                  | ✅                    | ✅                     | aishell, formosa, hkust, libri, swbd, thchs30, wsj |
-| v2(master) | ✅                      | ✅                | ✅                    |                       | swbd, wsj, libri                                          |
+| v2(master) | ✅                      | ✅                | ✅                    |                       | swbd, wsj, libri, commonvoice                      |
 

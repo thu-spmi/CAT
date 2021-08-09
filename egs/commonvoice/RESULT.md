@@ -1,0 +1,46 @@
+# Commonvoice
+
+Results on [Mozilla Common Voice](https://commonvoice.mozilla.org/zh-CN) dataset.
+
+## German
+
+### Conformer+Transformer rescoring
+
+* Based on Mozilla Common Voice 5.1 with validated 692-hour speech and paired text.
+
+* Reported in ["Advancing CTC-CRF Based End-to-End Speech Recognition with Wordpieces and Conformers"](https://arxiv.org/abs/2107.03007)
+
+* AM: Conformer with 25M parameters. SpecAug and 3-way perturbation is applied.
+* "Trans." in the table denotes the Transformer (indeed the interpolation with 4-gram).
+
+| Unit  | LM     | Test | Notes                        |
+| ----- | ------ | ---- | ---------------------------- |
+| char  | 4-gram | 12.7 | ---                          |
+| char  | Trans. | 11.6 | N-best with N=20, weight=0.8 |
+| phone | 4-gram | 10.7 | ---                          |
+| phone | Trans. | 10.0 | N-best with N=60, weight=0.8 |
+| wp    | 4-gram | 10.5 | ---                          |
+| wp    | Trans. | 9.8  | N-best with N=20, weight=0.8 |
+
+**Experiment**
+
+Kaldi setup:
+
+Since the commonvoice data are in `mp3` format, you need to modify the two files `utils/data/get_reco2dur.sh` and `utils/data/get_utt2dur.sh` by setting `read_entire_file=True`.
+
+* Phone-based system
+
+  ```shell
+  bash run.sh
+  ```
+
+* Char-based or wordpiece-based
+
+  ```shell
+  bash run_wp.sh
+  ```
+
+  Defautly the setup in `run_wp.sh` is for conducting wp experiment. To run the char-based one, you need to modify the `bpemode=unigram` to`bpemode=char`.
+
+For rescoring with "Trans.", please refer to `egs/libri/RESULT.md`.
+
