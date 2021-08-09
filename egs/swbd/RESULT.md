@@ -11,9 +11,9 @@ Results on Switchboard datasets.
 
 | Unit  | LM     | SW   | CH   | Eval2000 | Notes                              |
 | ----- | ------ | ---- | ---- | -------- | ---------------------------------- |
-| phone | 4-gram | 7.9  | 16.1 | 12.1     | ---                                |
+| phone | 4-gram | 7.9  | 16.1 | 12.1     | `exp\swbd_phone`                                |
 | phone | Trans. | 6.9  | 14.5 | 10.7     | N-best rescoring, N=40, weight=0.8 |
-| wp    | 4-gram | 8.7  | 16.5 | 12.7     | ---                                |
+| wp    | 4-gram | 8.7  | 16.5 | 12.7     | `exp\swbd_wp`                                |
 | wp    | Trans. | 7.2  | 14.8 | 11.1     | N-best rescoring, N=60, weight=0.8 |
 
 **Experiment**
