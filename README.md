@@ -63,10 +63,10 @@ Please cite CAT using:
 
   For easy maintenance of experiments and enforcing the reproducibility, we re-organize the code and strongly recommend to do experiments according to the [guideline](RequestForExperiments.md).
 
-  Compare of v2 and v1: 
+  Comparison between v2 and v1: 
 
 | Branch     | Flexible configuration | Easily reproduce | Distributed training | Chunk streaming model | Recipes                                            |
 | ---------- | ---------------------- | ---------------- | -------------------- | --------------------- | -------------------------------------------------- |
 | v1         |                        |                  | ✅                    | ✅                     | aishell, formosa, hkust, libri, swbd, thchs30, wsj |
-| v2(master) | ✅                      | ✅                | ✅                    |                       | swbd, wsj, libri, commonvoice                      |
+| v2 (master) | ✅                      | ✅                | ✅                    |                       | swbd, wsj, libri, commonvoice German                     |
 
