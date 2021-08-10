@@ -13,14 +13,14 @@ Results on [Mozilla Common Voice](https://commonvoice.mozilla.org/zh-CN) dataset
 * AM: Conformer with 25M parameters. SpecAug and 3-way perturbation is applied.
 * "Trans." in the table denotes the Transformer (indeed the interpolation with 4-gram).
 
-| Unit  | LM     | Test | Notes                        |
-| ----- | ------ | ---- | ---------------------------- |
-| char  | 4-gram | 12.7 | ---                          |
-| char  | Trans. | 11.6 | N-best with N=20, weight=0.8 |
-| phone | 4-gram | 10.7 | ---                          |
-| phone | Trans. | 10.0 | N-best with N=60, weight=0.8 |
-| wp    | 4-gram | 10.5 | ---                          |
-| wp    | Trans. | 9.8  | N-best with N=20, weight=0.8 |
+| Unit                     | LM     | Test | Notes                        |
+| ------------------------ | ------ | ---- | ---------------------------- |
+| [char](exp/cv_de_char/)  | 4-gram | 12.7 | ---                          |
+| char                     | Trans. | 11.6 | N-best with N=20, weight=0.8 |
+| [phone](exp/cv_de_phone) | 4-gram | 10.7 | ---                          |
+| phone                    | Trans. | 10.0 | N-best with N=60, weight=0.8 |
+| [wp](exp/cv_de_wp)       | 4-gram | 10.5 | ---                          |
+| wp                       | Trans. | 9.8  | N-best with N=20, weight=0.8 |
 
 **Experiment**
 

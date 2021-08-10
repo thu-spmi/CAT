@@ -9,12 +9,12 @@ Results on Switchboard datasets.
 * AM: Conformer with 52M parameters. SpecAug and 3-way perturbation is applied.
 * "Trans." in the table denotes the Transformer (indeed the interpolation with 4-gram).
 
-| Unit  | LM     | SW   | CH   | Eval2000 | Notes                              |
-| ----- | ------ | ---- | ---- | -------- | ---------------------------------- |
-| phone | 4-gram | 7.9  | 16.1 | 12.1     | `exp\swbd_phone`                                |
-| phone | Trans. | 6.9  | 14.5 | 10.7     | N-best rescoring, N=40, weight=0.8 |
-| wp    | 4-gram | 8.7  | 16.5 | 12.7     | `exp\swbd_wp`                                |
-| wp    | Trans. | 7.2  | 14.8 | 11.1     | N-best rescoring, N=60, weight=0.8 |
+| Unit                    | LM     | SW   | CH   | Eval2000 | Notes                              |
+| ----------------------- | ------ | ---- | ---- | -------- | ---------------------------------- |
+| [phone](exp/swbd_phone) | 4-gram | 7.9  | 16.1 | 12.1     | ---                                |
+| phone                   | Trans. | 6.9  | 14.5 | 10.7     | N-best rescoring, N=40, weight=0.8 |
+| [wp](exp/swbd_wp)       | 4-gram | 8.7  | 16.5 | 12.7     | ---                                |
+| wp                      | Trans. | 7.2  | 14.8 | 11.1     | N-best rescoring, N=60, weight=0.8 |
 
 **Experiment**
 
@@ -35,6 +35,7 @@ For rescoring with "Trans.", please refer to `egs/libri/RESULT.md`.
 ## VGG-BLSTM
 
 * AM: VGG-BLSTM with 16M parameters. 3-way perturbation is applied.
+* Hyper-parameters of AM training: `lamb=0.1, hdim=320, lr=0.001`
 
 | Unit  | SW   | CH   |
 | ----- | ---- | ---- |
@@ -43,6 +44,7 @@ For rescoring with "Trans.", please refer to `egs/libri/RESULT.md`.
 ## BLSTM
 
 * AM: BLSTM with 13M parameters.
+* Hyper-parameters of AM training: `lamb=0.1, hdim=320, lr=0.001`
 
 | Unit  | SW   | CH   | SP   |
 | ----- | ---- | ---- | ---- |

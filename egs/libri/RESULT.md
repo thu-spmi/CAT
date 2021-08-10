@@ -8,12 +8,12 @@ Results on Librispeech dataset.
 * AM: Conformer with 52M parameters. SpecAug is applied.
 * "Trans." in the table denotes the Transformer (indeed the interpolation with 4-gram).
 
-| Unit  | LM     | Test-clean | Test-other |
-| ----- | ------ | ---------- | ---------- |
-| phone | 4-gram | 3.61       | 8.10       |
-| phone | Trans. | 2.51       | 5.95       |
-| wp    | 4-gram | 3.59       | 8.37       |
-| wp    | Trans. | 2.54       | 6.33       |
+| Unit                     | LM     | Test-clean | Test-other |
+| ------------------------ | ------ | ---------- | ---------- |
+| [phone](exp/libri_phone) | 4-gram | 3.61       | 8.10       |
+| phone                    | Trans. | 2.51       | 5.95       |
+| [wp](exp/libri_wp)       | 4-gram | 3.59       | 8.37       |
+| wp                       | Trans. | 2.54       | 6.33       |
 
 **Experiment**
 
