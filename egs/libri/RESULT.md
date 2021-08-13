@@ -7,7 +7,7 @@ Results on Librispeech dataset.
 * Reported in ["Advancing CTC-CRF Based End-to-End Speech Recognition with Wordpieces and Conformers"](https://arxiv.org/abs/2107.03007)
 * AM: Conformer with 52M parameters. SpecAug is applied.
 * "Trans." in the table denotes the interpolation between 4-gram and Transformer LM.
-* Publicly available [Data](https://drive.google.com/file/d/1JYkyfgu9FaR-akvzukOj0ASiRtFe6aYE/view?usp=sharing) on Google Drive for phone-based system and wp-based system rescoring respectively, only `Nbest list` is provided since `data/lang` can be obtained from [returnn-experiments](https://github.com/rwth-i6/returnn-experiments/tree/master/2019-lm-transformers).
+* Data for phone-based system and wp-based system rescoring respectively is publicly available on [Google Drive](https://drive.google.com/file/d/1JYkyfgu9FaR-akvzukOj0ASiRtFe6aYE/view?usp=sharing), only `Nbest list` is inlcuded since `data/lang` can be obtained from [returnn-experiments](https://github.com/rwth-i6/returnn-experiments/tree/master/2019-lm-transformers).
 
 | Unit                     | LM     | Test-clean | Test-other |
 | ------------------------ | ------ | ---------- | ---------- |

@@ -10,7 +10,7 @@ Results on [Mozilla Common Voice](https://commonvoice.mozilla.org/zh-CN) dataset
 * Reported in ["Advancing CTC-CRF Based End-to-End Speech Recognition with Wordpieces and Conformers"](https://arxiv.org/abs/2107.03007)
 * AM: Conformer with 25M parameters. SpecAug and 3-way perturbation is applied.
 * "Trans." in the table denotes the interpolation between 4-gram and Transformer LM.
-* Publicly available [Data](https://drive.google.com/file/d/1W9gI0ziFUEgo4FN8eCP1h7utvf-f9dJo/view?usp=sharing) on Google Drive for phone-based system, char-based system and wp-based system rescoring respectively, including `data/lang_{phn,bpe}`, `Nbest list`. 
+* Data for phone-based system and wp-based system rescoring respectively is publicly available on [Google Drive](https://drive.google.com/file/d/1u4C25P21ZdhytgiZbBSsO-4XSg49QIeO/view?usp=sharing), including `data/lang_{phn,bpe}`, `Nbest list`. 
 
 | Unit                     | LM     | Test | Notes                        |
 | ------------------------ | ------ | ---- | ---------------------------- |

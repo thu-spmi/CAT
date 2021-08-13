@@ -7,7 +7,7 @@ Results on Switchboard datasets.
 * Reported in ["Advancing CTC-CRF Based End-to-End Speech Recognition with Wordpieces and Conformers"](https://arxiv.org/abs/2107.03007)
 * AM: Conformer with 52M parameters. SpecAug and 3-way perturbation is applied.
 * "Trans." in the table denotes the interpolation between 4-gram and Transformer LM.
-* Publicly avaiable [Data](https://drive.google.com/file/d/12NQn7an8FAjRVLkIlwHqeOjf6FBQMLz7/view?usp=sharing) on Google Drive for phone-based system and wp-based system rescoring respectively, including `data/lang_{phn,bpe}`, `Nbest list`.
+* Data for phone-based system and wp-based system rescoring respectively is publicly available on [Google Drive](https://drive.google.com/file/d/12NQn7an8FAjRVLkIlwHqeOjf6FBQMLz7/view?usp=sharing), including `data/lang_{phn,bpe}`, `Nbest list`.
 
 | Unit                    | LM     | SW   | CH   | Eval2000 | Notes                              |
 | ----------------------- | ------ | ---- | ---- | -------- | ---------------------------------- |
