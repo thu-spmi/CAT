@@ -13,7 +13,7 @@
 
 srcdir=data/local/train_nohup_sp
 dir=data/local/dict_bpe
-nbpe=150 # nbpe-3
+nbpe=150 
 bpemode=unigram
 bpemodel=$dir/train_${bpemode}
 unk_id=2
@@ -28,7 +28,7 @@ spm_train --input=$dir/train.txt --vocab_size=${nbpe} --bos_id=0 \
     --eos_id=1 --unk_id=$unk_id --model_type=${bpemode} --model_prefix=${bpemodel} \
     --input_sentence_size=100000000 --user_defined_symbols="[laughter],[noise]"\
     --unk_piece="[vocalized-noise]" --treat_whitespace_as_suffix=false --unk_surface="<unk>"
-#
+
 ## convert text into bpe id
 for x in train_nodup train_dev; do
     cp data/$x/text data/$x/text.pos
@@ -40,9 +40,8 @@ for x in train_nodup train_dev; do
     paste -d ' ' data/$x/text.uttid data/$x/text.id_tmp > data/$x/text.id
     paste -d ' ' data/$x/text.uttid data/$x/text.piece_tmp > data/$x/text.piece
 done
-#
-# get units.txt
 
+# get units.txt
 cat data/train_nodup/text.id | cut -f 2- -d ' ' | tr ' ' '\n' | tr 'A-Z' 'a-z' | sort -n \
     | uniq | grep -v '^0$' | grep -v '^1$' | awk '{print $1 " " NR}' > $dir/units.txt
 
@@ -61,4 +60,3 @@ grep -v '\[laughter|noise|vocalized-noise\]' $dir/units.txt > $dir/units_nosil.t
 utils/sym2int.pl -f 2- $dir/units.txt < $dir/lexicon.txt > $dir/lexicon_numbers.txt
 
 echo "Succeed in generating dict"
-

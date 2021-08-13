@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Modified by Wenjie Peng (wenjayep@gmail.com)
+# This script is adopted from kaldi, modified by Wenjie Peng (wenjayep@gmail.com)
 
 # This script is very similar to rnnlm/lmrescore_nbest.sh, and it performs N-best
 # LM rescoring with a Pytorch-trained neural LM.

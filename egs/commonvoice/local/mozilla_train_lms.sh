@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # To be run from one directory above this script.
-# This script is adopted from the aishell of Kaldi, modified by Chengrui Zhu.
+# This script is adopted from the aishell recipe of Kaldi, modified by Chengrui Zhu.
 
 #text=data/local/train/text
 #lexicon=data/local/dict/lexicon.txt 
