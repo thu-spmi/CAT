@@ -6,7 +6,8 @@ Results on Librispeech dataset.
 
 * Reported in ["Advancing CTC-CRF Based End-to-End Speech Recognition with Wordpieces and Conformers"](https://arxiv.org/abs/2107.03007)
 * AM: Conformer with 52M parameters. SpecAug is applied.
-* "Trans." in the table denotes the Transformer (indeed the interpolation with 4-gram).
+* "Trans." in the table denotes the interpolation between 4-gram and Transformer LM.
+* [Data](https://drive.google.com/file/d/1JYkyfgu9FaR-akvzukOj0ASiRtFe6aYE/view?usp=sharing) for phone-based system and wp-based system rescoring respectively, i.e. Nbest list.
 
 | Unit                     | LM     | Test-clean | Test-other |
 | ------------------------ | ------ | ---------- | ---------- |
@@ -31,12 +32,9 @@ Results on Librispeech dataset.
 
 **To reproduce our Trans. LM rescoring, you need to:**
 
-1. Download and configure `returnn` from https://github.com/rwth-i6/returnn.
-2. Download the 42-layer pretrained word-level Trans. LM from [1], and put `2019-lm-transformers/*` under `returnn/` directory.
+1. Download and configure `returnn` from [returnn](https://github.com/rwth-i6/returnn).
+2. Download the 42-layer pretrained word-level Trans. LM from [returnn-experiments](https://github.com/rwth-i6/returnn-experiments/tree/master/2019-lm-transformers), and put `2019-lm-transformers/*` under `returnn/` directory.
 3. Modify the path in `conf/rwth-nnlm.conf` and `local/pytorchnn/lmrescore_nbest_pytorchnn_rwth.sh` accordding to your systems.
 4. Copy `local/pytorchnn/lmrescore_nbest_pytorchnn_rwth.sh` to `steps/pytorchnn/`
 5. Replace `returnn/2019-lm-transformers/librispeech/word_200k_vocab/re_transfo_42_d00.sgd.lr1.cl1.small_batch.config` with `conf/rwth-nnlm.conf`
 
-**Reference**
-
-[1] https://github.com/rwth-i6/returnn-experiments/tree/master/2019-lm-transformers

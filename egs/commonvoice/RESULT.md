@@ -7,11 +7,10 @@ Results on [Mozilla Common Voice](https://commonvoice.mozilla.org/zh-CN) dataset
 ### Conformer+Transformer rescoring
 
 * Based on Mozilla Common Voice 5.1 with validated 692-hour speech and paired text.
-
 * Reported in ["Advancing CTC-CRF Based End-to-End Speech Recognition with Wordpieces and Conformers"](https://arxiv.org/abs/2107.03007)
-
 * AM: Conformer with 25M parameters. SpecAug and 3-way perturbation is applied.
-* "Trans." in the table denotes the Transformer (indeed the interpolation with 4-gram).
+* "Trans." in the table denotes the interpolation between 4-gram and Transformer LM.
+* [Data](https://drive.google.com/file/d/1W9gI0ziFUEgo4FN8eCP1h7utvf-f9dJo/view?usp=sharing) for char-based system, phone-based system and wp-based system rescoring respectively, i.e. Nbest list.
 
 | Unit                     | LM     | Test | Notes                        |
 | ------------------------ | ------ | ---- | ---------------------------- |
@@ -40,7 +39,7 @@ Since the commonvoice data are in `mp3` format, you need to modify the two files
   bash run_wp.sh
   ```
 
-  Defautly the setup in `run_wp.sh` is for conducting wp experiment. To run the char-based one, you need to modify the `bpemode=unigram` to`bpemode=char`.
+  The default setup in `run_wp.sh` is for wp-based experiment. To run the char-based one, you need to modify the `bpemode=unigram` to`bpemode=char`.
 
-For rescoring with "Trans.", please refer to `egs/libri/RESULT.md`.
+For rescoring with "Trans.", please refer to `local/pytorchnn/readme`.
 

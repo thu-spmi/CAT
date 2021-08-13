@@ -5,9 +5,9 @@ Results on Switchboard datasets.
 ## Conformer+Transformer rescoring
 
 * Reported in ["Advancing CTC-CRF Based End-to-End Speech Recognition with Wordpieces and Conformers"](https://arxiv.org/abs/2107.03007)
-
 * AM: Conformer with 52M parameters. SpecAug and 3-way perturbation is applied.
-* "Trans." in the table denotes the Transformer (indeed the interpolation with 4-gram).
+* "Trans." in the table denotes the interpolation between 4-gram and Transformer LM.
+* [Data](https://drive.google.com/file/d/12NQn7an8FAjRVLkIlwHqeOjf6FBQMLz7/view?usp=sharing) for phone-based system and wp-based system rescoring respectively, i.e. Nbest list.
 
 | Unit                    | LM     | SW   | CH   | Eval2000 | Notes                              |
 | ----------------------- | ------ | ---- | ---- | -------- | ---------------------------------- |
@@ -30,7 +30,7 @@ Results on Switchboard datasets.
   bash run_wp.sh
   ```
 
-For rescoring with "Trans.", please refer to `egs/libri/RESULT.md`.
+For rescoring with "Trans.", please refer to `local/pytorchnn/readme`.
 
 ## VGG-BLSTM
 
