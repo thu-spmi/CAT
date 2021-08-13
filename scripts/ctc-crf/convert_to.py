@@ -27,6 +27,10 @@ if __name__ == "__main__":
                         choices=["hdf5", "pickle"], default="pickle")
     parser.add_argument("-W", "--warning", action="store_true",
                         default=False)
+    parser.add_argument("--describe", type=str, default=None,
+                        help="Arithmetic expression used to describe sequence transformation by length. e.g. '(L+1)//3'")
+    parser.add_argument("--filer", type=int, default=-1,
+                        help="Allowing maximum length of sequences, otherwise which will be filtered out.")
     parser.add_argument("scp", type=str)
     parser.add_argument("label", type=str)
     parser.add_argument("weight", type=str)
@@ -68,7 +72,11 @@ if __name__ == "__main__":
             feature = kaldi_io.read_mat(value)
             feature = np.asarray(feature)
 
-            if feature.shape[0] < ctc_len(label):
+            described_length = int(
+                eval(args.describe.replace('L', str(feature.shape[0]))))
+            L_MAX = args.filer if args.filer > 0 else float('inf')
+
+            if described_length < ctc_len(label) or feature.shape[0] > L_MAX:
                 count += 1
                 continue
 

@@ -1,22 +1,22 @@
 {
     "net": {
-        "type": "BLSTM",
+        "type": "ConformerNet",
         "lossfn": "crf",
         "lamb": 0.01,
         "specaug_config": {
             "time_warp_window": 0.2,
             "freq_mask_width_range": 0.15,
             "num_freq_mask": 2,
-            "time_mask_width_range": 0.1,
-            "num_time_mask": 2,
-            "delta_feats": true
+            "time_mask_width_range": 0.05,
+            "num_time_mask": 2
         },
         "kwargs": {
-            "n_layers": 6,
-            "idim": 120,
-            "hdim": 320,
-            "num_classes": 72,
-            "dropout": 0.5
+            "num_cells": 16,
+            "idim": 80,
+            "hdim": 256,
+            "conv_multiplier": 256,
+            "num_classes": 56,
+            "delta_feats": false
         }
     },
     "scheduler": {
@@ -33,11 +33,11 @@
             }
         },
         "kwargs": {
-            "total_batch_size": 128,
-            "warmup_epoch": 6,
+            "total_batch_size": 256,
+            "warmup_epoch": 8,
             "refer_batch": 100,
             "refer_lr": 3e-4,
-            "lr_stop": 1e-6,
+            "lr_stop": 1e-5,
             "gamma": 0.3,
             "reverse_metric_direc": true
         }

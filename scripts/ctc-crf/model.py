@@ -199,7 +199,7 @@ class ConformerNet(nn.Module):
             kernel_size: int = 32,
             multiplier: int = 1,
             dropout: float = 0.1,
-            delta_feats=True):
+            delta_feats=False):
         super().__init__()
 
         if delta_feats:

@@ -1,0 +1,15 @@
+This directory is adopted from `kaldi/egs/swbd/s5c/local/pytorchnn`
+
+Before runing the Pytorch-based NNLM rescoring, make sure 
+1) all the steps in the `run.sh` have been executed properly.(It is a good practice to check 
+    the files inside the `exp` dir).
+2) config the parameters inside `local/pytorchnn/run_nnlm.sh` according to the generated data 
+    in your exp(See the comments inside `local/pytorchnn/*.sh` to know how to set the related 
+    parameters.).
+
+Then, to run the Pytorch-based NNLM rescoring, one just simply type:
+`bash local/pytorchnn/run_nnlm.sh`
+
+If you encounter anything wrong, the first thing is to check whether some parameters are configured
+properly(i.e. make sure the dir exists in your disk.). Otherwise, feel free to file an issue 
+and we will fix it ASAP.

@@ -1,0 +1,7 @@
+This directory is adopted from `kaldi/egs/swbd/s5c/local/pytorchnn`
+
+Please refer to `CAT/egs/swbd/local/pytorchnn/readme` on how to run the Pytorch-based NNLM rescoring.
+
+Note in this recipe, we replace the Pytorch-based NNLM model with RWTH pretrained 42-layer Transformer LM, 
+while keep other steps the same with the original Pytorch-based NNLM rescoring pipeline.
+Please refer to `../../RESULT.md` for a high-level information on how to run the Transformer LM rescoring.

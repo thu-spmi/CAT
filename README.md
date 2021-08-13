@@ -5,7 +5,7 @@
 * [Key Features](#Key-Features)
 * [Installation](#Installation)
 * [Quick start](#Quick-start)
-* [Changelog](#Changelog)
+* [DevLog](#DevLog)
 
 ## Overview
 
@@ -51,16 +51,22 @@ Please cite CAT using:
 * [Basic usage](RequestForExperiments.md#Workflow)
 * [Step-by-step workflow](toolkitworkflow.md)
 
-## Changelog
+## DevLog
+
+* 2021.07: add support of [Wordpieces](wordpieces.md) by Wenjie Peng.
+
+* 2021.05: add support of [Conformer](conformer.md) and SpecAug by Huahuan Zheng.
+
+* yyyy-mm-dd: add support of Deformable TDNNs by Keyu An.
 
 * CAT v2 (master branch)
 
   For easy maintenance of experiments and enforcing the reproducibility, we re-organize the code and strongly recommend to do experiments according to the [guideline](RequestForExperiments.md).
 
-  Compare of v2 and v1: 
+  Comparison between v2 and v1: 
 
 | Branch     | Flexible configuration | Easily reproduce | Distributed training | Chunk streaming model | Recipes                                            |
 | ---------- | ---------------------- | ---------------- | -------------------- | --------------------- | -------------------------------------------------- |
 | v1         |                        |                  | ✅                    | ✅                     | aishell, formosa, hkust, libri, swbd, thchs30, wsj |
-| v2(master) | ✅                      | ✅                | ✅                    |                       | swbd, wsj, libri                                          |
+| v2 (master) | ✅                      | ✅                | ✅                    |                       | swbd, wsj, libri, commonvoice German                     |
 

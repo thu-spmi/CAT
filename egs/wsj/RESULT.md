@@ -1,4 +1,4 @@
-# WSJ results
+# WSJ
 
 * SP: 3way speed perturbation
 
