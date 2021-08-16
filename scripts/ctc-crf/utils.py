@@ -7,6 +7,7 @@ Author: Zheng Huahuan (zhh20@mails.tsinghua.edu.cn)
 import os
 import time
 import json
+import math
 import shutil
 import scheduler
 from collections import OrderedDict
@@ -255,7 +256,6 @@ class Manager(object):
             self.model.train()
             if self.rank == 0 and not self.DEBUG:
                 self.log_export(args.ckptpath)
-                plot_monitor(args.dir.split('/')[-1])
                 plot_monitor(args.ckptpath)
 
             if state == 2:
@@ -332,13 +332,12 @@ def train(trainloader, epoch: int, args, manager: Manager):
         prefix="Epoch: [{}]".format(epoch))
 
     end = time.time()
+    fold = args.grad_accum_fold
+    assert fold >= 1
+    pre_steps = int(math.ceil(len(trainloader)/float(fold)) * (epoch-1))
 
+    optimizer.zero_grad()
     for i, minibatch in enumerate(trainloader):
-        if args.debug and i > 20:
-            if args.gpu == 0:
-                highlight_msg("In debug mode, quit training.")
-            dist.barrier()
-            break
         # measure data loading time
         logits, input_lengths, labels, label_lengths, path_weights = minibatch
         logits, labels, input_lengths, label_lengths = logits.cuda(
@@ -346,7 +345,6 @@ def train(trainloader, epoch: int, args, manager: Manager):
 
         data_time.update(time.time() - end)
 
-        optimizer.zero_grad()
         loss = model(logits, labels, input_lengths, label_lengths)
 
         with torch.no_grad():
@@ -359,24 +357,42 @@ def train(trainloader, epoch: int, args, manager: Manager):
 
         loss.backward()
 
-        optimizer.step()
-        scheduler.update_lr((epoch - 1) * len(trainloader) + i + 1)
+        # update every fold times and won't drop the last batch
+        if fold == 1 or (i+1) % fold == 0 or (i+1) == len(trainloader):
+            # for Adam optimizer, even though fold > 1, it's no need to normalize grad
+            # if using SGD, let grad = grad_accum / fold as following or use a new_lr = init_lr / fold
+            # if fold > 1:
+            #     for param in model.parameters():
+            #         if param.requires_grad:
+            #             param.grad.data /= fold
+            optimizer.step()
+            optimizer.zero_grad()
+            scheduler.update_lr(pre_steps + (i + 1)/fold)
 
-        # measure accuracy and record loss; item() can sync all processes.
-        tolog = [loss.item(), real_loss.item(),
-                 logits.size(0), time.time()-end]
-        end = time.time()
-        losses.update(tolog[0], tolog[2])
-        losses_real.update(tolog[1], tolog[2])
-        # measure elapsed time
-        batch_time.update(tolog[-1])
-        manager.log_update(
-            [epoch, tolog[0], tolog[1], scheduler.lr_cur, tolog[-1]], loc='log_train')
+            # measure accuracy and record loss; item() can sync all processes.
+            tolog = [loss.item(), real_loss.item(),
+                     logits.size(0), time.time()-end]
+            end = time.time()
+            losses.update(tolog[0], tolog[2])
+            losses_real.update(tolog[1], tolog[2])
+            # measure elapsed time
+            batch_time.update(tolog[-1])
+            manager.log_update(
+                [epoch, tolog[0], tolog[1], scheduler.lr_cur, tolog[-1]], loc='log_train')
 
-        if (i % args.print_freq == 0 or args.debug) and args.gpu == 0:
-            progress.display(i)
+            if ((i+1)/fold % args.print_freq == 0 or args.debug) and args.gpu == 0:
+                progress.display(i+1)
+
+            if args.debug and (i+1)/fold >= 20:
+                if args.gpu == 0:
+                    highlight_msg("In debug mode, quit training.")
+                dist.barrier()
+                break
+        else:
+            continue
 
 
+@torch.no_grad()
 def test(testloader, args, manager: Manager):
 
     model = manager.model
@@ -391,42 +407,41 @@ def test(testloader, args, manager: Manager):
 
     beg = time.time()
     end = time.time()
-    with torch.no_grad():
-        for i, minibatch in enumerate(testloader):
-            if args.debug and i > 20:
-                if args.gpu == 0:
-                    highlight_msg("In debug mode, quit evaluating.")
-                dist.barrier()
-                break
-            # measure data loading time
-            logits, input_lengths, labels, label_lengths, path_weights = minibatch
-            logits, labels, input_lengths, label_lengths = logits.cuda(
-                args.gpu, non_blocking=True), labels, input_lengths, label_lengths
-            path_weights = path_weights.cuda(args.gpu, non_blocking=True)
+    for i, minibatch in enumerate(testloader):
+        if args.debug and i >= 20:
+            if args.gpu == 0:
+                highlight_msg("In debug mode, quit evaluating.")
+            dist.barrier()
+            break
+        # measure data loading time
+        logits, input_lengths, labels, label_lengths, path_weights = minibatch
+        logits, labels, input_lengths, label_lengths = logits.cuda(
+            args.gpu, non_blocking=True), labels, input_lengths, label_lengths
+        path_weights = path_weights.cuda(args.gpu, non_blocking=True)
 
-            data_time.update(time.time() - end)
+        data_time.update(time.time() - end)
 
-            loss = model(logits, labels, input_lengths, label_lengths)
+        loss = model(logits, labels, input_lengths, label_lengths)
 
-            if args.iscrf:
-                weight = torch.mean(path_weights)
-                real_loss = loss - weight
-            else:
-                real_loss = loss
+        if args.iscrf:
+            weight = torch.mean(path_weights)
+            real_loss = loss - weight
+        else:
+            real_loss = loss
 
-            dist.all_reduce(real_loss, dist.ReduceOp.SUM)
-            real_loss = real_loss / dist.get_world_size()
+        dist.all_reduce(real_loss, dist.ReduceOp.SUM)
+        real_loss = real_loss / dist.get_world_size()
 
-            # measure accuracy and record loss
-            losses_real.update(real_loss.item(), logits.size(0))
+        # measure accuracy and record loss
+        losses_real.update(real_loss.item(), logits.size(0))
 
-            # measure elapsed time
-            batch_time.update(time.time() - end)
+        # measure elapsed time
+        batch_time.update(time.time() - end)
 
-            end = time.time()
+        end = time.time()
 
-            if (i % args.print_freq == 0 or args.debug) and args.gpu == 0:
-                progress.display(i)
+        if ((i+1) % args.print_freq == 0 or args.debug) and args.gpu == 0:
+            progress.display(i+1)
 
     manager.log_update(
         [losses_real.avg, time.time() - beg], loc='log_eval')

@@ -4,7 +4,7 @@ Apache 2.0.
 Author: Hongyu Xiang, Keyu An, Zheng Huahuan
 """
 
-import kaldi_io
+import kaldiio
 import numpy as np
 import argparse
 import utils
@@ -62,19 +62,18 @@ if __name__ == "__main__":
         pickle_dataset = []
 
     count = 0
+    L_MAX = args.filer if args.filer > 0 else float('inf')
+    num_lines = sum(1 for line in open(args.scp, 'r'))
     with open(args.scp, 'r') as fi:
-        lines = fi.readlines()
-        for line in tqdm(lines):
-            key, value = line.split()
+        for line in tqdm(fi, total=num_lines):
+            key, loc_ark = line.split()
 
             label = label_dict[key]
             weight = weight_dict[key]
-            feature = kaldi_io.read_mat(value)
-            feature = np.asarray(feature)
+            feature = kaldiio.load_mat(loc_ark)
 
             described_length = int(
                 eval(args.describe.replace('L', str(feature.shape[0]))))
-            L_MAX = args.filer if args.filer > 0 else float('inf')
 
             if described_length < ctc_len(label) or feature.shape[0] > L_MAX:
                 count += 1
@@ -85,7 +84,7 @@ if __name__ == "__main__":
                 dset.attrs['label'] = label
                 dset.attrs['weight'] = weight
             else:
-                pickle_dataset.append([key, value, label, weight])
+                pickle_dataset.append([key, loc_ark, label, weight])
 
     print(f"Remove {count} unqualified sequences in total.")
     if args.format == "pickle":

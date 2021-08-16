@@ -35,7 +35,8 @@ def main(args):
     os.makedirs(args.dir+'/ckpt', exist_ok=True)
     setattr(args, 'ckptpath', args.dir+'/ckpt')
     if os.listdir(args.ckptpath) != [] and not args.debug and args.resume is None:
-        raise FileExistsError(f"{args.ckptpath} is not empty! Refuse to run the experiment.")
+        raise FileExistsError(
+            f"{args.ckptpath} is not empty! Refuse to run the experiment.")
 
     ngpus_per_node = torch.cuda.device_count()
     args.world_size = ngpus_per_node * args.world_size
@@ -64,10 +65,14 @@ def main_worker(gpu, ngpus_per_node, args):
         data_format = "pickle"
         Dataset = DataSet.SpeechDatasetPickle
 
-    tr_set = Dataset(
-        f"{args.data}/{data_format}/tr.{data_format}")
-    test_set = Dataset(
-        f"{args.data}/{data_format}/cv.{data_format}")
+    if args.trset is None:
+        args.trset = os.path.join(args.data, f'{data_format}/tr.{data_format}')
+    if args.devset is None:
+        args.devset = os.path.join(
+            args.data, f'{data_format}/cv.{data_format}')
+
+    tr_set = Dataset(args.trset)
+    test_set = Dataset(args.devset)
     print("Data prepared.")
 
     train_sampler = DistributedSampler(tr_set)
@@ -209,8 +214,14 @@ if __name__ == "__main__":
 
     parser.add_argument("--data", type=str, default=None,
                         help="Location of training/testing data.")
+    parser.add_argument("--trset", type=str, default=None,
+                        help="Location of training data. Default: <data>/[pickle|hdf5]/tr.[pickle|hdf5]")
+    parser.add_argument("--devset", type=str, default=None,
+                        help="Location of dev data. Default: <data>/[pickle|hdf5]/cv.[pickle|hdf5]")
     parser.add_argument("--dir", type=str, default=None, metavar='PATH',
                         help="Directory to save the log and model files.")
+    parser.add_argument("--grad-accum-fold", type=int, default=1,
+                        help="Utilize gradient accumulation for K times. Default: K=1")
 
     parser.add_argument('-p', '--print-freq', default=10, type=int,
                         metavar='N', help='print frequency (default: 10)')

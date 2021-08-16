@@ -1,0 +1,6 @@
+tqdm
+h5py
+matplotlib
+pandas
+sentencepiece
+kaldiio
