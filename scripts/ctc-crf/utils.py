@@ -256,6 +256,7 @@ class Manager(object):
             if self.rank == 0 and not self.DEBUG:
                 self.log_export(args.ckptpath)
                 plot_monitor(args.dir.split('/')[-1])
+                plot_monitor(args.ckptpath)
 
             if state == 2:
                 print("Break: GPU[%d]" % self.rank)
@@ -334,7 +335,7 @@ def train(trainloader, epoch: int, args, manager: Manager):
 
     for i, minibatch in enumerate(trainloader):
         if args.debug and i > 20:
-            if args.gpu==0:
+            if args.gpu == 0:
                 highlight_msg("In debug mode, quit training.")
             dist.barrier()
             break
@@ -393,7 +394,7 @@ def test(testloader, args, manager: Manager):
     with torch.no_grad():
         for i, minibatch in enumerate(testloader):
             if args.debug and i > 20:
-                if args.gpu==0:
+                if args.gpu == 0:
                     highlight_msg("In debug mode, quit evaluating.")
                 dist.barrier()
                 break

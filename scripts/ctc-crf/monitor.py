@@ -13,15 +13,35 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 
-def plot_monitor(task: str, interactive_show=False):
+def plot_monitor(log_path: str = None, train_log: str = 'log_train.csv', dev_log: str = 'log_eval.csv', task: str = None, interactive_show=False):
+    """Plot the monitor log files
 
-    train_log = f'exp/{task}/ckpt/log_train.csv'
-    dev_log = f'exp/{task}/ckpt/log_eval.csv'
+    Args:
+        log_path (str, optional): directory of log files
+        train_log (str, optional): location/name of training log file
+            if `log_path` is not None, would be `log_path/train_log`
+        dev_log (str, optional): location/name of dev log file
+            if `log_path` is not None, would be `log_path/dev_log`
+        task (str, optional): task name (title of ploting)
+        interactive_show (bool, optional): specify whether plot in interactive mode. Default False. 
+    """
+
+    if log_path is not None:
+        if not os.path.isdir(log_path):
+            raise NotADirectoryError(f"{log_path} is not a directory.")
+            pass
+        train_log = os.path.join(log_path, train_log)
+        dev_log = os.path.join(log_path, dev_log)
 
     if not os.path.isfile(train_log):
         raise FileNotFoundError(f"'{train_log}' doesn't exist!")
     if not os.path.isfile(dev_log):
         raise FileNotFoundError(f"'{dev_log}' doesn't exist!")
+
+    if task is None:
+        task = train_log.split('/')[-2]
+
+    direc = os.path.dirname(train_log)
 
     df_train = pd.read_csv(train_log)
     df_eval = pd.read_csv(dev_log)
@@ -132,8 +152,7 @@ def plot_monitor(task: str, interactive_show=False):
     ]
     plt.suptitle('\n'.join(titles))
     plt.tight_layout()
-    plt.savefig(f'exp/{task}/monitor.png', dpi=300)
-    print(f'> Saved at exp/{task}/monitor.png')
+    plt.savefig(os.path.join(direc, 'monitor.png'), dpi=300)
     if interactive_show:
         plt.show()
     else:
@@ -145,10 +164,11 @@ def plot_monitor(task: str, interactive_show=False):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        raise ValueError("Please input the experiment name.")
+        raise ValueError("Please specify the experiment directory.")
 
-    task = sys.argv[1].strip('/').split('/')[-1]
-    assert os.path.isdir(
-        f'exp/{task}'), f"\'exp/{task}\' is not a valid directory!"
-
-    plot_monitor(task)
+    loc = sys.argv[1]
+    try:
+        plot_monitor(loc)
+    except FileNotFoundError:
+        print("Log files not found in {0}, try to find {0}/ckpt".format(loc))
+        plot_monitor(os.path.join(loc, 'ckpt'))
