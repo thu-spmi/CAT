@@ -255,7 +255,7 @@ class TimeWarp(torch.nn.Module):
                 _y = time_warp(spec[i*ch:i*ch+ch][:, :spec_lengths[i], :],
                                window=int(spec_lengths[i]*self.window))
                 ys.append(_y)
-            y = pad_list(ys, 0.0, dim=1)
+            y = utils.pad_list(ys, 0.0, dim=1)
 
         y = y.view(*org_size)
 

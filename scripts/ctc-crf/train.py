@@ -14,7 +14,6 @@ import argparse
 import numpy as np
 import model as model_zoo
 import dataset as DataSet
-from _specaug import SpecAug
 from collections import OrderedDict
 
 import torch
@@ -119,13 +118,12 @@ def main_worker(gpu, ngpus_per_node, args):
 
 
 class CAT_Model(nn.Module):
-    def __init__(self, NET=None, fn_loss='crf', lamb: float = 0.1, net_kwargs: dict = None, sepcaug: nn.Module = None):
+    def __init__(self, NET=None, fn_loss='crf', lamb: float = 0.1, net_kwargs: dict = None):
         super().__init__()
         if NET is None:
             return None
 
         self.infer = NET(**net_kwargs)
-        self.specaug = sepcaug
 
         if fn_loss == "ctc":
             self.loss_fn = utils.CTCLoss()
@@ -173,15 +171,8 @@ def build_model(args, configuration, train=True) -> nn.Module:
     else:
         lamb = netconfigs['lamb']
 
-    if 'specaug_config' not in netconfigs:
-        specaug = None
-        if args.rank == 0:
-            utils.highlight_msg("Disable SpecAug.")
-    else:
-        specaug = SpecAug(**netconfigs['specaug_config'])
-
     setattr(args, 'iscrf', lossfn == 'crf')
-    model = CAT_Model(net, lossfn, lamb, net_kwargs, specaug)
+    model = CAT_Model(net, lossfn, lamb, net_kwargs)
 
     torch.cuda.set_device(args.gpu)
     model.cuda(args.gpu)
