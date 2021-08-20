@@ -534,3 +534,121 @@ class _LSTM(nn.Module):
         out, olens = pad_packed_sequence(packed_output, batch_first=True)
 
         return out, olens
+
+    
+class DeformTDNNlayer(nn.Module):
+    def __init__(self, idim=120, hdim=640, dropout=0.5, kernel_size=5, dilation=1, padding=2, stride=1, bias=None, modulation=False, low_latency=False):
+        """
+        Keyu An, Yi Zhang, Zhijian Ou, "Deformable TDNN with adaptive receptive fields for speech recognition", INTERSPEECH 2021.
+        
+        Args:
+            modulation (bool, optional): If True, Modulated Defomable Convolution (Deformable ConvNets v2).
+        """
+        super(DeformTDNNlayer, self).__init__()
+        self.kernel_size = kernel_size
+        self.dilation = dilation
+        self.padding = padding
+        self.stride = stride
+        self.zero_padding = nn.ZeroPad2d(padding)
+        self.conv = nn.Conv1d(idim, hdim, kernel_size=kernel_size, stride=kernel_size, bias=bias)
+
+        self.p_conv = nn.Conv1d(idim, kernel_size, kernel_size=5, padding=2, stride=stride)
+        nn.init.constant_(self.p_conv.weight, 0)
+        self.p_conv.register_backward_hook(self._set_lr)
+
+        self.modulation = modulation
+        self.low_latency = low_latency
+        if low_latency:
+            print("low latency")
+        setattr(self, "dropout", torch.nn.Dropout(dropout))
+        if modulation:
+            print("use modulation !")
+            self.m_conv = nn.Conv1d(idim, kernel_size, kernel_size=5, padding=2, stride=stride)
+            nn.init.constant_(self.m_conv.weight, 0)
+            self.m_conv.register_backward_hook(self._set_lr)
+
+    @staticmethod
+    def _set_lr(module, grad_input, grad_output):
+        grad_input = (grad_input[i] * 0.1 for i in range(len(grad_input)))
+        grad_output = (grad_output[i] * 0.1 for i in range(len(grad_output)))
+
+    def forward(self, x):
+        l = x.size(1)
+        c = x.size(2)
+        x =x.transpose(1, 2)
+        offset = self.p_conv(x)
+        
+        if self.low_latency:
+            zero = torch.zeros_like(offset)
+            offset = torch.where(offset > 0, zero, offset)
+        
+        if self.modulation:
+            m = torch.sigmoid(self.m_conv(x))
+
+        dtype = offset.data.type()
+        ks = self.kernel_size
+        N = offset.size(1)
+
+
+        p = self._get_p(ks, l, c, offset, dtype, self.dilation)
+        p = p.contiguous().permute(0, 2, 1)
+        p = torch.clamp(p, 0, x.size(2)-1)
+        q_l = p.detach().floor().long()
+        q_r = q_l + 1
+        q_l = torch.clamp(q_l, 0, x.size(2)-1)
+        q_r = torch.clamp(q_r, 0, x.size(2)-1)
+        g_l = (1 + (q_l.type_as(p) - p))
+        g_r = (1 - (q_r.type_as(p) - p))
+        x_q_l = self._get_x_q(x, q_l, N)
+        x_q_r = self._get_x_q(x, q_r, N)
+        x_offset = g_l.unsqueeze(dim=1) * x_q_l + \
+                   g_r.unsqueeze(dim=1) * x_q_r
+        if self.modulation:
+            m = m.contiguous().permute(0, 2, 1)
+            m = m.unsqueeze(dim=1)
+            m = torch.cat([m for _ in range(x_offset.size(1))], dim=1)
+            x_offset *= m
+
+        x_offset = self._reshape_x_offset(x_offset, ks)
+        out = self.conv(x_offset)
+        out = F.relu(out, inplace=True)
+        out = out.transpose(1, 2)
+        out = F.layer_norm(out, [out.size()[-1]])
+        dropout = getattr(self, 'dropout')
+        out = dropout(out)
+        return out
+
+    def _get_p_n(self, N, dtype, dilation):
+        p_n = torch.arange(-(self.kernel_size-1)*dilation//2, (self.kernel_size-1)*dilation//2+1,dilation)
+        p_n = p_n.view(1, N, 1).type(dtype)
+
+        return p_n
+
+    def _get_p_0(self, l, c, N, dtype):
+        p_0 = torch.arange(0, l*self.stride, self.stride)
+        p_0 = torch.flatten(p_0).view(1, 1, l).repeat(1, N, 1)
+
+        return p_0.type(dtype)
+
+    def _get_p(self, ks, l, c, offset, dtype,dilation):
+        p_n = self._get_p_n(ks, dtype, dilation)
+        p_0 = self._get_p_0(l, c, ks, dtype)
+        p = p_0 + p_n + offset
+        return p
+
+    def _get_x_q(self, x, q, N):
+        b, l,  _ = q.size()
+        c = x.size(1)
+        x = x.contiguous().view(b, c, -1)
+        index = q
+        index = index.contiguous().unsqueeze(dim=1).expand(-1, c, -1, -1).contiguous().view(b, c, -1)
+        x_offset = x.gather(dim=-1, index=index).contiguous().view(b, c, l, N)
+
+        return x_offset
+
+    @staticmethod
+    def _reshape_x_offset(x_offset, ks):
+        b, c, l, N = x_offset.size()
+        x_offset = torch.cat([x_offset[..., s:s+ks].contiguous().view(b, c, l*ks) for s in range(0, N, ks)], dim=-1)
+        x_offset = x_offset.contiguous().view(b, c, l*ks)
+        return x_offset
