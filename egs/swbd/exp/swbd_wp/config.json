@@ -3,13 +3,6 @@
         "type": "ConformerNet",
         "lossfn": "crf",
         "lamb": 0.01,
-        "specaug_config": {
-            "time_warp_window": 0.2,
-            "freq_mask_width_range": 0.15,
-            "num_freq_mask": 2,
-            "time_mask_width_range": 0.05,
-            "num_time_mask": 2
-        },
         "kwargs": {
             "num_cells": 16,
             "idim": 80,
@@ -21,6 +14,13 @@
             "res_factor": 0.3,
             "delta_feats": false
         }
+    },
+    "specaug_config": {
+        "time_warp_window": 0.2,
+        "freq_mask_width_range": 0.15,
+        "num_freq_mask": 2,
+        "time_mask_width_range": 0.05,
+        "num_time_mask": 2
     },
     "scheduler": {
         "type": "SchedulerTransformerEarlyStop",

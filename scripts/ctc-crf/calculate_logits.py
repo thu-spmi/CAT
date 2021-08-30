@@ -5,13 +5,14 @@ Author: Hongyu Xiang, Keyu An, Zheng Huahuan
 """
 
 import json
-import utils
+import coreutils
 import argparse
-import kaldi_io
+import kaldiio
 import numpy as np
 from tqdm import tqdm
 from train import build_model
 from dataset import InferDataset
+from collections import OrderedDict
 
 from torch.utils.data.distributed import DistributedSampler
 from torch.utils.data import DataLoader
@@ -22,7 +23,7 @@ import torch.multiprocessing as mp
 
 def main(args):
     if not torch.cuda.is_available():
-        utils.highlight_msg("Using CPU.")
+        coreutils.highlight_msg("Using CPU")
         single_worker('cpu', args.nj, args)
         return None
 
@@ -31,8 +32,11 @@ def main(args):
     print(f"> Global number of GPUs: {args.world_size}")
     num_jobs = args.nj
     if num_jobs <= ngpus_per_node:
-        utils.highlight_msg(
-            f"Number of jobs (--nj={num_jobs}) is too small.\nUse only one GPU for avoiding errors.")
+        coreutils.highlight_msg(
+            [
+                f"Number of jobs (--nj={num_jobs}) is too small",
+                "Use only one GPU for avoiding errors"
+            ])
         single_worker("cuda:0", num_jobs, args)
         return None
 
@@ -45,7 +49,8 @@ def main(args):
         return None
     else:
         # This is a hack for non-divisible length of data to number of GPUs
-        utils.highlight_msg("Using hack to deal with undivisible data length.")
+        coreutils.highlight_msg(
+            "Using hack to deal with undivisible seq length")
         mp.spawn(main_worker, nprocs=ngpus_per_node,
                  args=(ngpus_per_node, args, num_jobs-1))
         single_worker("cuda:0", 1, args, len(inferset)-res)
@@ -61,8 +66,8 @@ def main_worker(gpu, ngpus_per_node, args, num_jobs):
         world_size=args.world_size, rank=args.rank)
 
     world_size = dist.get_world_size()
-    local_writers = [open(f"{args.output_dir}/decode.{i+1}.ark", "wb")
-                     for i in range(args.rank, num_jobs, world_size)]
+    local_writers = [
+        f"{args.output_dir}/decode.{i+1}.ark" for i in range(args.rank, num_jobs, world_size)]
 
     inferset = InferDataset(args.input_scp)
     res = len(inferset) % args.world_size
@@ -84,16 +89,16 @@ def main_worker(gpu, ngpus_per_node, args, num_jobs):
 
     torch.cuda.set_device(args.gpu)
     model.cuda(args.gpu)
-    model.load_state_dict(torch.load(
-        args.resume, map_location=f"cuda:{args.gpu}"))
     model = torch.nn.parallel.DistributedDataParallel(
         model, device_ids=[args.gpu])
+
+    load_checkpoint(model, args.resume, loc=f"cuda:{args.gpu}")
     model.eval()
 
     if args.rank == 0:
         print("> Model built.")
         print("  Model size:{:.2f}M".format(
-            utils.count_parameters(model)/1e6))
+            coreutils.count_parameters(model)/1e6))
 
     cal_logit(model, testloader, args.gpu, local_writers)
 
@@ -101,10 +106,10 @@ def main_worker(gpu, ngpus_per_node, args, num_jobs):
 def single_worker(device, num_jobs, args, idx_beg=0):
 
     if idx_beg > 0 and num_jobs == 1:
-        local_writers = [open(f"{args.output_dir}/decode.{args.nj}.ark", 'wb')]
+        local_writers = [f"{args.output_dir}/decode.{args.nj}.ark"]
     else:
-        local_writers = [open(f"{args.output_dir}/decode.{i+1}.ark", 'wb')
-                         for i in range(num_jobs)]
+        local_writers = [
+            f"{args.output_dir}/decode.{i+1}.ark" for i in range(num_jobs)]
 
     inferset = InferDataset(args.input_scp)
     inferset.dataset = inferset.dataset[idx_beg:]
@@ -119,39 +124,65 @@ def single_worker(device, num_jobs, args, idx_beg=0):
     model = build_model(args, configures, train=False)
 
     model = model.to(device)
-    model.load_state_dict(torch.load(
-        args.resume, map_location=device))
+    load_checkpoint(model, args.resume, loc=device)
+
     model.eval()
 
     print("> Model built.")
     print("  Model size:{:.2f}M".format(
-        utils.count_parameters(model)/1e6))
+        coreutils.count_parameters(model)/1e6))
 
     cal_logit(model, testloader, device, local_writers)
 
 
+@torch.no_grad()
 def cal_logit(model, testloader, device, local_writers):
     results = []
-    with torch.no_grad():
-        for batch in tqdm(testloader):
-            key, x, x_lens = batch
-            x_lens = x_lens.flatten()
-            x = x.to(device, non_blocking=True)
-            netout, _ = model.forward(x, x_lens)
+    for batch in tqdm(testloader):
+        key, x, x_lens = batch
+        x_lens = x_lens.flatten()
+        x = x.to(device, non_blocking=True)
+        netout, _ = model.forward(x, x_lens)
 
-            r = netout.cpu().data.numpy()
-            r[r == -np.inf] = -1e16
-            r = r[0]
-            results.append((r, key[0]))
+        r = netout.cpu().data.numpy()
+        r[r == -np.inf] = -1e16
+        r = r[0]
+        results.append((key[0], r))
 
     num_local_writers = len(local_writers)
-    for i, (r, utt) in enumerate(results):
-        kaldi_io.write_mat(
-            local_writers[i % num_local_writers], r, key=utt)
+    len_interval = len(results)//num_local_writers
+    split_results = [
+        results[i*len_interval:(i+1)*len_interval] for i in range(num_local_writers)]
+    split_results[-1] += results[num_local_writers*len_interval:]
 
-    for write in local_writers:
-        write.close()
+    for writer, result in zip(local_writers, split_results):
+        kaldiio.save_ark(writer, dict(result))
+
     return None
+
+
+def load_checkpoint(model, path_ckpt, loc='cpu'):
+
+    checkpoint = torch.load(path_ckpt, map_location=loc)
+    state_dict = OrderedDict()
+    if 'module.' != next(iter(checkpoint['model'].keys()))[:7]:
+        # old version
+        if isinstance(model, torch.nn.parallel.DistributedDataParallel):
+            for k, v in checkpoint['model'].items():
+                # add the 'module.' prefix
+                state_dict['module.'+k] = v
+        else:
+            state_dict = checkpoint['model']
+    elif isinstance(model, torch.nn.parallel.DistributedDataParallel):
+        for k, v in checkpoint['model'].items():
+            # remove the 'infer.'
+            state_dict[k.replace('infer.', '')] = v
+    else:
+        for k, v in checkpoint['model'].items():
+            # remove the 'module.'
+            state_dict[k.replace('module.infer.', '')] = v
+    model.load_state_dict(state_dict)
+    return model
 
 
 if __name__ == "__main__":

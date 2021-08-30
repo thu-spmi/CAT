@@ -4,13 +4,14 @@ Apache 2.0.
 Author: Hongyu Xiang, Keyu An, Zheng Huahuan
 """
 
-import kaldi_io
+import kaldiio
 import numpy as np
 import argparse
-import utils
+import coreutils
 import pickle
 import h5py
 from tqdm import tqdm
+from typing import Callable
 
 
 def ctc_len(label):
@@ -39,8 +40,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.warning:
-        utils.highlight_msg(
-            "Calculation of CTC loss requires the input sequence to be longer than ctc_len(labels).\nCheck that in 'ctc-crf/convert_to.py' if your model does subsampling on seq.\nMake your modify at line 'if feature.shape[0] < ctc_len(label):' to filter unqualified seq.\nIf you have already done, ignore this.")
+        coreutils.highlight_msg([
+            "Calculation of CTC loss requires the input sequence to be longer than ctc_len(labels)",
+            "Check that in 'ctc-crf/convert_to.py' if your model does subsampling on seq",
+            "Make your modify at line 'if feature.shape[0] < ctc_len(label):' to filter unqualified seq",
+            "If you have already done, ignore this."])
 
     label_dict = {}
     with open(args.label, 'r') as fi:
@@ -62,21 +66,22 @@ if __name__ == "__main__":
         pickle_dataset = []
 
     count = 0
+    L_MAX = args.filer if args.filer > 0 else float('inf')
+    num_lines = sum(1 for line in open(args.scp, 'r'))
+    if args.describe is None:
+        def formated_L(x): return x
+    else:
+        # type: Callable[[int], int]
+        formated_L = eval(f'lambda L: {args.describe}')
     with open(args.scp, 'r') as fi:
-        lines = fi.readlines()
-        for line in tqdm(lines):
-            key, value = line.split()
+        for line in tqdm(fi, total=num_lines):
+            key, loc_ark = line.split()
 
             label = label_dict[key]
             weight = weight_dict[key]
-            feature = kaldi_io.read_mat(value)
-            feature = np.asarray(feature)
+            feature = kaldiio.load_mat(loc_ark)
 
-            described_length = int(
-                eval(args.describe.replace('L', str(feature.shape[0]))))
-            L_MAX = args.filer if args.filer > 0 else float('inf')
-
-            if described_length < ctc_len(label) or feature.shape[0] > L_MAX:
+            if formated_L(feature.shape[0]) < ctc_len(label) or feature.shape[0] > L_MAX:
                 count += 1
                 continue
 
@@ -85,7 +90,7 @@ if __name__ == "__main__":
                 dset.attrs['label'] = label
                 dset.attrs['weight'] = weight
             else:
-                pickle_dataset.append([key, value, label, weight])
+                pickle_dataset.append([key, loc_ark, label, weight])
 
     print(f"Remove {count} unqualified sequences in total.")
     if args.format == "pickle":

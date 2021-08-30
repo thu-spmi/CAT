@@ -59,8 +59,6 @@ Please cite CAT using:
 
 * 2021.05: add support of [Conformer](conformer.md) and SpecAug by Huahuan Zheng.
 
-* yyyy-mm-dd: add support of Deformable TDNNs by Keyu An.
-
 * CAT v2 (master branch)
 
   For easy maintenance of experiments and enforcing the reproducibility, we re-organize the code and strongly recommend to do experiments according to the [guideline](RequestForExperiments.md).

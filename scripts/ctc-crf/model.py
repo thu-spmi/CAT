@@ -7,14 +7,11 @@ In this file, we define universal models
 """
 
 import numpy as np
-import six
-import utils
 import _layers as nnlayers
 from collections import OrderedDict
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 
 def get_vgg2l_odim(idim, in_channel=1, out_channel=128):
@@ -216,7 +213,7 @@ class ConformerNet(nn.Module):
             cell = nnlayers.ConformerCell(
                 hdim, res_factor, d_head, num_heads, kernel_size, multiplier, dropout)
             self.cells.append(cell)
-            # Note that this is somewhat hard-code style
+            # FIXME: Note that this is somewhat hard-code style
             cell.mhsam.mha.pe = pe
         self.classifier = nn.Linear(hdim, num_classes)
 

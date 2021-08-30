@@ -4,11 +4,13 @@ Apache 2.0.
 Author: Hongyu Xiang, Keyu An, Zheng Huahuan (zhh20@mails.tsinghua.edu.cn)
 """
 
-import kaldi_io
+import os
+import kaldiio
 import h5py
-import utils
+import coreutils
 import pickle
-import numpy as np
+from kaldiio import ReadHelper
+from typing import Union, Tuple, Sequence
 
 import torch
 from torch.utils.data import Dataset
@@ -17,21 +19,23 @@ from torch.utils.data import Dataset
 class SpeechDataset(Dataset):
     def __init__(self, h5py_path):
         self.h5py_path = h5py_path
+        self.dataset = None
         hdf5_file = h5py.File(h5py_path, 'r')
-        self.keys = hdf5_file.keys()
-        hdf5_file.close()
+        self.keys = list(hdf5_file.keys())
 
     def __len__(self):
         return len(self.keys)
 
     def __getitem__(self, idx):
-        hdf5_file = h5py.File(self.h5py_path, 'r')
-        dataset = hdf5_file[self.keys[idx]]
-        mat = dataset.value
+        if self.dataset is None:
+            self.dataset = h5py.File(self.h5py_path, 'r')
+
+        dataset = self.dataset[self.keys[idx]]
+        mat = dataset[:]
         label = dataset.attrs['label']
         weight = dataset.attrs['weight']
-        hdf5_file.close()
-        return torch.FloatTensor(mat), torch.IntTensor(label), torch.FloatTensor(weight)
+
+        return torch.tensor(mat, dtype=torch.float), torch.IntTensor(label), torch.tensor(weight, dtype=torch.float)
 
 
 class SpeechDatasetMem(Dataset):
@@ -45,7 +49,7 @@ class SpeechDatasetMem(Dataset):
           label = dataset.attrs['label']
           weight = dataset.attrs['weight']
           self.data_batch.append(
-              [torch.FloatTensor(mat), torch.IntTensor(label), torch.FloatTensor(weight)])
+              [torch.tensor(mat, dtype=torch.float), torch.IntTensor(label), torch.tensor(weight, dtype=torch.float)])
 
         hdf5_file.close()
         print("read all data into memory")
@@ -67,8 +71,8 @@ class SpeechDatasetPickle(Dataset):
 
     def __getitem__(self, idx):
         key, feature_path, label, weight = self.dataset[idx]
-        mat = np.array(kaldi_io.read_mat(feature_path))
-        return torch.FloatTensor(mat), torch.IntTensor(label), torch.FloatTensor(weight)
+        mat = kaldiio.load_mat(feature_path)
+        return torch.tensor(mat, dtype=torch.float), torch.IntTensor(label), torch.tensor(weight, dtype=torch.float)
 
 
 class SpeechDatasetMemPickle(Dataset):
@@ -80,9 +84,9 @@ class SpeechDatasetMemPickle(Dataset):
 
         for data in self.dataset:
             key, feature_path, label, weight = data
-            mat = np.array(kaldi_io.read_mat(feature_path))
+            mat = kaldiio.load_mat(feature_path)
             self.data_batch.append(
-                [torch.FloatTensor(mat), torch.IntTensor(label), torch.FloatTensor(weight)])
+                [torch.tensor(mat, dtype=torch.float), torch.IntTensor(label), torch.tensor(weight, dtype=torch.float)])
 
     def __len__(self):
         return len(self.data_batch)
@@ -103,8 +107,8 @@ class InferDataset(Dataset):
 
     def __getitem__(self, index):
         key, feature_path = self.dataset[index]
-        mat = np.array(kaldi_io.read_mat(feature_path))
-        return key, torch.FloatTensor(mat), torch.LongTensor([mat.shape[0]])
+        mat = kaldiio.load_mat(feature_path)
+        return key, torch.tensor(mat, dtype=torch.float), torch.LongTensor([mat.shape[0]])
 
 
 class sortedPadCollate():
@@ -124,7 +128,7 @@ class sortedPadCollate():
                    for mat, label, weight in batch]
         batch_sorted = sorted(batches, key=lambda item: item[3], reverse=True)
 
-        mats = utils.pad_list([x[0] for x in batch_sorted])
+        mats = coreutils.pad_list([x[0] for x in batch_sorted])
 
         labels = torch.cat([x[1] for x in batch_sorted])
 

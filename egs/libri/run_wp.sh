@@ -167,11 +167,11 @@ if [ $stage -le 7 ] && [ $stop_stage -ge 7 ]; then
     for set in test_clean test_other dev_clean dev_other; do
         mkdir -p $dir/logits/${set}
         ark_dir=$(readlink -f $dir/logits/${set})
-        python3 ctc-crf/calculate_logits.py                 \
-            --resume=$dir/ckpt/infer.pt                     \
-            --config=$dir/config.json                       \
+        python3 ctc-crf/calculate_logits.py                   \
+            --resume=$dir/ckpt/bestckpt.pt                    \
+            --config=$dir/config.json                         \
             --nj=$nj --input_scp=data/all_ark/${set}.scp      \
-            --output_dir=$ark_dir                           \
+            --output_dir=$ark_dir                             \
             || exit 1
 
         mkdir -p $dir/decode_${set}_tgsmall
