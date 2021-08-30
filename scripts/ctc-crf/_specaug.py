@@ -7,7 +7,7 @@ Modified into spec aug with masking by ratio by Huahuan Zheng (zhh20@mails.tsing
 
 from _layers import StackDelta, UnStackDelta
 from typing import Union, Sequence
-import utils
+import coreutils
 
 import torch
 import torch.nn as nn
@@ -171,7 +171,7 @@ class MaskTime(nn.Module):
                     _out = self.mask_by_batch(
                         spec[i*ch+j][None, :spec_length[i], :])
                     outs.append(_out)
-            out = utils.pad_list(outs, 0.0, dim=1)
+            out = coreutils.pad_list(outs, 0.0, dim=1)
             out = out.view(*org_size)
         return out
 
@@ -255,7 +255,7 @@ class TimeWarp(torch.nn.Module):
                 _y = time_warp(spec[i*ch:i*ch+ch][:, :spec_lengths[i], :],
                                window=int(spec_lengths[i]*self.window))
                 ys.append(_y)
-            y = utils.pad_list(ys, 0.0, dim=1)
+            y = coreutils.pad_list(ys, 0.0, dim=1)
 
         y = y.view(*org_size)
 

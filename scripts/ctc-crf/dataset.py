@@ -7,9 +7,8 @@ Author: Hongyu Xiang, Keyu An, Zheng Huahuan (zhh20@mails.tsinghua.edu.cn)
 import os
 import kaldiio
 import h5py
-import utils
+import coreutils
 import pickle
-import numpy as np
 from kaldiio import ReadHelper
 from typing import Union, Tuple, Sequence
 
@@ -129,7 +128,7 @@ class sortedPadCollate():
                    for mat, label, weight in batch]
         batch_sorted = sorted(batches, key=lambda item: item[3], reverse=True)
 
-        mats = utils.pad_list([x[0] for x in batch_sorted])
+        mats = coreutils.pad_list([x[0] for x in batch_sorted])
 
         labels = torch.cat([x[1] for x in batch_sorted])
 

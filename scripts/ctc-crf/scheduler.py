@@ -10,14 +10,47 @@ import math
 import torch
 import numpy as np
 from collections import OrderedDict
+from typing import Tuple, Iterable, Union
+
+from torch.distributed.optim import ZeroRedundancyOptimizer
 
 
-def SetupOptim(type_optim: str, paramlist, **kwargs) -> torch.optim.Optimizer:
-    return getattr(torch.optim, type_optim)(paramlist, **kwargs)
+def SetupOptim(type_optim: str, paramlist: Iterable[torch.nn.parameter.Parameter], use_zero: bool = False, **kwargs) -> Union[torch.optim.Optimizer, ZeroRedundancyOptimizer]:
+    """Setup the optimizer.
+
+    Args:
+        type_optim (str): name of optimizer, should be an attribute of `torch.optim`, like `Adam`, `SGD`.
+        paramlist (Iterable[Parameter]): a iterator or generator that returns parameters to be optimized.
+        use_zero (bool, default False): a flag to determinte whether use `ZeroRedundancyOptimizer` or not,
+            ref to https://pytorch.org/tutorials/recipes/zero_redundancy_optimizer.html, which is supported since
+            torch 1.8.0
+        **kwargs: any keyword arguments can be passed into optimizer initializatio.
+    
+    Return:
+        optimizer (torch.optim.Optimizer | ZeroRedundancyOptimizer)
+
+    Example:
+        >>> # With `use_zero=False`
+        >>> model = nn.Linear(3,4)
+        >>> optimizer = SetupOptim('Adam', model.parameters(), lr=1e-3, betas=(0.9,0.99))
+        >>> # With `use_zero=True`
+        >>> # ... (init of DDP)
+        >>> model = torch.nn.parallel.DistributedDataParallel(model)
+        >>> optimizer = SetupOptim('Adam', model.parameters(), lr=1e-3, betas=(0.9,0.99))
+    """
+    if not use_zero:
+        return getattr(torch.optim, type_optim)(paramlist, **kwargs)
+    else:
+        raise NotImplementedError
+        print("Using zero reduncdancy optimizer...")
+        # FIXME: This is still a experimental function in torch 1.9.0
+        zerooptimizer = ZeroRedundancyOptimizer(
+            params=paramlist, optim=getattr(torch.optim, type_optim), **kwargs)
+        return zerooptimizer
 
 
 class Scheduler(object):
-    def __init__(self, optimizer_configs, paramlist, reverse_metric_direc=False):
+    def __init__(self, optimizer_configs: dict, paramlist: Iterable[torch.nn.parameter.Parameter], reverse_metric_direc=False):
         super().__init__()
         self.optimizer = SetupOptim(
             optimizer_configs['type_optim'], paramlist, **optimizer_configs['kwargs'])
@@ -33,7 +66,7 @@ class Scheduler(object):
     def update_lr(self, *args, **kwargs):
         return None
 
-    def _adjust_lr_(self, lr):
+    def _adjust_lr_(self, lr: float):
         for param_group in self.optimizer.param_groups:
             param_group['lr'] = lr
 
@@ -46,7 +79,7 @@ class Scheduler(object):
                 output[name] = value
         return output
 
-    def load_state_dict(self, ckpt: OrderedDict, optim_only=False):
+    def load_state_dict(self, ckpt: OrderedDict, optim_only: bool = False):
         if optim_only:
             self.optimizer.load_state_dict(ckpt['optimizer'])
             return None
@@ -59,21 +92,23 @@ class Scheduler(object):
             else:
                 setattr(self, name, ckpt[name])
 
-    def impl_step(self, metric):
+    def impl_step(self, metric) -> Tuple[int, str]:
         raise NotImplementedError
 
-    def step(self, global_epoch, metric):
+    def step(self, global_epoch: int, metric) -> Tuple[int, str]:
         """Optimizer step
 
         Args:
             global_epoch (int): the global epoch (begins from 1)
             metric (obj): the metric for evaluate the performance
 
-        Returns:
-            int: choice of `[0, 1, 2]`, meaning
+        Returns: (state, info)
+            state (int): choice of `[0, 1, 2]`, meaning
                 0: continue training by the prior condition
                 1: continue training for metric is improving
                 2: stop training.
+            
+            info (str): information
         """
         if self.best_metric is None:
             self.best_metric = metric
@@ -102,6 +137,7 @@ class SchedulerEarlyStop(Scheduler):
     def impl_step(self, metric):
 
         state = 0
+        info = ''
         if self.epoch_cur <= self.epoch_min:
             if not (self._reverse_ ^ (metric < self.best_metric)):
                 self.best_metric = metric
@@ -114,21 +150,17 @@ class SchedulerEarlyStop(Scheduler):
             self.count_worse += 1
             if self.count_worse >= self.num_ahead:
                 lr = self.lr_cur
-                print("Validation metrics doesn't improve\nDecay the learning rate from {:.2e} to {:.2e}".format(
-                    lr, lr * self.gamma))
                 lr *= self.gamma
                 if lr < self.lr_stop:
-                    print("lr: {:.2e} < lr_stop: {:.2e}, terminate training.".format(
-                        lr, self.lr_stop))
                     state = 2
                 else:
                     self._adjust_lr_(lr)
                     self.count_worse = 0
 
-        print("Epoch: [{}@{}] | best={:.2f} | current={:.2f} | worse_count={} | lr={:.2e}".format(
-            self.epoch_cur, self.epoch_min, self.best_metric, metric, self.count_worse, self.lr_cur))
+        info = "Epoch: [{}@{}] | best={:.2f} | current={:.2f} | worse_count={} | lr={:.2e}".format(
+            self.epoch_cur, self.epoch_min, self.best_metric, metric, self.count_worse, self.lr_cur)
 
-        return state
+        return state, info
 
 
 class SchedulerFixedStop(Scheduler):
@@ -154,10 +186,10 @@ class SchedulerFixedStop(Scheduler):
 
         self.custom_update()
 
-        print("Epoch: [{}/{}] | best={:.2f} | current={:.2f} | lr={:.2e}".format(
-            self.epoch_cur, self.epoch_max, self.best_metric, metric, self.lr_cur))
+        info = "Epoch: [{}/{}] | best={:.2f} | current={:.2f} | lr={:.2e}".format(
+            self.epoch_cur, self.epoch_max, self.best_metric, metric, self.lr_cur)
 
-        return state
+        return state, info
 
 
 class SchedulerWarmupMileStone(SchedulerEarlyStop):
@@ -205,9 +237,9 @@ class SchedulerWarmupMileStone(SchedulerEarlyStop):
                 state = 1
             cur_lr = self.lr_cur
             self._adjust_lr_(cur_lr+self.lr_addon)
-            print("Epoch: [{}/{}] | best={:.2f} | current={:.2f} | lr={:.2e}".format(
-                self.epoch_cur, self.epoch_warmup, self.best_metric, metric, self.lr_cur))
-            return state
+            info = "Epoch: [{}/{}] | best={:.2f} | current={:.2f} | lr={:.2e}".format(
+                self.epoch_cur, self.epoch_warmup, self.best_metric, metric, self.lr_cur)
+            return state, info
         else:
             return super().impl_step(metric)
 
@@ -284,15 +316,14 @@ class SchedulerTransformerEarlyStop(SchedulerEarlyStop):
             if not (self._reverse_ ^ (metric < self.best_metric)):
                 self.best_metric = metric
 
-            print("Epoch: [{}] | best={:.2f} | current={:.2f} | lr={:.2e}".format(
-                self.epoch_cur, self.best_metric, metric, self.lr_cur))
-            return 0
+            return 0, "Epoch: [{}] | best={:.2f} | current={:.2f} | lr={:.2e}".format(
+                self.epoch_cur, self.best_metric, metric, self.lr_cur)
         else:
             lr0 = self.lr_cur
-            state = super().impl_step(metric)
+            states = super().impl_step(metric)
             lr1 = self.lr_cur
             self.lr_init *= lr1 / lr0
-            return state
+            return states
 
 
 class SchedulerIterAnnealing(SchedulerFixedStop):

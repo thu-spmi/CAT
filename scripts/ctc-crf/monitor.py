@@ -7,7 +7,7 @@ Directly execute: (in working directory)
     python3 ctc-crf/monitor.py <path to my exp>
 """
 
-import sys
+import argparse
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -163,12 +163,15 @@ def plot_monitor(log_path: str = None, train_log: str = 'log_train.csv', dev_log
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        raise ValueError("Please specify the experiment directory.")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("log", type=str, help="Location of log files.")
+    parser.add_argument("--title", type=str, default=None,
+                        help="Configure the plotting title.")
+    args = parser.parse_args()
 
-    loc = sys.argv[1]
     try:
-        plot_monitor(loc)
+        plot_monitor(args.log, task=args.title)
     except FileNotFoundError:
-        print("Log files not found in {0}, try to find {0}/ckpt".format(loc))
-        plot_monitor(os.path.join(loc, 'ckpt'))
+        print(
+            "Log files not found in {0}, try to find {0}/ckpt".format(args.log))
+        plot_monitor(os.path.join(args.log, 'ckpt'), task=args.title)

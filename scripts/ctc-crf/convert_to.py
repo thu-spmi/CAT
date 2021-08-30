@@ -7,10 +7,11 @@ Author: Hongyu Xiang, Keyu An, Zheng Huahuan
 import kaldiio
 import numpy as np
 import argparse
-import utils
+import coreutils
 import pickle
 import h5py
 from tqdm import tqdm
+from typing import Callable
 
 
 def ctc_len(label):
@@ -39,8 +40,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.warning:
-        utils.highlight_msg(
-            "Calculation of CTC loss requires the input sequence to be longer than ctc_len(labels).\nCheck that in 'ctc-crf/convert_to.py' if your model does subsampling on seq.\nMake your modify at line 'if feature.shape[0] < ctc_len(label):' to filter unqualified seq.\nIf you have already done, ignore this.")
+        coreutils.highlight_msg([
+            "Calculation of CTC loss requires the input sequence to be longer than ctc_len(labels)",
+            "Check that in 'ctc-crf/convert_to.py' if your model does subsampling on seq",
+            "Make your modify at line 'if feature.shape[0] < ctc_len(label):' to filter unqualified seq",
+            "If you have already done, ignore this."])
 
     label_dict = {}
     with open(args.label, 'r') as fi:
@@ -64,6 +68,11 @@ if __name__ == "__main__":
     count = 0
     L_MAX = args.filer if args.filer > 0 else float('inf')
     num_lines = sum(1 for line in open(args.scp, 'r'))
+    if args.describe is None:
+        def formated_L(x): return x
+    else:
+        # type: Callable[[int], int]
+        formated_L = eval(f'lambda L: {args.describe}')
     with open(args.scp, 'r') as fi:
         for line in tqdm(fi, total=num_lines):
             key, loc_ark = line.split()
@@ -72,10 +81,7 @@ if __name__ == "__main__":
             weight = weight_dict[key]
             feature = kaldiio.load_mat(loc_ark)
 
-            described_length = int(
-                eval(args.describe.replace('L', str(feature.shape[0]))))
-
-            if described_length < ctc_len(label) or feature.shape[0] > L_MAX:
+            if formated_L(feature.shape[0]) < ctc_len(label) or feature.shape[0] > L_MAX:
                 count += 1
                 continue
 

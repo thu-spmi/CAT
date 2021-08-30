@@ -161,7 +161,7 @@ if [ $stage -le 7 ] && [ $stop_stage -ge 7 ]; then
         mkdir -p $dir/logits/$set
         ark_dir=$(readlink -f $dir/logits/$set)
         python3 ctc-crf/calculate_logits.py                 \
-            --resume=$dir/ckpt/infer.pt                     \
+            --resume=$dir/ckpt/bestckpt.pt                  \
             --config=$dir/config.json                       \
             --nj=$nj --input_scp=data/all_ark/$set.scp      \
             --output_dir=$ark_dir                           \

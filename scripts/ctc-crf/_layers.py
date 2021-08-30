@@ -101,7 +101,9 @@ class Conv2dSubdampling(nn.Module):
         out = out.permute(0, 2, 1, 3)
         # [B, T//4, OD, D//4] -> [B, T//4, OD * D//4]
         out = out.contiguous().view(B, NT, OD*ND)
-        lens_out = (lens//2)//2
+        # NOTE (Huahuan): use torch.div() instead '//'
+        lens_out = torch.div(lens, 2, rounding_mode='floor')
+        lens_out = torch.div(lens_out, 2, rounding_mode='floor')
         return out, lens_out
 
 
@@ -529,13 +531,14 @@ class _LSTM(nn.Module):
     def forward(self, x: torch.Tensor, ilens: torch.Tensor, hidden=None):
         self.lstm.flatten_parameters()
 
-        packed_input = pack_padded_sequence(x, ilens.to("cpu"), batch_first=True)
+        packed_input = pack_padded_sequence(
+            x, ilens.to("cpu"), batch_first=True)
         packed_output, _ = self.lstm(packed_input, hidden)
         out, olens = pad_packed_sequence(packed_output, batch_first=True)
 
         return out, olens
 
-    
+
 class DeformTDNNlayer(nn.Module):
     def __init__(self, idim=120, hdim=640, dropout=0.5, kernel_size=5, dilation=1, padding=2, stride=1, bias=None, modulation=False, low_latency=False):
         """
@@ -550,9 +553,11 @@ class DeformTDNNlayer(nn.Module):
         self.padding = padding
         self.stride = stride
         self.zero_padding = nn.ZeroPad2d(padding)
-        self.conv = nn.Conv1d(idim, hdim, kernel_size=kernel_size, stride=kernel_size, bias=bias)
+        self.conv = nn.Conv1d(
+            idim, hdim, kernel_size=kernel_size, stride=kernel_size, bias=bias)
 
-        self.p_conv = nn.Conv1d(idim, kernel_size, kernel_size=5, padding=2, stride=stride)
+        self.p_conv = nn.Conv1d(
+            idim, kernel_size, kernel_size=5, padding=2, stride=stride)
         nn.init.constant_(self.p_conv.weight, 0)
         self.p_conv.register_backward_hook(self._set_lr)
 
@@ -563,7 +568,8 @@ class DeformTDNNlayer(nn.Module):
         setattr(self, "dropout", torch.nn.Dropout(dropout))
         if modulation:
             print("use modulation !")
-            self.m_conv = nn.Conv1d(idim, kernel_size, kernel_size=5, padding=2, stride=stride)
+            self.m_conv = nn.Conv1d(
+                idim, kernel_size, kernel_size=5, padding=2, stride=stride)
             nn.init.constant_(self.m_conv.weight, 0)
             self.m_conv.register_backward_hook(self._set_lr)
 
@@ -575,20 +581,19 @@ class DeformTDNNlayer(nn.Module):
     def forward(self, x):
         l = x.size(1)
         c = x.size(2)
-        x =x.transpose(1, 2)
+        x = x.transpose(1, 2)
         offset = self.p_conv(x)
-        
+
         if self.low_latency:
             zero = torch.zeros_like(offset)
             offset = torch.where(offset > 0, zero, offset)
-        
+
         if self.modulation:
             m = torch.sigmoid(self.m_conv(x))
 
         dtype = offset.data.type()
         ks = self.kernel_size
         N = offset.size(1)
-
 
         p = self._get_p(ks, l, c, offset, dtype, self.dilation)
         p = p.contiguous().permute(0, 2, 1)
@@ -602,7 +607,7 @@ class DeformTDNNlayer(nn.Module):
         x_q_l = self._get_x_q(x, q_l, N)
         x_q_r = self._get_x_q(x, q_r, N)
         x_offset = g_l.unsqueeze(dim=1) * x_q_l + \
-                   g_r.unsqueeze(dim=1) * x_q_r
+            g_r.unsqueeze(dim=1) * x_q_r
         if self.modulation:
             m = m.contiguous().permute(0, 2, 1)
             m = m.unsqueeze(dim=1)
@@ -619,7 +624,8 @@ class DeformTDNNlayer(nn.Module):
         return out
 
     def _get_p_n(self, N, dtype, dilation):
-        p_n = torch.arange(-(self.kernel_size-1)*dilation//2, (self.kernel_size-1)*dilation//2+1,dilation)
+        p_n = torch.arange(-(self.kernel_size-1)*dilation//2,
+                           (self.kernel_size-1)*dilation//2+1, dilation)
         p_n = p_n.view(1, N, 1).type(dtype)
 
         return p_n
@@ -630,7 +636,7 @@ class DeformTDNNlayer(nn.Module):
 
         return p_0.type(dtype)
 
-    def _get_p(self, ks, l, c, offset, dtype,dilation):
+    def _get_p(self, ks, l, c, offset, dtype, dilation):
         p_n = self._get_p_n(ks, dtype, dilation)
         p_0 = self._get_p_0(l, c, ks, dtype)
         p = p_0 + p_n + offset
@@ -641,7 +647,8 @@ class DeformTDNNlayer(nn.Module):
         c = x.size(1)
         x = x.contiguous().view(b, c, -1)
         index = q
-        index = index.contiguous().unsqueeze(dim=1).expand(-1, c, -1, -1).contiguous().view(b, c, -1)
+        index = index.contiguous().unsqueeze(
+            dim=1).expand(-1, c, -1, -1).contiguous().view(b, c, -1)
         x_offset = x.gather(dim=-1, index=index).contiguous().view(b, c, l, N)
 
         return x_offset
@@ -649,6 +656,7 @@ class DeformTDNNlayer(nn.Module):
     @staticmethod
     def _reshape_x_offset(x_offset, ks):
         b, c, l, N = x_offset.size()
-        x_offset = torch.cat([x_offset[..., s:s+ks].contiguous().view(b, c, l*ks) for s in range(0, N, ks)], dim=-1)
+        x_offset = torch.cat(
+            [x_offset[..., s:s+ks].contiguous().view(b, c, l*ks) for s in range(0, N, ks)], dim=-1)
         x_offset = x_offset.contiguous().view(b, c, l*ks)
         return x_offset
