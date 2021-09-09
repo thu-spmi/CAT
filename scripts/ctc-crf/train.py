@@ -16,6 +16,7 @@ import dataset as DataSet
 from collections import OrderedDict
 from ctc_crf import CTC_CRF_LOSS as CRFLoss
 from ctc_crf import WARP_CTC_LOSS as CTCLoss
+from mc_lingual import load_pv
 
 import torch
 import torch.nn as nn
@@ -145,6 +146,9 @@ def build_model(args, configuration, train=True) -> nn.Module:
     netconfigs = configuration['net']
     net_kwargs = netconfigs['kwargs']   # type:dict
     net = getattr(model_zoo, netconfigs['type'])
+    if args.mc_train_pv and os.path.isfile(args.mc_train_pv):
+        pv = args.mc_train_pv
+        net_kwargs["pv"] = pv
 
     am_model = net(**net_kwargs)    # type:nn.Module
     if not train:
