@@ -6,16 +6,26 @@
 # This script is adopted from wsj of Kaldi, modified by Chengrui Zhu.
 
 lang_suffix=
+lang=
+
+lm_srcdir_3g=data/local/local_lm/3gram-mincount
+lm_srcdir_4g=data/local/local_lm/4gram-mincount
+
 stage=1
 echo "$0 $@"  # Print the command line for logging
 . ./path.sh
 . utils/parse_options.sh || exit 1;
 
+if [ $# -eq 1 ]; then
+    lang=$1
+    lm_srcdir_3g=data/local/local_lm_${lang}/3gram-mincount
+    lm_srcdir_4g=data/local/local_lm_${lang}/4gram-mincount
+    lang_suffix=${lang_suffix}_${lang}
+fi
+
 [ ! -d data/lang_${lang_suffix} ] &&\
   echo "Expect data/lang_${lang_suffix} to exist" && exit 1;
 
-lm_srcdir_3g=data/local/local_lm/3gram-mincount
-lm_srcdir_4g=data/local/local_lm/4gram-mincount
 
 [ ! -d "$lm_srcdir_3g" ] && echo "No such dir $lm_srcdir_3g" && exit 1;
 [ ! -d "$lm_srcdir_4g" ] && echo "No such dir $lm_srcdir_4g" && exit 1;
