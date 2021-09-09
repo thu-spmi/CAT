@@ -1,0 +1,10 @@
+{
+    "src_token": "./data/lang_phn/tokens.txt",
+    "des_token": "./data/lang_phn_de/tokens.txt",
+    "P": null,
+    "hdim": 2048,
+    "odim": 43,
+    "lr": 1e-5,
+    "mode": "flat_phone",
+    "usg": "multi-finetune-eval"
+}
