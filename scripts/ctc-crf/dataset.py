@@ -9,11 +9,24 @@ import kaldiio
 import h5py
 import coreutils
 import pickle
-from kaldiio import ReadHelper
-from typing import Union, Tuple, Sequence
+import math
+from typing import Tuple, Sequence, List, Optional
 
 import torch
 from torch.utils.data import Dataset
+
+
+class FeatureReader:
+    def __init__(self) -> None:
+        self._opened_fd = {}
+
+    def __call__(self, arkname: str):
+        return kaldiio.load_mat(arkname, fd_dict=self._opened_fd)
+
+    def __del__(self):
+        for f in self._opened_fd.values():
+            f.close()
+        del self._opened_fd
 
 
 class SpeechDataset(Dataset):
@@ -65,13 +78,14 @@ class SpeechDatasetPickle(Dataset):
     def __init__(self, pickle_path):
         with open(pickle_path, 'rb') as f:
             self.dataset = pickle.load(f)
+        self.freader = FeatureReader()
 
     def __len__(self):
         return len(self.dataset)
 
     def __getitem__(self, idx):
-        key, feature_path, label, weight = self.dataset[idx]
-        mat = kaldiio.load_mat(feature_path)
+        _, feature_path, label, weight = self.dataset[idx]
+        mat = self.freader(feature_path)
         return torch.tensor(mat, dtype=torch.float), torch.IntTensor(label), torch.tensor(weight, dtype=torch.float)
 
 
@@ -81,10 +95,11 @@ class SpeechDatasetMemPickle(Dataset):
             self.dataset = pickle.load(f)
 
         self.data_batch = []
+        freader = FeatureReader()
 
         for data in self.dataset:
             key, feature_path, label, weight = data
-            mat = kaldiio.load_mat(feature_path)
+            mat = freader(feature_path)
             self.data_batch.append(
                 [torch.tensor(mat, dtype=torch.float), torch.IntTensor(label), torch.tensor(weight, dtype=torch.float)])
 
@@ -101,13 +116,14 @@ class InferDataset(Dataset):
         with open(scp_path, 'r') as fi:
             lines = fi.readlines()
         self.dataset = [x.split() for x in lines]
+        self.freader = FeatureReader()
 
     def __len__(self):
         return len(self.dataset)
 
     def __getitem__(self, index):
         key, feature_path = self.dataset[index]
-        mat = kaldiio.load_mat(feature_path)
+        mat = self.freader(feature_path)
         return key, torch.tensor(mat, dtype=torch.float), torch.LongTensor([mat.shape[0]])
 
 
