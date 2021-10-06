@@ -24,7 +24,7 @@ from torch.nn.utils.rnn import pad_sequence
 
 
 class Manager(object):
-    def __init__(self, logger: OrderedDict, func_build_model: Callable[[argparse.Namespace, dict], Union[nn.Module, nn.parallel.DistributedDataParallel]], args: argparse.Namespace):
+    def __init__(self, func_build_model: Callable[[argparse.Namespace, dict], Union[nn.Module, nn.parallel.DistributedDataParallel]], args: argparse.Namespace):
         super().__init__()
 
         with open(args.config, 'r') as fi:
@@ -47,7 +47,10 @@ class Manager(object):
         self.scheduler = GetScheduler(
             configures['scheduler'], self.model.parameters())
 
-        self.log = logger
+        self.log = OrderedDict({
+            'log_train': ['epoch,loss,loss_real,net_lr,time'],
+            'log_eval': ['loss_real,time']
+        })
         self.rank = args.rank
         self.DEBUG = args.debug
 

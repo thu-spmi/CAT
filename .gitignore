@@ -2,6 +2,16 @@ egs/**/data/
 egs/**/exp/
 egs/**/fbank/
 .vscode/
+*.png
+*.jpg
+*.pt
+*.ark
+*.scp
+src/ctc_crf/openfst/
+tmp/
+
+# tmp settings
+test_*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
