@@ -84,7 +84,7 @@ class Manager(object):
             self.model.train()
             if self.rank == 0 and not self.DEBUG:
                 self.log_export(args.ckptpath)
-                plot_monitor(args.ckptpath)
+                plot_monitor(args.dir, self.log)
 
             if state == 2:
                 print("Terminated: GPU[%d]" % self.rank)
