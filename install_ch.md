@@ -5,7 +5,6 @@
 * [安装依赖](#dependencies)
   * [PyTorch](#pytorch)
   * [Kaldi](#kaldi)
-  * [OpenFST](#openfst)
 * [安装CAT](#cat)
 
 这是一篇CAT的详细安装说明，其中包括CAT的一些依赖（PyTorch和Kaldi）的安装。
@@ -22,14 +21,14 @@ CAT主要的依赖工具有两个：PyTorch和Kaldi。一些其他的依赖例�
 
 1. 查看CUDA版本；
 
-   ```shell
-   $ whereis cuda
+   ```bash
+   whereis cuda
    ```
 
    输出信息中包括你的CUDA路径，通常是 `/usr/local/cuda`, 基于输出信息的路径，查看CUDA版本信息。
 
-   ```shell
-   $ <path to cuda>/bin/nvcc -V
+   ```bash
+   <path to cuda>/bin/nvcc -V
    ```
 
 2. 安装对应的PyTorch版本；
@@ -43,12 +42,14 @@ CAT主要的依赖工具有两个：PyTorch和Kaldi。一些其他的依赖例�
 3. 检查编译安装PyTorch使用的CUDA版本
 
    ```
-   $ python3 -m torch.utils.collect_env
-   Collecting environment information...
-   PyTorch version: 1.8.1
-   Is debug build: False
-   CUDA used to build PyTorch: 10.2
-   ...
+   python3 -m torch.utils.collect_env
+   # 输出类似如下的信息：
+   # 
+   # Collecting environment information...
+   # PyTorch version: 1.8.1
+   # Is debug build: False
+   # CUDA used to build PyTorch: 10.2
+   # ...
    ```
 
    
@@ -57,114 +58,85 @@ CAT主要的依赖工具有两个：PyTorch和Kaldi。一些其他的依赖例�
 
 Kaldi官方安装说明
 
-```shell
-$ git clone https://github.com/kaldi-asr/kaldi.git
-$ cd kaldi && cat INSTALL
+```bash
+git clone https://github.com/kaldi-asr/kaldi.git
+cd kaldi && cat INSTALL
 ```
 
 对于某些数据集，可能需要额外安装IRSTLM/SRILM/Kaldi LM等工具，为了后续说明方便，将Kaldi的安装目录记为`<path to kaldi>`。
-
-### OpenFST<a id="openfst"></a>
-
-1. 创建一个临时文件夹并进入；
-
-   ```shell
-   $ mkdir tmpfst && cd tmpfst
-   ```
-
-2. 下载OpenFST-1.6.7源文件并解压；
-
-   ```shell
-   # fetch the file from source
-   $ wget http://www.openfst.org/twiki/pub/FST/FstDownload/openfst-1.6.7.tar.gz
-   # extract
-   $ tar -xf openfst-1.6.7.tar.gz
-   # change directory to extracted one
-   $ cd openfst-1.6.7/
-   ```
-
-3. 配置编译，如果不添加`--prefix`选项，默认的安装路径是`/usr/local`。推荐指定个人目录下的路径。
-
-   ```shell
-   $ ./configure --prefix=<path to openfst>
-   ```
-
-4. 编译并安装。如果上一步中指定的安装路径权限不足，则需要root权限执行。
-
-   ```shell
-   make && make install
-   ```
-
-5. [可选] 删除临时文件夹
-
-   ```shell
-   $ cd ../../
-   $ rm -r tmpfst/
-   ```
 
 ## CAT<a id="cat"></a>
 
 1. 从GitHub获取源代码，把路径记为`<path to CAT>`；
 
-   ```shell
-   $ git clone https://github.com/thu-spmi/CAT
-   $ export PATH_CAT=$(readlink -f <path to CAT>)
-   $ export PATH_Kaldi=$(readlink -f <path to kaldi>)
-   $ export PATH_Openfst=$(readlink -f <path to openfst>)
+   ```bash
+   git clone https://github.com/thu-spmi/CAT
+   export PATH_CAT=$(readlink -f <path to CAT>)
+   export PATH_Kaldi=$(readlink -f <path to kaldi>)
    ```
 
-2. 把CAT中添加的补丁打包到Kaldi中；
+2. 安装python依赖包；
 
-   ```shell
+   ```bash
+   cd $PATH_CAT
+   python -m pip install --user -r requirements.txt
+   ```
+
+3. 把CAT中添加的补丁打包到Kaldi中；
+
+   ```bash
    # 复制补丁文件到Kaldi目录
-   $ cp $PATH_CAT/src/kaldi-patch/latgen-faster.cc $PATH_Kaldi/src/bin/
+   cp $PATH_CAT/src/kaldi-patch/latgen-faster.cc $PATH_Kaldi/src/bin/
    # 进入目录
-   $ cd $PATH_Kaldi/src/bin/
+   cd $PATH_Kaldi/src/bin/
    ```
 
    修改`Makefile`文件：
 
    在`BINFILES`文件列表中，添加`latgen-faster`。修改后运行命令编译：
 
-   ```shell
-   $ make
+   ```bash
+   make
    ```
 
    如果一切正常，kaldi目录下会新增文件`kaldi/src/bin/latgen-faster`。
 
-3. 安装 CTC-CRF 模块；
+4. 安装 CTC-CRF 模块；
 
-   ```shell
+   ```bash
    # 进入目录
-   $ cd $PATH_CAT/src/ctc_crf/
+   cd $PATH_CAT/src/ctc_crf/
    ```
 
    CTC-CRF 模块会以python模块的形式安装，因此在安装之前，检查并确保当前使用的python和之后要运行CAT的python是同一个：
 
-   ```shell
-   $ which python
+   ```bash
+   which python
    # 或
-   $ which python3
+   which python3
    ```
    
    编译并安装
    
-   ```shell
-   # 如果提示permission denied错误，使用root权限运行
-   $ CC=gcc-6 CXX=g++-6 make OPENFST=$PATH_Openfst
+   ```bash
+   # 如果提示permission denied错误，使用root权限重新运行
+   # gcc-6/gcc-5 均可正常编译
+   CC=gcc-6 CXX=g++-6 make
+   ```
+
+   若编译中出现错误，使用以下命令清除此前的编译文件
+
+   ```bash
+   make clean
    ```
    
-4. 尝试导入CTC-CRF模块
+5. 尝试导入CTC-CRF模块
 
-   ```shell
-   $ python
-   # or python3
-   $ python3
-   >>> import torch
-   >>> import ctc_crf_base
+   ```bash
+   python -c "import ctc_crf"
    ```
 
-   如果没有错误信息则说明导入正常。CTC-CRF模块是依赖于torch的，因此每次导入`ctc_crf_base`之前需要先导入`torch`。
+   如果没有错误信息则说明导入正常。
 
 5. 最后一些小的改动：
 
@@ -172,10 +144,10 @@ $ cd kaldi && cat INSTALL
 
    在`CAT/egs/wsj`中，链接kaldi文件夹
 
-   ```shell
-   $ cd $PATH_CAT/egs/wsj
-   $ ln -snf $PATH_Kaldi/egs/wsj/s5/steps steps
-   $ ln -snf $PATH_Kaldi/egs/wsj/s5/utils utils
+   ```bash
+   cd $PATH_CAT/egs/wsj
+   ln -snf $PATH_Kaldi/egs/wsj/s5/steps steps
+   ln -snf $PATH_Kaldi/egs/wsj/s5/utils utils
    ```
 
 6. Enjoy it! :rocket:

@@ -12,7 +12,8 @@ import numpy as np
 from collections import OrderedDict
 from typing import Tuple, Iterable, Union
 
-from torch.distributed.optim import ZeroRedundancyOptimizer
+if torch.__version__ >= '1.8.0':
+    from torch.distributed.optim import ZeroRedundancyOptimizer
 
 
 def SetupOptim(type_optim: str, paramlist: Iterable[torch.nn.parameter.Parameter], use_zero: bool = False, **kwargs) -> Union[torch.optim.Optimizer, ZeroRedundancyOptimizer]:
@@ -42,7 +43,6 @@ def SetupOptim(type_optim: str, paramlist: Iterable[torch.nn.parameter.Parameter
         return getattr(torch.optim, type_optim)(paramlist, **kwargs)
     else:
         raise NotImplementedError
-        print("Using zero reduncdancy optimizer...")
         # FIXME: This is still a experimental function in torch 1.9.0
         zerooptimizer = ZeroRedundancyOptimizer(
             params=paramlist, optim=getattr(torch.optim, type_optim), **kwargs)
