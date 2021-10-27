@@ -8,19 +8,19 @@ This page will introduce how to conduct your **Multi/Cross-lingual ASR** with th
 
 ---
 
-- ### [Flat-phone](#flat-phone)
+* [Flat-phone](#flat-phone)
 
-- ### [JoinAP-Linear](#joinap-linear)
+* [JoinAP-Linear](#joinap-linear)
 
-- ### [JoinAP-Nonlinear](#joinap-nonlinear)
+* [JoinAP-Nonlinear](#joinap-nonlinear)
 
-- ### [Cross-lingual](#m_vs_c)
+* [Cross-lingual](#cross-lingual)
 
 ---
 
 Let's start with **Multi-lingual** exp using **Flat-phone** method.  
 
-#### <a name="flat-phone">Flat-phone</a>
+<a name="flat-phone">**Flat-phone**</a>
 
 - #### training 
 
@@ -134,7 +134,7 @@ fi
 
 ​	where `--den-lm` is very important and should be set appropriately based on the language for finetuning. You should also be careful to set `--resume` and `--dir`. The config file for `--mc-conf` is the same to that in the `Flat-phone` model testing without finetuning, except that `"usg"` should be set as `"finetune"`. 
 
-#### <a name="joinap-linear">JoinAP-Linear</a>
+<a name="joinap-linear">**JoinAP-Linear**</a>
 
 - #### training
 
@@ -270,13 +270,13 @@ fi
 
   
 
-#### <a name="joinap-nonlinear">JoinAP-Nonlinear</a> 
+<a name="joinap-nonlinear">**JoinAP-Nonlinear**</a>
 
 ​	Model training, evaluation w/ or w/o finetuning for **JoinAP-Nonlinear** with **JoinAP-Linear** only differ in the configuration `json` file. 	You can simply set `"mode"` as `"joinap_nonlinear"` and reuse the above code of **JoinAP-Linear** for the **JoinAP-Nonlinear** exps. 
 
 By far, we have went through all the models for **Multilingual** exps. Next, we will compare the differences of model evaluation between **Multi-lingual** againest **Cross-lingual** exps.
 
-#### <a name="m_v_c">Cross-lingual</a>
+<a name="cross-lingual">**Cross-lingual**</a>
 
 ​	 We take `aishell` as the target language data for the **Cross-lingual** exps.
 

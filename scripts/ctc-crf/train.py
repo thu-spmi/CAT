@@ -111,7 +111,7 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
     # init ctc-crf, args.iscrf is set in build_model
     if args.iscrf:
         gpus = torch.IntTensor([args.gpu])
-        ctc_crf_base.init_env(f"{args.data}/den_meta/den_lm.fst", gpus)
+        ctc_crf_base.init_env(f"{args.den_lm}", gpus)
 
     # training
     manager.run(train_sampler, trainloader, testloader, args)
@@ -184,7 +184,7 @@ def build_model(args, configuration, train=True) -> nn.Module:
     torch.cuda.set_device(args.gpu)
     model.cuda(args.gpu)
     model = torch.nn.parallel.DistributedDataParallel(
-        model, device_ids=[args.gpu])
+        model, device_ids=[args.gpu], find_unused_parameters = True)
     return model
 
 

@@ -491,6 +491,8 @@ def BasicDDPParser(istraining: bool = True, prog: str = '') -> argparse.Argument
                             help='mini-batch size (default: 256), this is the total '
                             'batch size of all GPUs on the current node when '
                             'using Distributed Data Parallel')
+        parser.add_argument("--den-lm", type=str, default="./data/den_meta/den_lm.fst",
+                            help="Path to location of checkpoint.")
         parser.add_argument("--seed", type=int, default=0,
                             help="Manual seed.")
         parser.add_argument("--grad-accum-fold", type=int, default=1,

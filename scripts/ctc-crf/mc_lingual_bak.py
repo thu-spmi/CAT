@@ -158,6 +158,9 @@ def reset_model(model, ckpt, loc, mode, usg, pv, src_idx, des_idx, hdim, odim):
                     ckpt["scheduler"]["best_metric"] = None
                     model.module.infer.linear = new_linear
                     model.load_state_dict(ckpt["model"])
+#                    for param in model.parameters():
+#                        param.requires_grad = False
+#                    model.module.infer.linear.requires_grad = True
             else:
                 if "eval" in usg:
                     model.P = P
@@ -171,7 +174,6 @@ def reset_model(model, ckpt, loc, mode, usg, pv, src_idx, des_idx, hdim, odim):
                     ckpt["model"]["module.infer.P"] = P
                     ckpt["model"]["module.infer.linear.weight"] = new_linear.weight
                     ckpt["model"]["module.infer.linear.bias"] = new_linear.bias
-                    ckpt["scheduler"]["best_metric"] = None
                     model.module.infer.linear = new_linear
                     model.load_state_dict(ckpt["model"])
 
