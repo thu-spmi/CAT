@@ -71,7 +71,7 @@ if __name__ == "__main__":
         input_length = args.chunk_size*N_chunks
         feature = pad_tensor(feature, input_length,1)
         feature = feature.cuda()
-        out1,out2,out3,netout = model.forward(feature,input_length)  
+        out1,out2,out3,netout = model.forward(feature,args.chunk_size)  
         r = netout.cpu().data.numpy()
         r[r == -np.inf] = -1e16
         r = r[0]
