@@ -38,7 +38,7 @@ cat data/train_de/text | cut -f 2- -d " " - | sed 's/"//g' | sed 's/,//g' | sed 
 # model_prefix: prefix of the filename to save model 
 # input_sentence_size: 
 # unk_surface: symbol to replace unk_id when using spm_decode with wp id as input
-spm_train --input=$dir/input.txt --vocab_size=${nbpe} --bos_id=0 --eos_id=1 --unk_id=$unk_id \
+python3 ctc-crf/spm_train --input=$dir/input.txt --vocab_size=${nbpe} --bos_id=0 --eos_id=1 --unk_id=$unk_id \
     --model_type=${bpemode} --model_prefix=${bpemodel} --input_sentence_size=100000000 \
     --treat_whitespace_as_suffix=false --unk_surface="<UNK>"
 #
@@ -52,8 +52,8 @@ for x in train dev test; do
     paste -d " " data/${x}/text.uttid data/$x/text.tmp > data/$x/text_pos
     # model: path for saved model
     # output_format: specify encoded text format, support: [id, piece]
-    spm_encode --model=${bpemodel}.model --output_format=id < data/${x}/text.tmp > data/${x}/text.id_tmp || exit 1;
-    spm_encode --model=${bpemodel}.model --output_format=piece < data/${x}/text.tmp > data/${x}/text.piece_tmp || exit 1;
+    python3 ctc-crf/spm_encode --model=${bpemodel}.model --output_format=id < data/${x}/text.tmp > data/${x}/text.id_tmp || exit 1;
+    python3 ctc-crf/spm_encode --model=${bpemodel}.model --output_format=piece < data/${x}/text.tmp > data/${x}/text.piece_tmp || exit 1;
     paste -d ' ' data/${x}/text.uttid data/${x}/text.id_tmp > data/${x}/text.id
     paste -d ' ' data/${x}/text.uttid data/${x}/text.piece_tmp > data/${x}/text.piece
     rm data/$x/text.{id_tmp,piece_tmp}
@@ -66,9 +66,9 @@ cat  data/train/text.id | cut -f 2- -d " " | tr ' ' '\n' | sort -n | uniq | awk 
 
 
 cat data/train/text.id | cut -f 2- -d " " - > $dir/train.tmp 
-spm_decode --model=${bpemodel}.model --input_format=id < $dir/train.tmp | tr ' ' '\n' | sort | uniq | grep -v "^$" | grep -v '\<UNK\>' > $dir/train.wrd
+python3 ctc-crf/spm_decode --model=${bpemodel}.model --input_format=id < $dir/train.tmp | tr ' ' '\n' | sort | uniq | grep -v "^$" | grep -v '\<UNK\>' > $dir/train.wrd
 #
-spm_encode --model=${bpemodel}.model --output_format=id  < $dir/train.wrd | paste -d " " \
+python3 ctc-crf/spm_encode --model=${bpemodel}.model --output_format=id  < $dir/train.wrd | paste -d " " \
     $dir/train.wrd - > $dir/lexicon.txt || exit 1;
 
 echo "<UNK> $unk_id" >> $dir/lexicon.txt
