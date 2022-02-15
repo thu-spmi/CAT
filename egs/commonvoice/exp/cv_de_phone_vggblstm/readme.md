@@ -16,4 +16,4 @@
 - WER 12.94 [ 17789/137510,2975 ins,1913 del,12901 sub] exp/cv_de_phone_vggblstm/decode_de_test_bd_fgconst/wer_13_1.0
 
 ### Monitor figure
-![monitor](./ckpt/monitor.png)
+![monitor](./monitor.png)
