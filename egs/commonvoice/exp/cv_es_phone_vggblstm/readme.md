@@ -16,4 +16,4 @@
 - WER 14.22 [ 20839/146566, 2429 ins, 3399 del, 15011 sub ] exp/cv_es_phone_vggblstm/decode_es_test_bd_fgconst/wer_12_0.5
 
 ### Monitor figure
-![monitor](./ckpt/monitor.png)
+![monitor](./monitor.png)
