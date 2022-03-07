@@ -9,14 +9,16 @@ and is more non-hard-coding style.
 """
 
 import coreutils
-import os
-import argparse
 import model as model_zoo
 import dataset as DataSet
-from collections import OrderedDict
+from ctc_crf import CRFContext
 from ctc_crf import CTC_CRF_LOSS as CRFLoss
 from ctc_crf import WARP_CTC_LOSS as CTCLoss
 from mc_lingual import load_pv
+
+import os
+import argparse
+from typing import Callable
 
 import torch
 import torch.nn as nn
@@ -25,10 +27,8 @@ import torch.multiprocessing as mp
 from torch.utils.data.distributed import DistributedSampler
 from torch.utils.data import DataLoader
 
-import ctc_crf_base
 
-
-def main(args):
+def main_spawner(args, _main_worker: Callable[[int, int, argparse.Namespace], None]):
     if not torch.cuda.is_available():
         coreutils.highlight_msg("CPU only training is unsupported")
         return None
@@ -36,12 +36,13 @@ def main(args):
     ngpus_per_node = torch.cuda.device_count()
     args.world_size = ngpus_per_node * args.world_size
     print(f"Global number of GPUs: {args.world_size}")
-    mp.spawn(main_worker, nprocs=ngpus_per_node, args=(ngpus_per_node, args))
+    mp.spawn(_main_worker, nprocs=ngpus_per_node, args=(ngpus_per_node, args))
 
 
 def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
     coreutils.SetRandomSeed(args.seed)
     args.gpu = gpu
+    torch.cuda.set_device(gpu)
 
     args.rank = args.rank * ngpus_per_node + gpu
     print(f"Use GPU: local[{args.gpu}] | global[{args.rank}]")
@@ -91,11 +92,7 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
         num_workers=args.workers, pin_memory=True,
         sampler=test_sampler, collate_fn=DataSet.sortedPadCollate())
 
-    logger = OrderedDict({
-        'log_train': ['epoch,loss,loss_real,net_lr,time'],
-        'log_eval': ['loss_real,time']
-    })
-    manager = coreutils.Manager(logger, build_model, args)
+    manager = coreutils.Manager(build_model, args)
 
     # get GPU info
     gpu_info = coreutils.gather_all_gpu_info(args.gpu)
@@ -110,14 +107,10 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
 
     # init ctc-crf, args.iscrf is set in build_model
     if args.iscrf:
-        gpus = torch.IntTensor([args.gpu])
-        ctc_crf_base.init_env(f"{args.den_lm}", gpus)
+        ctx = CRFContext(f"{args.den_lm}", args.gpu)
 
     # training
     manager.run(train_sampler, trainloader, testloader, args)
-
-    if args.iscrf:
-        ctc_crf_base.release_env(gpus)
 
 
 class AMTrainer(nn.Module):
@@ -196,6 +189,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if not args.debug:
+        if not os.path.isdir(args.dir):
+            raise RuntimeError(
+                f"--dir={args.dir} is not a valid directory.")
         ckptpath = os.path.join(args.dir, 'ckpt')
         os.makedirs(ckptpath, exist_ok=True)
     else:
@@ -208,4 +204,4 @@ if __name__ == "__main__":
         raise FileExistsError(
             f"{args.ckptpath} is not empty! Refuse to run the experiment.")
 
-    main(args)
+    main_spawner(args, main_worker)

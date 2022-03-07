@@ -7,11 +7,9 @@ Author: Hongyu Xiang, Keyu An, Zheng Huahuan
 import kaldiio
 import numpy as np
 import argparse
-import coreutils
 import pickle
 import h5py
 from tqdm import tqdm
-from typing import Callable
 
 
 def ctc_len(label):
@@ -40,11 +38,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.warning:
-        coreutils.highlight_msg([
-            "Calculation of CTC loss requires the input sequence to be longer than ctc_len(labels)",
-            "Check that in 'ctc-crf/convert_to.py' if your model does subsampling on seq",
-            "Make your modify at line 'if feature.shape[0] < ctc_len(label):' to filter unqualified seq",
-            "If you have already done, ignore this."])
+        print(
+            "Calculation of CTC loss requires the input sequence to be longer than ctc_len(labels)\n",
+            "Check that in 'convert_to.py' if your model does subsampling on seq\n",
+            "Make your modify at line 'if feature.shape[0] < ctc_len(label):' to filter unqualified seq\n",
+            "If you have already done, ignore this.")
 
     label_dict = {}
     with open(args.label, 'r') as fi:
@@ -73,13 +71,15 @@ if __name__ == "__main__":
     else:
         # type: Callable[[int], int]
         formated_L = eval(f'lambda L: {args.describe}')
+
+    f_opened = {}
     with open(args.scp, 'r') as fi:
         for line in tqdm(fi, total=num_lines):
             key, loc_ark = line.split()
 
             label = label_dict[key]
             weight = weight_dict[key]
-            feature = kaldiio.load_mat(loc_ark)
+            feature = kaldiio.load_mat(loc_ark, fd_dict=f_opened)
 
             if formated_L(feature.shape[0]) < ctc_len(label) or feature.shape[0] > L_MAX:
                 count += 1
@@ -92,6 +92,8 @@ if __name__ == "__main__":
             else:
                 pickle_dataset.append([key, loc_ark, label, weight])
 
+    for f in f_opened.values():
+        f.close()
     print(f"Remove {count} unqualified sequences in total.")
     if args.format == "pickle":
         with open(args.output_path, 'wb') as fo:
