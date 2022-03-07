@@ -8,8 +8,8 @@
 text=$1
 lexicon=$2
 dir=$3
-for f in "$text" "$lexicon"; do
-  [ ! -f $x ] && echo "$0: No such file $f" && exit 1;
+for x in "$text" "$lexicon"; do
+  [ ! -f $x ] && echo "$0: No such file $x" && exit 1;
 done
 
 # This script takes no arguments.  It assumes you have already run
@@ -21,9 +21,9 @@ done
 mkdir -p $dir
 export LC_ALL=C # You'll get errors about things being not sorted, if you
 # have a different locale.
-export PATH=$PATH:/mnt/nas_workspace2/zcr/kaldi/tools/kaldi_lm
+
 ( # First make sure the kaldi_lm toolkit is installed.
- cd /mnt/nas_workspace2/zcr/kaldi/tools/ || exit 1;
+ cd $KALDI_ROOT/tools/ || exit 1;
  if [ -d kaldi_lm ]; then
    echo Not installing the kaldi_lm toolkit since it is already there.
  else

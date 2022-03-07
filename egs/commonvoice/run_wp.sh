@@ -4,6 +4,8 @@
 # Author: Chengrui Zhu, Huahuan Zheng
 # Apache 2.0.
 # This script implements CTC-CRF training on Mozilla Commonvoice dataset.
+set -e
+set -o pipefail
 
 . ./cmd.sh
 . ./path.sh
@@ -11,7 +13,7 @@
 stage=1
 stop_stage=100
 nj=$(nproc)
-data=/path/to/commonvoice/de
+data="/path/to/commonvoice/de"
 lang=de
 train_set=train_$(echo $lang | tr - _)
 dev_set=dev_$(echo $lang | tr - _)
@@ -79,7 +81,7 @@ if [ $NODE == 0 ]; then
       
       # train.txt without uttid for training n-gramm
       cat data/train/text_pos | cut -f 2- -d " " - > data/local/dict_bpe/train.txt || exit 1;
-      local/mozilla_train_lms.sh data/local/dict_bpe/train.txt data/local/dict_bpe/ data/local/local_lm || exit 1;
+      local/mozilla_train_lms.sh data/local/dict_bpe/train.txt data/local/dict_bpe/lexicon.txt data/local/local_lm || exit 1;
       local/mozilla_format_local_lms.sh --lang-suffix "bpe"  || exit 1;
       local/mozilla_decode_graph.sh data/local/local_lm data/lang_bpe data/lang_bpe_test || exit 1;
 
@@ -97,8 +99,8 @@ if [ $NODE == 0 ]; then
           | fstarcsort --sort_type=olabel > data/den_meta/T_den.fst || exit 1;
       fstcompose data/den_meta/T_den.fst data/den_meta/phone_lm.fst > data/den_meta/den_lm.fst || exit 1;
       echo "prepare denominator finished"
-      path_weight data/train/text_number data/den_meta/phone_lm.fst > data/train/weight
-      path_weight data/dev/text_number data/den_meta/phone_lm.fst > data/dev/weight
+      path_weight data/train/text_number data/den_meta/phone_lm.fst > data/train/weight || exit 1
+      path_weight data/dev/text_number data/den_meta/phone_lm.fst > data/dev/weight || exit 1
       echo "prepare weight finished"
 
     fi 
