@@ -16,6 +16,7 @@ from collections import OrderedDict
 from monitor import plot_monitor
 from _specaug import SpecAug
 from typing import Callable, Union, Sequence, Iterable
+from mc_lingual import update_model
 
 import torch
 import torch.nn as nn
@@ -60,6 +61,13 @@ class Manager(object):
             checkpoint = torch.load(
                 args.resume, map_location=loc)  # type: OrderedDict
             self.load(checkpoint)
+            if os.path.isfile(args.mc_conf):
+                # Multi/Cross-lingual exp
+                self.model, lr = update_model(
+                    self.model, checkpoint, args, loc)
+                configures["scheduler"]["optimizer"]["kwargs"]["lr"] = lr
+                self.scheduler = GetScheduler(
+                    configures['scheduler'], self.model.parameters())
 
     def run(self, train_sampler: torch.utils.data.distributed.DistributedSampler, trainloader: torch.utils.data.DataLoader, testloader: torch.utils.data.DataLoader, args: argparse.Namespace):
 
@@ -375,8 +383,15 @@ def train(trainloader, epoch: int, args: argparse.Namespace, manager: Manager):
         # update every fold times and won't drop the last batch
         if fold == 1 or (i+1) % fold == 0 or (i+1) == len(trainloader):
             loss = model(logits, labels, input_lengths, label_lengths)
-            loss.backward()
             real_loss = _cal_real_loss(loss, path_weights)
+
+            positive_flag = (real_loss > 0.).sum().cuda(args.gpu)
+            dist.all_reduce(positive_flag, dist.ReduceOp.SUM)
+            if positive_flag != dist.get_world_size():
+                del loss
+                continue
+
+            loss.backward()
 
             # for Adam optimizer, even though fold > 1, it's no need to normalize grad
             # if using SGD, let grad = grad_accum / fold as following or use a new_lr = init_lr / fold
@@ -480,14 +495,14 @@ def BasicDDPParser(istraining: bool = True, prog: str = '') -> argparse.Argument
                             help='mini-batch size (default: 256), this is the total '
                             'batch size of all GPUs on the current node when '
                             'using Distributed Data Parallel')
+        parser.add_argument("--den-lm", type=str, default="./data/den_meta/den_lm.fst",
+                            help="Path to denominator LM.")
         parser.add_argument("--seed", type=int, default=0,
                             help="Manual seed.")
         parser.add_argument("--grad-accum-fold", type=int, default=1,
                             help="Utilize gradient accumulation for K times. Default: K=1")
-
         parser.add_argument("--debug", action="store_true",
                             help="Configure to debug settings, would overwrite most of the options.")
-
         parser.add_argument("--data", type=str, default=None,
                             help="Location of training/testing data.")
         parser.add_argument("--trset", type=str, default=None,
@@ -497,6 +512,10 @@ def BasicDDPParser(istraining: bool = True, prog: str = '') -> argparse.Argument
         parser.add_argument("--dir", type=str, default=None, metavar='PATH',
                             help="Directory to save the log and model files.")
 
+    parser.add_argument("--mc-conf", type=str, default="",
+                        help="Config file for multi/cross-lingual exp")
+    parser.add_argument("--mc-train-pv", type=str, default="",
+                        help="Phonological vector file for multilingual training")
     parser.add_argument("--config", type=str, default=None, metavar='PATH',
                         help="Path to configuration file of backbone.")
     parser.add_argument("--resume", type=str, default=None,

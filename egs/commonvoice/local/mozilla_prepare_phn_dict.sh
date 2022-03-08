@@ -9,8 +9,13 @@
 
 srcdir=data/train
 dir=data/dict_phn
-mkdir -p $dir
 srcdict=$1
+if [ $# -gt 1 ]; then
+    srcdir=$2
+    dir=$3
+fi
+mkdir -p $dir
+
 [ -f path.sh ] && . ./path.sh
 
 [ ! -f "$srcdict" ] && echo "No such file $srcdict" && exit 1;
