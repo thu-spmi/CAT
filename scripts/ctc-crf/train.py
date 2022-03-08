@@ -5,7 +5,7 @@ Author: Zheng Huahuan (zhh20@mails.tsinghua.edu.cn)
 
 This script uses DistributedDataParallel (DDP) to train model within framework of CAT.
 Differed from `train_dist.py`, this one supports read configurations from json file
-and is more non-hard-coding style.
+and is of less hard-coding style.
 """
 
 import coreutils
@@ -14,7 +14,6 @@ import dataset as DataSet
 from ctc_crf import CRFContext
 from ctc_crf import CTC_CRF_LOSS as CRFLoss
 from ctc_crf import WARP_CTC_LOSS as CTCLoss
-from mc_lingual import load_pv
 
 import os
 import argparse
@@ -142,6 +141,9 @@ def build_model(args, configuration, train=True) -> nn.Module:
     if args.mc_train_pv and os.path.isfile(args.mc_train_pv):
         pv = args.mc_train_pv
         net_kwargs["pv"] = pv
+        ismc = True
+    else:
+        ismc = False
 
     am_model = net(**net_kwargs)    # type:nn.Module
     if not train:
@@ -176,8 +178,10 @@ def build_model(args, configuration, train=True) -> nn.Module:
 
     torch.cuda.set_device(args.gpu)
     model.cuda(args.gpu)
+    # NOTE (Huahuan): setup find_unused_parameters=True would harm the performance, since
+    # which requests the DDP to check the unused parameters everytime in forward/backward
     model = torch.nn.parallel.DistributedDataParallel(
-        model, device_ids=[args.gpu], find_unused_parameters = True)
+        model, device_ids=[args.gpu], find_unused_parameters=ismc)
     return model
 
 

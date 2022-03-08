@@ -63,10 +63,11 @@ class Manager(object):
             self.load(checkpoint)
             if os.path.isfile(args.mc_conf):
                 # Multi/Cross-lingual exp
-                self.model, lr = update_model(self.model, checkpoint, args, loc)
+                self.model, lr = update_model(
+                    self.model, checkpoint, args, loc)
                 configures["scheduler"]["optimizer"]["kwargs"]["lr"] = lr
                 self.scheduler = GetScheduler(
-                        configures['scheduler'], self.model.parameters())
+                    configures['scheduler'], self.model.parameters())
 
     def run(self, train_sampler: torch.utils.data.distributed.DistributedSampler, trainloader: torch.utils.data.DataLoader, testloader: torch.utils.data.DataLoader, args: argparse.Namespace):
 
@@ -495,7 +496,7 @@ def BasicDDPParser(istraining: bool = True, prog: str = '') -> argparse.Argument
                             'batch size of all GPUs on the current node when '
                             'using Distributed Data Parallel')
         parser.add_argument("--den-lm", type=str, default="./data/den_meta/den_lm.fst",
-                            help="Path to location of checkpoint.")
+                            help="Path to denominator LM.")
         parser.add_argument("--seed", type=int, default=0,
                             help="Manual seed.")
         parser.add_argument("--grad-accum-fold", type=int, default=1,
@@ -515,8 +516,6 @@ def BasicDDPParser(istraining: bool = True, prog: str = '') -> argparse.Argument
                         help="Config file for multi/cross-lingual exp")
     parser.add_argument("--mc-train-pv", type=str, default="",
                         help="Phonological vector file for multilingual training")
-    parser.add_argument("--den-lm", type=str, default="./data/den_meta/den_lm.fst",
-                        help="Path to location of checkpoint.")
     parser.add_argument("--config", type=str, default=None, metavar='PATH',
                         help="Path to configuration file of backbone.")
     parser.add_argument("--resume", type=str, default=None,
