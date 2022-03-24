@@ -13,7 +13,6 @@ from tqdm import tqdm
 from train import build_model
 from dataset import InferDataset
 from collections import OrderedDict
-from mc_lingual import update_model
 
 from torch.utils.data.distributed import DistributedSampler
 from torch.utils.data import DataLoader
@@ -93,11 +92,6 @@ def main_worker(gpu, ngpus_per_node, args, num_jobs):
     model = torch.nn.parallel.DistributedDataParallel(
         model, device_ids=[args.gpu])
 
-    ckpt = torch.load(args.resume, map_location=f'cuda:{args.gpu}')
-    model.load_state_dict(ckpt)
-    if args.mc_conf:
-        model, _ = update_model(model, ckpt, args, f'cuda:{args.gpu}')
-
     load_checkpoint(model, args.resume, loc=f"cuda:{args.gpu}")
     model.eval()
 
@@ -131,12 +125,6 @@ def single_worker(device, num_jobs, args, idx_beg=0):
 
     model = model.to(device)
     load_checkpoint(model, args.resume, loc=device)
-
-    ckpt = torch.load(args.resume, map_location=device)
-    model.load_state_dict(ckpt)
-
-    if args.mc_conf:
-        model, _ = update_model(model, ckpt, args, device)
 
     model.eval()
 
@@ -208,11 +196,6 @@ if __name__ == "__main__":
     parser.add_argument("--nj", type=int)
     parser.add_argument("--resume", type=str, default=None,
                         help="Path to location of checkpoint.")
-
-    parser.add_argument("--mc-conf", type=str, default=None,
-                        help="src token file for multi/cross-lingual finetune|eval")
-    parser.add_argument("--mc-train-pv", type=str, default=None,
-                        help="path of phonological vector matrix file for multi/cross-lingual")
 
     parser.add_argument('-j', '--workers', default=1, type=int, metavar='N',
                         help='number of data loading workers (default: 1)')

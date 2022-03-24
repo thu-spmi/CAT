@@ -5,7 +5,7 @@ Author: Zheng Huahuan (zhh20@mails.tsinghua.edu.cn)
 
 This script uses DistributedDataParallel (DDP) to train model within framework of CAT.
 Differed from `train_dist.py`, this one supports read configurations from json file
-and is of less hard-coding style.
+and is more non-hard-coding style.
 """
 
 import coreutils
@@ -106,7 +106,7 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
 
     # init ctc-crf, args.iscrf is set in build_model
     if args.iscrf:
-        ctx = CRFContext(f"{args.den_lm}", args.gpu)
+        ctx = CRFContext(f"{args.data}/den_meta/den_lm.fst", args.gpu)
 
     # training
     manager.run(train_sampler, trainloader, testloader, args)
@@ -138,12 +138,6 @@ def build_model(args, configuration, train=True) -> nn.Module:
     netconfigs = configuration['net']
     net_kwargs = netconfigs['kwargs']   # type:dict
     net = getattr(model_zoo, netconfigs['type'])
-    if args.mc_train_pv and os.path.isfile(args.mc_train_pv):
-        pv = args.mc_train_pv
-        net_kwargs["pv"] = pv
-        ismc = True
-    else:
-        ismc = False
 
     am_model = net(**net_kwargs)    # type:nn.Module
     if not train:
@@ -178,10 +172,8 @@ def build_model(args, configuration, train=True) -> nn.Module:
 
     torch.cuda.set_device(args.gpu)
     model.cuda(args.gpu)
-    # NOTE (Huahuan): setup find_unused_parameters=True would harm the performance, since
-    # which requests the DDP to check the unused parameters everytime in forward/backward
     model = torch.nn.parallel.DistributedDataParallel(
-        model, device_ids=[args.gpu], find_unused_parameters=ismc)
+        model, device_ids=[args.gpu])
     return model
 
 

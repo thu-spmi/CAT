@@ -5,146 +5,29 @@ Author: Zheng Huahuan (zhh20@mails.tsinghua.edu.cn)
 """
 
 import os
-import argparse
 import time
 import json
 import math
 import shutil
 import scheduler
-import numpy as np
 from collections import OrderedDict
 from monitor import plot_monitor
+from ctc_crf import CTC_CRF_LOSS as CRFLoss
+from ctc_crf import WARP_CTC_LOSS as CTCLoss
 from _specaug import SpecAug
-from typing import Callable, Union, Sequence, Iterable
+
 
 import torch
-import torch.nn as nn
 import torch.distributed as dist
 from torch.nn.utils.rnn import pad_sequence
 
 
-class Manager(object):
-    def __init__(self, func_build_model: Callable[[argparse.Namespace, dict], Union[nn.Module, nn.parallel.DistributedDataParallel]], args: argparse.Namespace):
-        super().__init__()
-
-        with open(args.config, 'r') as fi:
-            configures = json.load(fi)  # type: dict
-
-        self.model = func_build_model(args, configures)
-
-        # Initial specaug module
-        if 'specaug_config' not in configures:
-            specaug = None
-            if args.rank == 0:
-                highlight_msg("Disable SpecAug")
-        else:
-            specaug = SpecAug(**configures['specaug_config'])
-            specaug = specaug.to(f'cuda:{args.gpu}')
-
-        self.specaug = specaug
-
-        # Initial scheduler and optimizer
-        self.scheduler = GetScheduler(
-            configures['scheduler'], self.model.parameters())
-
-        self.log = OrderedDict({
-            'log_train': ['epoch,loss,loss_real,net_lr,time'],
-            'log_eval': ['loss_real,time']
-        })
-        self.rank = args.rank
-        self.DEBUG = args.debug
-
-        if args.resume is not None:
-            print(f"[GPU {args.rank}]: Resuming from: {args.resume}")
-            loc = f'cuda:{args.gpu}'
-            checkpoint = torch.load(
-                args.resume, map_location=loc)  # type: OrderedDict
-            self.load(checkpoint)
-
-    def run(self, train_sampler: torch.utils.data.distributed.DistributedSampler, trainloader: torch.utils.data.DataLoader, testloader: torch.utils.data.DataLoader, args: argparse.Namespace):
-
-        epoch = self.scheduler.epoch_cur
-        self.model.train()
-        while True:
-            epoch += 1
-            train_sampler.set_epoch(epoch)
-
-            train(trainloader, epoch, args, self)
-
-            self.model.eval()
-            metrics = test(testloader, args, self)
-            if isinstance(metrics, tuple):
-                # defaultly use the first one to evaluate
-                metrics = metrics[0]
-            state, info = self.scheduler.step(epoch, metrics)
-
-            if args.gpu == 0:
-                print(info)
-
-            self.model.train()
-            if self.rank == 0 and not self.DEBUG:
-                self.log_export(args.ckptpath)
-                plot_monitor(args.dir, self.log)
-
-            if state == 2:
-                print("Terminated: GPU[%d]" % self.rank)
-                dist.barrier()
-                break
-            elif self.rank != 0 or self.DEBUG:
-                continue
-            elif state == 0 or state == 1:
-                self.save("checkpoint", args.ckptpath)
-                if state == 1:
-                    shutil.copyfile(
-                        f"{args.ckptpath}/checkpoint.pt", f"{args.ckptpath}/bestckpt.pt")
-            else:
-                raise ValueError(f"Unknown state: {state}.")
-            torch.cuda.empty_cache()
-
-    def save(self, name: str, PATH: str = '') -> str:
-        """Save checkpoint.
-
-        The checkpoint file would be located at `PATH/name.pt`
-        or `name.pt` if `PATH` is empty.
-        """
-
-        PATH = os.path.join(PATH, name+'.pt')
-        torch.save(OrderedDict({
-            'model': self.model.state_dict(),
-            'scheduler': self.scheduler.state_dict(),
-            'log': OrderedDict(self.log)
-        }), PATH)
-        return PATH
-
-    def load(self, checkpoint: OrderedDict):
-        r'Load checkpoint.'
-
-        dist.barrier()
-        self.model.load_state_dict(checkpoint['model'])
-        self.scheduler.load_state_dict(checkpoint['scheduler'])
-        self.log = checkpoint['log']
-
-    def log_update(self, msg: list = [], loc: str = "log_train"):
-        self.log[loc].append(msg)
-
-    def log_export(self, PATH: str):
-        """Save log file in {PATH}/{key}.csv
-        """
-
-        for key, value in self.log.items():
-
-            with open(f"{PATH}/{key}.csv", 'w+', encoding='utf8') as file:
-                data = [','.join([str(x) for x in infos])
-                        for infos in value[1:]]
-                file.write(value[0] + '\n' + '\n'.join(data))
-
-
-def GetScheduler(scheduler_configs: dict, param_list: Iterable) -> scheduler.Scheduler:
+def GetScheduler(scheduler_configs, param_list) -> scheduler.Scheduler:
     schdl_base = getattr(scheduler, scheduler_configs['type'])
     return schdl_base(scheduler_configs['optimizer'], param_list, **scheduler_configs['kwargs'])
 
 
-def pad_list(xs: torch.Tensor, pad_value=0, dim=0) -> torch.Tensor:
+def pad_list(xs, pad_value=0, dim=0):
     """Perform padding for the list of tensors.
 
     Args:
@@ -172,7 +55,7 @@ def pad_list(xs: torch.Tensor, pad_value=0, dim=0) -> torch.Tensor:
         return padded.transpose(1, dim+1).contiguous()
 
 
-def str2num(src: str) -> Sequence[int]:
+def str2num(src: str) -> list:
     return list(src.encode())
 
 
@@ -180,7 +63,7 @@ def num2str(num_list: list) -> str:
     return bytes(num_list).decode()
 
 
-def gather_all_gpu_info(local_gpuid: int, num_all_gpus: int = None) -> Sequence[int]:
+def gather_all_gpu_info(local_gpuid: int, num_all_gpus: int = None) -> list:
     """Gather all gpu info based on DDP backend
 
     This function is supposed to be invoked in all sub-process.
@@ -202,9 +85,9 @@ def gather_all_gpu_info(local_gpuid: int, num_all_gpus: int = None) -> Sequence[
     return [num2str(x.tolist()).strip() for x in info_list]
 
 
-def gen_readme(path: str, model: nn.Module, gpu_info: list = []) -> str:
+def gen_readme(path, model, gpu_info: list = []):
     if os.path.exists(path):
-        highlight_msg(f"Not generate new readme, since '{path}' exists")
+        highlight_msg(f"Not generate new readme, since '{path}' exists.")
         return path
 
     model_size = count_parameters(model)/1e6
@@ -237,7 +120,7 @@ def gen_readme(path: str, model: nn.Module, gpu_info: list = []) -> str:
         "```",
         "",
         "### Monitor figure",
-        "![monitor](./ckpt/monitor.png)",
+        "![monitor](./monitor.png)",
         ""
     ]
     with open(path, 'w') as fo:
@@ -246,7 +129,7 @@ def gen_readme(path: str, model: nn.Module, gpu_info: list = []) -> str:
     return path
 
 
-def count_parameters(model: nn.Module) -> int:
+def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
@@ -292,11 +175,7 @@ class AverageMeter(object):
         return fmtstr.format(**self.__dict__)
 
 
-def highlight_msg(msg: Union[Sequence[str], str]):
-    if isinstance(msg, str):
-        print("\n>>> {} <<<\n".format(msg))
-        return
-
+def highlight_msg(msg: str):
     try:
         terminal_col = os.get_terminal_size().columns
     except:
@@ -306,7 +185,12 @@ def highlight_msg(msg: Union[Sequence[str], str]):
         print(msg)
         return None
 
-    len_msg = max([len(line) for line in msg])
+    if '\n' in msg:
+        msg = msg.split('\n')
+        len_msg = max([len(line) for line in msg])
+    else:
+        len_msg = len(msg)
+        msg = [msg]
 
     if len_msg > max_len:
         len_msg = max_len
@@ -331,15 +215,117 @@ def highlight_msg(msg: Union[Sequence[str], str]):
     print(msg)
 
 
-def train(trainloader, epoch: int, args: argparse.Namespace, manager: Manager):
-    @torch.no_grad()
-    def _cal_real_loss(loss, path_weight):
-        if args.iscrf:
-            partial_loss = loss.cpu()
-            weight = torch.mean(path_weights)
-            return partial_loss - weight
+class Manager(object):
+    def __init__(self, logger: OrderedDict, func_buil_model, args):
+        super().__init__()
+
+        with open(args.config, 'r') as fi:
+            configures = json.load(fi)
+
+        self.model = func_buil_model(args, configures)
+
+        if 'specaug_config' not in configures:
+            specaug = None
+            if args.rank == 0:
+                highlight_msg("Disable SpecAug.")
         else:
-            return loss.cpu()
+            specaug = SpecAug(**configures['specaug_config'])
+            specaug = specaug.to(f'cuda:{args.gpu}')
+
+        self.specaug = specaug
+        self.scheduler = GetScheduler(
+            configures['scheduler'], self.model.parameters())
+
+        self.log = logger
+        self.rank = args.rank
+        self.DEBUG = args.debug
+
+        if args.resume is not None:
+            print(f"Resuming from: {args.resume}")
+            loc = f'cuda:{args.gpu}'
+            checkpoint = torch.load(args.resume, map_location=loc)
+            self.load(checkpoint)
+
+    def run(self, train_sampler, trainloader, testloader, args):
+
+        epoch = self.scheduler.epoch_cur
+        self.model.train()
+        while True:
+            epoch += 1
+            train_sampler.set_epoch(epoch)
+
+            train(trainloader, epoch, args, self)
+
+            self.model.eval()
+            metrics = test(testloader, args, self)
+            if isinstance(metrics, tuple):
+                # defaultly use the first one to evaluate
+                metrics = metrics[0]
+            state = self.scheduler.step(epoch, metrics)
+
+            self.model.train()
+            if self.rank == 0 and not self.DEBUG:
+                self.log_export(args.ckptpath)
+                plot_monitor(args.ckptpath)
+
+            if state == 2:
+                print("Break: GPU[%d]" % self.rank)
+                dist.barrier()
+                break
+            elif self.rank != 0 or self.DEBUG:
+                continue
+            elif state == 0 or state == 1:
+                self.save("checkpoint", args.ckptpath)
+                if state == 1:
+                    shutil.copyfile(
+                        f"{args.ckptpath}/checkpoint.pt", f"{args.ckptpath}/bestckpt.pt")
+
+                    # save model for inference
+                    torch.save(self.model.module.infer.state_dict(),
+                               args.ckptpath + "/infer.pt")
+            else:
+                raise ValueError(f"Unknown state: {state}.")
+            torch.cuda.empty_cache()
+
+    def save(self, name, PATH=''):
+        """Save checkpoint.
+
+        The checkpoint file would be located at `PATH/name.pt`
+        or `name.pt` if `PATH` is empty.
+        """
+
+        if PATH != '' and PATH[-1] != '/':
+            PATH += '/'
+        torch.save(OrderedDict({
+            'model': self.model.state_dict(),
+            'scheduler': self.scheduler.state_dict(),
+            'log': OrderedDict(self.log)
+        }), PATH+name+'.pt')
+
+    def load(self, checkpoint):
+        r'Load checkpoint.'
+
+        dist.barrier()
+        self.model.load_state_dict(checkpoint['model'])
+        self.scheduler.load_state_dict(checkpoint['scheduler'])
+        self.log = checkpoint['log']
+
+    def log_update(self, msg=[], loc="log_train"):
+        self.log[loc].append(msg)
+
+    def log_export(self, PATH):
+        """Save log file in {PATH}/{key}.csv
+        """
+
+        for key, value in self.log.items():
+
+            with open(f"{PATH}/{key}.csv", 'w+', encoding='utf8') as file:
+                data = [','.join([str(x) for x in infos])
+                        for infos in value[1:]]
+                file.write(value[0] + '\n' + '\n'.join(data))
+
+
+def train(trainloader, epoch: int, args, manager: Manager):
 
     scheduler = manager.scheduler
 
@@ -372,12 +358,20 @@ def train(trainloader, epoch: int, args: argparse.Namespace, manager: Manager):
 
         data_time.update(time.time() - end)
 
+        loss = model(logits, labels, input_lengths, label_lengths)
+
+        with torch.no_grad():
+            if args.iscrf:
+                partial_loss = loss.cpu()
+                weight = torch.mean(path_weights)
+                real_loss = partial_loss - weight
+            else:
+                real_loss = loss.cpu()
+
+        loss.backward()
+
         # update every fold times and won't drop the last batch
         if fold == 1 or (i+1) % fold == 0 or (i+1) == len(trainloader):
-            loss = model(logits, labels, input_lengths, label_lengths)
-            loss.backward()
-            real_loss = _cal_real_loss(loss, path_weights)
-
             # for Adam optimizer, even though fold > 1, it's no need to normalize grad
             # if using SGD, let grad = grad_accum / fold as following or use a new_lr = init_lr / fold
             # if fold > 1:
@@ -404,18 +398,15 @@ def train(trainloader, epoch: int, args: argparse.Namespace, manager: Manager):
 
             if args.debug and (i+1)/fold >= 20:
                 if args.gpu == 0:
-                    highlight_msg("In debugging, quit loop")
+                    highlight_msg("In debug mode, quit training.")
                 dist.barrier()
                 break
         else:
-            # gradient accumulation w/o sync
-            with model.no_sync():
-                loss = model(logits, labels, input_lengths, label_lengths)
-                loss.backward()
+            continue
 
 
 @torch.no_grad()
-def test(testloader, args: argparse.Namespace, manager: Manager) -> float:
+def test(testloader, args, manager: Manager):
 
     model = manager.model
 
@@ -432,7 +423,7 @@ def test(testloader, args: argparse.Namespace, manager: Manager) -> float:
     for i, minibatch in enumerate(testloader):
         if args.debug and i >= 20:
             if args.gpu == 0:
-                highlight_msg("In debugging, quit loop")
+                highlight_msg("In debug mode, quit evaluating.")
             dist.barrier()
             break
         # measure data loading time
@@ -469,57 +460,3 @@ def test(testloader, args: argparse.Namespace, manager: Manager) -> float:
         [losses_real.avg, time.time() - beg], loc='log_eval')
 
     return losses_real.avg
-
-
-def BasicDDPParser(istraining: bool = True, prog: str = '') -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog=prog)
-    if istraining:
-        parser.add_argument('-p', '--print-freq', default=10, type=int,
-                            metavar='N', help='print frequency (default: 10)')
-        parser.add_argument('--batch_size', default=256, type=int, metavar='N',
-                            help='mini-batch size (default: 256), this is the total '
-                            'batch size of all GPUs on the current node when '
-                            'using Distributed Data Parallel')
-        parser.add_argument("--seed", type=int, default=0,
-                            help="Manual seed.")
-        parser.add_argument("--grad-accum-fold", type=int, default=1,
-                            help="Utilize gradient accumulation for K times. Default: K=1")
-
-        parser.add_argument("--debug", action="store_true",
-                            help="Configure to debug settings, would overwrite most of the options.")
-
-        parser.add_argument("--data", type=str, default=None,
-                            help="Location of training/testing data.")
-        parser.add_argument("--trset", type=str, default=None,
-                            help="Location of training data. Default: <data>/[pickle|hdf5]/tr.[pickle|hdf5]")
-        parser.add_argument("--devset", type=str, default=None,
-                            help="Location of dev data. Default: <data>/[pickle|hdf5]/cv.[pickle|hdf5]")
-        parser.add_argument("--dir", type=str, default=None, metavar='PATH',
-                            help="Directory to save the log and model files.")
-
-    parser.add_argument("--config", type=str, default=None, metavar='PATH',
-                        help="Path to configuration file of backbone.")
-    parser.add_argument("--resume", type=str, default=None,
-                        help="Path to location of checkpoint.")
-
-    parser.add_argument('-j', '--workers', default=1, type=int, metavar='N',
-                        help='number of data loading workers (default: 1)')
-    parser.add_argument('--rank', default=0, type=int,
-                        help='node rank for distributed training')
-    parser.add_argument('--dist-url', default='tcp://127.0.0.1:12947', type=str,
-                        help='url used to set up distributed training')
-    parser.add_argument('--dist-backend', default='nccl', type=str,
-                        help='distributed backend')
-    parser.add_argument('--world-size', default=1, type=int,
-                        help='number of nodes for distributed training')
-    parser.add_argument('--gpu', default=None, type=int,
-                        help='GPU id to use.')
-
-    return parser
-
-
-def SetRandomSeed(seed: int = 0):
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-    np.random.seed(seed)
-    torch.backends.cudnn.deterministic = True

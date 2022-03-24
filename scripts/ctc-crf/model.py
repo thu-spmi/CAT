@@ -38,104 +38,6 @@ class LSTM(nn.Module):
         return out, olens
 
 
-class LSTM_JoinAP_Linear(nn.Module):
-    """ Implementation of the JoinAP Linear model definition in paper:
-
-    Chengrui Zhu, Keyu An, Huahuan Zheng and Zhijian Ou, "Multilingual and Crosslingual Speech Recognition Using
-    Phonological-vector based Phone Embeddings." arXiv preprint arXiv:2107.05038 (2021).
-
-    The model definition is the same as that of LSTM, but different in the additional linear transformation operation
-    before input to Softmax Layer. This class is originally implemented by Chengrui Zhu, and is latter refactored by Wenjie Peng.
-
-    Param:
-        P: phonological vector matrix
-        A: phoneme transformation matrix with size [phonological_dim, phoneme_dim]
-
-    Please refer to Equation (2) of Sec. 3.2 in the paper.
-    """
-    def __init__(self, idim, hdim, n_layers, num_classes, dropout, pv, bidirectional=False):
-        super().__init__()
-        self.lstm = nnlayers._LSTM(
-            idim, hdim, n_layers, dropout, bidirectional=bidirectional)
-
-        if bidirectional:
-            self.A = nn.Linear(51, hdim*2)
-        else:
-            self.A = nn.Linear(51, hdim)
-
-        self.P, p_c = self.init_pv(pv)
-        self.linear = nn.Linear(p_c, num_classes)
-
-
-    def init_pv(self, fin):
-        pv = load_pv(fin)
-        P = nn.Parameter(pv)
-        p_c = P.size()[0]
-        return P, p_c
-
-    def forward(self, x: torch.Tensor, ilens: torch.Tensor, hidden=None):
-
-        lstm_out, olens = self.lstm(x, ilens, hidden)
-
-        out = self.A(self.P) # [pv_dim, hdim]
-
-        out = torch.esinsum("bth, ch -> btc", lstm_out, out)
-        out = self.linear(out) # [batch, time, num_class]
-
-        return out, olens
-
-class LSTM_JoinAP_NonLinear(nn.Module):
-    """ Implementation of the JoinAP Non-linear model definition in paper:
-
-    Chengrui Zhu, Keyu An, Huahuan Zheng and Zhijian Ou, "Multilingual and Crosslingual Speech Recognition Using
-    Phonological-vector based Phone Embeddings." arXiv preprint arXiv:2107.05038 (2021).
-
-    Different from JoinAP Linear, this implementation applies non-linear transformation before Softmax Layer.
-    This class is originally implemented by Chengrui Zhu, and is latter refactored by Wenjie Peng.
-
-    Params:
-        P   : phonological vector matrix
-        A1  : linear transformation matrix with size [phonological_dim, hdim1]
-        A2  : linear transformation matrix with size [hdim1, hdim2]
-        sig : non-linear activation function
-
-    Please refer to Equation (3) in Sec. 3.2 in the paper.
-    """
-    def __init__(self, idim, hdim, n_layers, num_classes, dropout, pv, bidirectional=False):
-        super().__init__()
-        self.lstm = nnlayers._LSTM(
-            idim, hdim, n_layers, dropout, bidirectional=bidirectional)
-
-        if bidirectional:
-            self.A2 = nn.Linear(512, hdim*2)
-        else:
-            self.A2 = nn.Linear(512, hdim)
-
-        self.A1 = nn.Linear(51, 512)
-        self.sig = nn.Sigmoid()
-        self.P, p_c = self.init_pv(pv)
-        self.linear = nn.Linear(p_c, num_classes)
-
-    def init_pv(self, fin):
-        pv = load_pv(fin)
-        P = nn.Parameter(pv, requires_grad = False)
-        return P, P.size()[0]
-
-    def forward(self, x: torch.Tensor, ilens: torch.Tensor, hidden=None):
-        # bottom-up output: lstm_out
-        lstm_out, olens = self.lstm(x, ilens, hidden)
-
-        out = self.A1(self.P) # [pv_dim, 512]
-        out = self.sig(out)
-        out = self.A2(out) # [pv_dim, hdim]
-
-        # Join bottom-up and top-down
-        out = torch.einsum('bth, ch -> btc', lstm_out, out)
-        out = self.linear(out)
-
-        return out, olens
-
-
 class BLSTM(LSTM):
     def __init__(self, idim, hdim, n_layers, num_classes, dropout):
         super().__init__(idim, hdim, n_layers, num_classes, dropout, bidirectional=True)
@@ -157,32 +59,6 @@ class VGGBLSTM(VGGLSTM):
     def __init__(self, idim, hdim, n_layers, num_classes, dropout, in_channel=3):
         super().__init__(idim, hdim, n_layers, num_classes,
                          dropout, in_channel=in_channel, bidirectional=True)
-
-
-class VGGBLSTM_JoinAP_Linear(LSTM_JoinAP_Linear):
-    """ VGGBLSTM for JoinAP Linear """
-    def __init__(self, idim, hdim, n_layers, num_classes, dropout, pv, in_channel=3):
-        super().__init__(get_vgg2l_odim(idim, in_channel=in_channel), hdim,
-                         n_layers, num_classes, dropout, pv, bidirectional=True)
-
-        self.VGG = nnlayers.VGG2L(in_channel)
-
-    def forward(self, x: torch.Tensor, ilens: torch.Tensor):
-        vgg_o, vgg_lens = self.VGG(x, ilens)
-        return super().forward(vgg_o, vgg_lens)
-
-
-class VGGBLSTM_JoinAP_NonLinear(LSTM_JoinAP_NonLinear):
-    """ VGGBLSTM for JoinAP Non-linear """
-    def __init__(self, idim, hdim, n_layers, num_classes, dropout, pv, in_channel=3):
-        super().__init__(get_vgg2l_odim(idim, in_channel=in_channel), hdim,
-                         n_layers, num_classes, dropout, pv, bidirectional=True)
-
-        self.VGG = nnlayers.VGG2L(in_channel)
-
-    def forward(self, x: torch.Tensor, ilens: torch.Tensor):
-        vgg_o, vgg_lens = self.VGG(x, ilens)
-        return super().forward(vgg_o, vgg_lens)
 
 
 class LSTMrowCONV(nn.Module):
