@@ -808,7 +808,9 @@ ngram 1=7
 ### TLG.fst
 
 把以上生成的fst文件进行重组，生成TLG.fst。
-
+	
+![TLG.fst](assets/TLG.fst.png)
+	
 ```shell
 local/yesno_decode_graph.sh data/lm/srilm/srilm.o1g.kn.gz data/lang data/lang_test || exit 1;
 ```
@@ -858,7 +860,7 @@ echo "Composing decoding graph TLG.fst succeeded"
 rm -r $tgt_lang/LG.fst   # We don't need to keep this intermediate FST
 ```
 
-到此，我们完成了数据文件的准备以及TLG.fst的生成，TLG.fst画图如下：
+到此，我们完成了数据文件的准备以及TLG.fst的生成，具体流程如下：
 
 ![TLG.fst](assets/TLG.png)
 
