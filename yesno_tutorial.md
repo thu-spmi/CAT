@@ -611,7 +611,7 @@ ctc-crf/ctc_compile_dict_token.sh --dict-type "phn" \
 
 详见ctc-crf/ctc_compile_dict_token.sh的注释。
 
-***fst文件的可视化，参考[https://www.cnblogs.com/welen/p/7611320.html]、[https://www.dazhuanlan.com/shitou103/topics/1489883]***
+***fst文件的可视化，参考[fst可视化教程](https://www.cnblogs.com/welen/p/7611320.html)***
 
 通过这一步，脚本依次通过lexicon_numbers.txt, units.txt生成了words.txt, tokens.txt，进而生成了T.fst, L.fst。
 
@@ -941,7 +941,7 @@ Step 2: [Feature extraction](https://github.com/thu-spmi/CAT/blob/master/toolkit
 
 分别为音频采样率和滤波器个数，yesno数据集音频采样率为8000，滤波器个数我们取40。
 
-***关于FBank：[https://www.jianshu.com/p/b25abb28b6f8]***
+***关于FBank：[特征提取](https://www.jianshu.com/p/b25abb28b6f8)***
 
 ```shell
 if [ $stage -le 2 ] && [ $stop_stage -ge 2 ]; then
