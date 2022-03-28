@@ -1,0 +1,35 @@
+{
+    "net": {
+        "type": "BLSTM",
+        "lossfn": "crf",
+        "lamb": 0.01,
+        "kwargs": {
+            "n_layers": 6,
+            "idim": 120,
+            "hdim": 320,
+            "num_classes": 218,
+            "dropout": 0.5
+        }
+    },
+    "scheduler": {
+        "type": "SchedulerWarmupMileStone",
+        "optimizer": {
+            "type_optim": "Adam",
+            "kwargs": {
+                "lr": 1e-3,
+                "betas": [
+                    0.9,
+                    0.99
+                ],
+                "weight_decay": 0.0
+            }
+        },
+        "kwargs": {
+	    "total_batch_size":1192,
+	    "refer_batch":256,
+            "warmup_epoch": 10,
+            "lr_stop": 1e-5,
+            "reverse_metric_direc": true
+        }
+    }
+}
