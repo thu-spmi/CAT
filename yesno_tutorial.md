@@ -1095,7 +1095,22 @@ Step 5: [Model training](https://github.com/thu-spmi/CAT/blob/master/toolkitwork
 }
 ```
 
-net参数设置训练使用的模型，参考ctc_crf/model.py；scheduler参数设置学习的策略，参考ctc_crf/scheduler.py，optimizer参数请阅读[torch.optim][https://pytorch.org/docs/stable/optim.html]相关文档。此处我们采用LSTM模型，学习率衰减使用余弦退火策略。
+**参数设置说明**	
+
+| settings     |                                                                             |
+| ------------ | --------------------------------------------------------------------------- |
+| lossfn       | 损失函数默认crf(ctc-crf)或ctc                                                |
+| lamb         | 稳定ctc loss的权重                                                           |
+| n_layers     | 神经网络循环层数                                                             |
+| idim         | 输入特征的维度                                                               |
+| hdim         | 神经网络每个隐藏层中的单元数                                                  |
+| num_classes  | 神经网络输出层数一般为音素集合数+1(phone+1 for phone-based model).(char+1 for char-based model)                                                         |
+| dropout      | 防止过拟合(默认0.5)                                                          |
+| optimizer    | 优化器(默认Adam)                                                             |
+| lr           | 学习率大小                                                                   |
+		
+此处type我们采用LSTM模型,net参数设置训练使用其它模型具体参考ctc_crf/model.py；scheduler参数设置学习的策略，具体参考ctc_crf/scheduler.py.
+optimizer相关参数及设置参考：[优化器相关说明](https://pytorch.org/docs/master/optim.html#torch.optim.Optimizer).
 
 训练的代码如下：
 
