@@ -93,12 +93,13 @@ def main_worker(gpu, ngpus_per_node, args, num_jobs):
     model = torch.nn.parallel.DistributedDataParallel(
         model, device_ids=[args.gpu])
 
-    ckpt = torch.load(args.resume, map_location=f'cuda:{args.gpu}')
-    model.load_state_dict(ckpt)
-    if args.mc_conf:
-        model, _ = update_model(model, ckpt, args, f'cuda:{args.gpu}')
-
     load_checkpoint(model, args.resume, loc=f"cuda:{args.gpu}")
+    if args.mc_conf:
+        model, _ = update_model(
+            model=model,
+            ckpt=torch.load(args.resume, map_location=f'cuda:{args.gpu}'),
+            args=args,
+            loc=f'cuda:{args.gpu}')
     model.eval()
 
     if args.rank == 0:
@@ -131,12 +132,12 @@ def single_worker(device, num_jobs, args, idx_beg=0):
 
     model = model.to(device)
     load_checkpoint(model, args.resume, loc=device)
-
-    ckpt = torch.load(args.resume, map_location=device)
-    model.load_state_dict(ckpt)
-
     if args.mc_conf:
-        model, _ = update_model(model, ckpt, args, device)
+        model, _ = update_model(
+            model=model,
+            ckpt=torch.load(args.resume, map_location=device),
+            args=args,
+            loc=device)
 
     model.eval()
 
