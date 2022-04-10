@@ -17,12 +17,12 @@
 * [7.实验展示](#7-实验展示)
 * [8.结果分析](#8-结果分析)
 
-此文档的目的是让大家了解kaldi工具包的使用，**通过搭建一个简单的语音识别项目，帮助初学者更多了解CAT的工作流程，先知其然，在知其所以然，如果想要更多了解建议进一步阅读以下基本文献。
+此文档的目的是让大家了解kaldi->CAT工具包的使用，通过搭建一个简单的语音识别项目，帮助初学者更多了解CAT的工作流程，先知其然再知其所以然，如果想要更多了解建议进一步阅读以下基本文献。
 
-- L. R. Rabiner, “A tutorial on hidden Markov models and selected applications in speech recognition”, Proceedings of the IEEE, 1989.[PDF](https://web.ece.ucsb.edu/Faculty/Rabiner/ece259/Reprints/tutorial%20on%20hmm%20and%20applications.pdf)
-- A. Graves, S. Fernandez, F. Gomez, and J. Schmidhuber, “Connectionist temporal classiﬁcation: Labelling unsegmented sequence data with recurrent neural networks”, ICML, 2006.[PDF](https://www.cs.toronto.edu/~graves/icml_2006.pdf)
-- Hongyu Xiang, Zhijian Ou, "CRF-based Single-stage Acoustic Modeling with CTC Topology", ICASSP, 2019.[PDF](http://oa.ee.tsinghua.edu.cn/~ouzhijian/pdf/ctc-crf.pdf)
-- Zhijian Ou, "State-of-the-Art of End-to-End Speech Recognition", Tutorial at The 6th Asian Conference on Pattern Recognition (ACPR2021), Jeju Island, Korea, 2021.[PDF](http://oa.ee.tsinghua.edu.cn/~ouzhijian/pdf/ACPR2021%20Tutorial%20State-of-the-Art%20of%20End-to-End%20Speech%20Recognition.pdf)
+- L. R. Rabiner, “A tutorial on hidden Markov models and selected applications in speech recognition”, Proceedings of the IEEE, 1989. [PDF](https://web.ece.ucsb.edu/Faculty/Rabiner/ece259/Reprints/tutorial%20on%20hmm%20and%20applications.pdf)
+- A. Graves, S. Fernandez, F. Gomez, and J. Schmidhuber, “Connectionist temporal classiﬁcation: Labelling unsegmented sequence data with recurrent neural networks”, ICML, 2006. [PDF](https://www.cs.toronto.edu/~graves/icml_2006.pdf)
+- Hongyu Xiang, Zhijian Ou, "CRF-based Single-stage Acoustic Modeling with CTC Topology", ICASSP, 2019. [PDF](http://oa.ee.tsinghua.edu.cn/~ouzhijian/pdf/ctc-crf.pdf)
+- Zhijian Ou, "State-of-the-Art of End-to-End Speech Recognition", Tutorial at The 6th Asian Conference on Pattern Recognition (ACPR2021), Jeju Island, Korea, 2021.  [PDF](http://oa.ee.tsinghua.edu.cn/~ouzhijian/pdf/ACPR2021%20Tutorial%20State-of-the-Art%20of%20End-to-End%20Speech%20Recognition.pdf)
 
 **[CAT workflow](https://github.com/thu-spmi/CAT/blob/master/toolkitworkflow.md)已经整理了CAT的工作流程，分为六步，前五步为训练，第六步是解码。** 这份文档将根据[CAT workflow](https://github.com/thu-spmi/CAT/blob/master/toolkitworkflow.md)，更具体地以一个简单语音识别项目（yesno项目）为例，对CAT工作流程加以解释。
 
@@ -78,9 +78,7 @@ http://www.openslr.org/1.
 1. 在egs下创建yesno目录
 
 2. 编写以下两个脚本
-CAT toolkit: 一般无需修改默认路径即可
-Kaldi:路径需要修改到下载好的kaldi根目录下
-Data:你的yesno根目录下
+
    - **path.sh**
 
      ```shell
@@ -100,12 +98,19 @@ Data:你的yesno根目录下
      ```
 
      配置全局的环境变量，分别配置CAT、kaldi、Data(数据集的环境变量)，代码来源为`egs\wsj`项目下的同名文件。
+     
+     CAT toolkit: 一般无需修改默认路径即可
+     
+     Kaldi:路径需要修改到下载好的kaldi根目录下
+     
+     Data:你的yesno根目录下
 
      创建完后可以在终端里运行一遍`./path.sh`，没有问题后我们进行下一步。
 
    - **cmd.sh**
 
      ```shell
+     # copy from kaldi
      export train_cmd=run.pl
      export decode_cmd=run.pl
      export mkgraph_cmd=run.pl
@@ -117,8 +122,11 @@ Data:你的yesno根目录下
 3. 创软连接到kaldi以及CAT工具包的目录，便于代码的编写以及迁移
 
    ```shell
+   # path ctc-crf
    ln -s ../../scripts/ctc-crf ctc-crf
+   # path utils from kaldi
    ln -s $KALDI_ROOT/egs/wsj/s5/utils utils
+   # path steps from kaldi
    ln -s $KALDI_ROOT/egs/wsj/s5/steps steps
    ```
 
@@ -1268,10 +1276,19 @@ fi
 
 以下是进行8次实验的结果对比：
 	
-![image](https://user-images.githubusercontent.com/99643269/158049903-7fccdc78-8ef7-4b95-af1a-1f213dd96b15.png)
+| Model             | Loss_fune   | N-gram | featrue_size | hidm/layers | Scheduler       | Batch_size | lr    | epoch | min_loss | WER   |
+| ----------------- | ----------- | ------ | ------------ | ----------- | --------------- | ---------- | ----- | ----- | -------- | ------|
+| BLSTM             | CTC         | 1-gram | 120          | 320/3       | CosineAnnealing | 4          | 0.001 | 30    | -7.71    | 8.79  |
+| BLSTM             | CTC         | 3-gram | 120          | 320/3       | CosineAnnealing | 4          | 0.001 | 30    | 1.91     | 20.83 |
+| BLSTM             | CTC         | 1-gram | 120          | 320/3       | EarlyStop       | 4          | 0.001 | 30    | 4.45     | 17.50 |
+| BLSTM             | CTC         | 3-gram | 120          | 320/3       | EarlyStop       | 4          | 0.001 | 30    | 8.15     | 33.25 | 
+| VGG-BLSYM         | CTC-CRF     | 1-gram | 120          | 320/3       | CosineAnnealing | 4          | 0.001 | 30    | -13.06   | 2.92  |
+| VGG-BLSTM         | CTC-CRF     | 3-gram | 120          | 320/3       | CosineAnnealing | 4          | 0.001 | 30    | -17.77   | 12.92 |
+| VGG-BLSTM         | CTC-CRF     | 1-gram | 120          | 320/3       | EarlyStop       | 4          | 0.001 | 12    | -16.54   | 1.25  |
+| vGG-BLSTM         | CTC-CRF     | 3-gram | 120          | 320/3       | EarlyStop       | 4          | 0.001 | 30    | -10.89   | 18.75 |
 
-**实验结果可以看出CAT(ctc-crf)要优于ctc，由于yesno实验数据简单生成的语言模型并不复杂所以1-gram要比多阶语言模型效果更好**
-	
-**也可以尝试修改`exp/demo/config.jsn`中参数尝试多次训练**
+**实验结果可以看出CAT(ctc-crf)明显优于ctc，由于yesno实验数据简单生成的语言模型并不复杂所以1-gram要比多阶语言模型效果更好**
+	 
+**也可以尝试修改`exp/demo/config.json`中参数尝试多次训练**
 
 **🐱‍🏍**	
