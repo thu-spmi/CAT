@@ -10,8 +10,8 @@ Results on Thchs30 datasets.
 
 | Unit  | Test | SP   |
 | ----- | ---- | ---- |
-| phone | 7.87 | Y    |
-
+| phone | 7.87 | N    |
+| phone | 6.91 | Y    |
 
 
 ## VGG-BLSTM
@@ -21,5 +21,4 @@ Results on Thchs30 datasets.
 
 | Unit  | Test | SP   |
 | ----- | ---- | ---- |
-| phone | 6.19 | N    |
 | phone | 6.01 | Y    |
