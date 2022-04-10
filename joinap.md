@@ -2,7 +2,9 @@
 
 ---
 
-This page will introduce how to conduct your **Multi/Cross-lingual ASR** with the recently proposed **JoinAP** method, whereas we recommend the interested readers to read the reference given in this page for the theoretical understanding and `CAT/scripts/ctc-crf/{model.py,mc_lingual.py}` for the implementation detailes. To shed light on how to conduct **Multi/Cross-lingual ASR under the CTC-CRF framework**, we will first introduce how to conduct  **Multi-lingual ** exps. Specifically, **multi-lingual** exps with **Flat-phone**, **JoinAP-Linear** and **JoinAP-Nonlinear** will be described. Then, **Cross-lingual** exps will be described in the end.
+This page introduces how to conduct **Multi/Cross-lingual ASR** study with the recently proposed **JoinAP** method. We recommend to read the references at the bottom of this page for theoretical understanding and `CAT/scripts/ctc-crf/{model.py,mc_lingual.py}` for implementation details. 
+
+In this page, we will first introduce how to conduct  **Multi-lingual** experiments, with **Flat-phone**, **JoinAP-Linear** and **JoinAP-Nonlinear**, respectively. Finally, **Cross-lingual** experiments will be described.
 
 ### What we will cover
 
@@ -18,24 +20,22 @@ This page will introduce how to conduct your **Multi/Cross-lingual ASR** with th
 
 ---
 
-Let's start with **Multi-lingual** exp using **Flat-phone** method.  
-
 <a name="flat-phone">**Flat-phone**</a>
 
 - #### training 
 
-  - Once data preparation finishes, **Flat-phone** based multilingual training is the same as monolingual training.
+  - **Flat-phone** based multilingual training is the same as monolingual training.
 
 - #### testing with finetune
 
-  - Testing with finetuning consists of two stages, where the first stage is finetuning while the second stage is testing with the finetuned model. The two stages for **Flat-phone** system is shown as below:
+  - Testing with finetuning consists of two stages. The first stage is finetuning, and the second stage is testing with the finetuned model. The two stages for **Flat-phone** system is shown as follows:
 
     ``` shell
     dir=exp/mc_flatphone
     finetune_dir=exp/mc_flatphone_finetune
     
+    # finetune
     if [ $stage -le 8 ] && [ $stop_stage -ge 8 ]; then
-        # finetune
         unset CUDA_VISIBLE_DEVICES
         if [[ $NODE == 0 && ! -f $dir/scripts.tar.gz ]]; then
             echo ""
@@ -61,7 +61,7 @@ Let's start with **Multi-lingual** exp using **Flat-phone** method.
         done
     fi
     
-    
+    # testing
     if [ $stage -le 9 ] && [ $stop_stage -ge 9 ]; then
         for x in ${lang[@]}; do
             scp=data/all_ark/test_${x}.scp
@@ -84,7 +84,10 @@ Let's start with **Multi-lingual** exp using **Flat-phone** method.
     fi
     ```
 
-    Multi/Cross-lingual finetuning is implemented with `ctc/crf/train.py` by adding additional arguments. For `Flat-phone` finetuning, `--den-lm` and `--mc-conf` must be specified, where `--den-lm` is used to construct the `denominator graph` for the finetuned language while `--mc-conf` is used to adjust the model for finetuning. We take `de` as the language for finetuning and the corresponding file of `conf/mc_flatphone_finetune_de.json`is shown as below:
+    Multi/Cross-lingual finetuning is implemented with `ctc/crf/train.py` by adding additional arguments. For `Flat-phone` finetuning, `--den-lm` and `--mc-conf` are used to provide two input files:
+    - `--den-lm` specifies the file used to construct the `denominator graph` for the finetuned language;
+    - `--mc-conf` specifies the configuration file used to adjust the model for finetuning. 
+    We take `de` as the language for finetuning and the corresponding file of `conf/mc_flatphone_finetune_de.json` is shown as below:
 
     ```json
     {
@@ -99,8 +102,20 @@ Let's start with **Multi-lingual** exp using **Flat-phone** method.
     }
     ```
 
-     where `src_token` and `des_token` is used to build the mapping relationship of output units between the original model and the target model; `P` is used to specify the phonological vector file for **JoinAP** method, and `lr` is used to specify the initial learning rate for finetuning; the value of `hdim` and `odim` depends on the target language; `mode` and `usg` specify the model type and the behavior for the model respectively. The validate value for `mode` must be one of `["flat_phone", "joinap_linear", "joinap_nonlinear"]` . And the validate value for `usg` must be one of `["fientune", "zero-shot-eval", "few-shot-eval", "multi-eval", "multi-finetune-eval"]`, where `"zero-shot-eval"` and `"few-shot-eval"` are used for multi-lingual exp, while `"multi-eval"` and `"multi-finetune-eval"` are used for cross-lingual exp. And `"finetune"` is used for finetuning for both multi and cross lingual exps. For the testing without finetuning of `Flat-phone` model, you should specify `"mode"` as `"flat-phone"` and `"usg"`   as `"zero-shot-eval"` . Once `"mode"` is set to `"flat_phone"`, the value of `"P"` won't take effect. `"lr"` will only take effect when `"usg"` is set to `"finetune"`. 
+     Each field in the configuration json file is as follows:
+      - `src_token` and `des_token`: used to build the mapping relationship of output units between the original model and the target model; 
+      - `P`: used to specify the phonological vector file for **JoinAP** method;
+      - `lr`: used to specify the initial learning rate for finetuning; 
+      - `hdim` and `odim` depends on the target language (to be detailed);
+      -  `mode`: specify the model type, must be one of `["flat_phone", "joinap_linear", "joinap_nonlinear"]`;
+      -  `usg`: specify the behavior for the model, must be one of `["fientune", "zero-shot-eval", "few-shot-eval", "multi-eval", "multi-finetune-eval"]`. 
 
+        - `"finetune"` is used for finetuning for both multi and cross lingual exps. 
+        - `"multi-eval"` and `"multi-finetune-eval"` are used for testing multi-lingual experiments;
+        - `"zero-shot-eval"` and `"few-shot-eval"` are used for testing cross-lingual experiments;
+      
+      For the testing without finetuning of `Flat-phone` model, you should specify `"mode"` as `"flat-phone"` and `"usg"`   as `"zero-shot-eval"` . Once `"mode"` is set to `"flat_phone"`, the value of `"P"` won't take effect. `"lr"` will only take effect when `"usg"` is set to `"finetune"`. 
+      
     Testing of the target languages can be conducted once finetuning finished, which is shown in `$stage=9` in the above code. Multi/Cross-lingual evaluation is implemented with `ctc/calculate_logits.py` by adding some additional arguments. Care should be taken to set `--resume`, `--config` and the parameters for `ctc-crf/decode.sh`. `conf/mc_flatphone_finetune_eval_de.json` should be the same with that of `conf/mc_flatphone_finetune_de.json`,  except that `"usg"` should be set to `"few-shot-eval"` instead.
 
 - #### testing without finetune
@@ -132,7 +147,7 @@ fi
 
 ```
 
-​	where `--den-lm` is very important and should be set appropriately based on the language for finetuning. You should also be careful to set `--resume` and `--dir`. The config file for `--mc-conf` is the same to that in the `Flat-phone` model testing without finetuning, except that `"usg"` should be set as `"finetune"`. 
+​Here `--den-lm` is very important and should be set appropriately based on the language for finetuning. You should also be careful to set `--resume` and `--dir`. The config file for `--mc-conf` is the same to that in the `Flat-phone` model testing without finetuning, except that `"usg"` should be set as `"finetune"`. 
 
 <a name="joinap-linear">**JoinAP-Linear**</a>
 
@@ -357,9 +372,8 @@ By far, we have went through all the models for **Multilingual** exps. Next, we 
   }
   ```
 
-If you have encountered some problems in the **Multi/Cross-lingual** exps, please feel free to file an issue.
+If you have encountered some problems in the **Multi/Cross-lingual** experiments, please feel free to file an issue.
 
 ### References
 
-- Chengrui Zhu, Keyu An, Huahuan Zheng and Zhijian Ou, "Multilingual and crosslingual speech recognition using phonological-vector based phone embeddings", arXiv:2107.05038.
-
+- Chengrui Zhu, Keyu An, Huahuan Zheng and Zhijian Ou, "Multilingual and crosslingual speech recognition using phonological-vector based phone embeddings", IEEE Workshop on Automatic Speech Recognition and Understanding (ASRU), 2021. [pdf](http://oa.ee.tsinghua.edu.cn/~ouzhijian/pdf/ASRU21_JoinAP.pdf)
