@@ -947,7 +947,7 @@ Step 2: [Feature extraction](https://github.com/thu-spmi/CAT/blob/master/toolkit
 --num-mel-bins=40
 ```
 
-分别为音频采样率和滤波器个数，yesno数据集音频采样率为8000，滤波器个数我们取40。
+分别为音频采样率和滤波器个数，yesno数据集音频采样率为8k(8000)，滤波器个数我们取40。
 
 ***关于FBank：[特征提取](https://www.jianshu.com/p/b25abb28b6f8)***
 
@@ -1132,7 +1132,7 @@ Step 5: [Model training](https://github.com/thu-spmi/CAT/blob/master/toolkitwork
 | lossfn       | 损失函数默认crf(ctc-crf)或ctc                                                |
 | lamb         | 稳定ctc loss的权重                                                           |
 | n_layers     | 神经网络循环层数                                                             |
-| idim         | 输入特征的维度                                                               |
+| idim         | 输入特征的维度,(Fbank中取40维+一阶差分+二阶差分=120维)                                                               |
 | hdim         | 神经网络每个隐藏层中的单元数                                                  |
 | num_classes  | 神经网络输出层数一般为音素集合数+1(phone+1 for phone-based model).(char+1 for char-based model)                                                         |
 | dropout      | 防止过拟合(默认0.5)                                                          |
