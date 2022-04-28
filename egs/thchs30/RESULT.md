@@ -22,3 +22,13 @@ Results on Thchs30 datasets.
 | Unit  | Test | SP   |
 | ----- | ---- | ---- |
 | phone | 6.01 | Y    |
+
+
+## Conformer+Transformer rescoring
+
+* Reported in ["Advancing CTC-CRF Based End-to-End Speech Recognition with Wordpieces and Conformers"](https://arxiv.org/abs/2107.03007)
+* AM: Conformer with 7M parameters.3-gram language model and 3-way perturbation is applied.
+
+| Unit  | Test | SP   | Note             |
+| ----- | ---- | ---- | ---------------- |
+| phone | 6.93 | Y    | run_conformer.sh |       
