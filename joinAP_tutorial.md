@@ -3,15 +3,16 @@
 - Chengrui Zhu, Keyu An, Huahuan Zheng and Zhijian Ou, "Multilingual and crosslingual speech recognition using phonological-vector based phone embeddings", IEEE Workshop on Automatic Speech Recognition and Understanding (ASRU), 2021. [pdf](http://oa.ee.tsinghua.edu.cn/~ouzhijian/pdf/ASRU21_JoinAP.pdf)
 #### 本文档将细化说明实验的每一步过程，包括数据获取，数据预处理，发音词典的生成(G2P),音位矢量生成，模型训练评估等。
 
-* [数据获取及预处理](#数据)
+* [数据获取及预处理](#数据获取及预处理)
 
-* [发音词典](#词典)
+* [发音词典](#发音词典)
 
 * [音位矢量](#音位矢量)
 
 * [训练及评估](#训练及评估)
 
 <a name="数据获取及预处理">**数据获取及预处理**</a>
+
 本次实验我们选择开源Common Voice[数据](https://commonvoice.mozilla.org/zh-CN/datasets)作为我们原始训练语料，我们针对CommonVoiceCorpus5.1中德语(750小时)，法语(604小时)，西班牙语(521小时)，意大利语(167小时)，波兰语(119小时)进行多语言以及跨语言的实验，这些开源数据我们可以直接下载得到。下载好的数据由我们音频以及训练，验证，测试文本组成。
 
 数据预处理阶段我们仿照kaldi脚本处理[CAT-commonvoice](https://github.com/thu-spmi/CAT/tree/master/egs/commonvoice),其中 **local**下的脚本文件无需任何处理，我们只需修改**run_mc.sh** 脚本文件即可,脚本中**stage7**开始为joinAP模型的训练，我们目前只说明前6步
