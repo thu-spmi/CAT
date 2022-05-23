@@ -55,6 +55,7 @@ Please cite CAT using:
 * [Tutorial on building your first CAT project (yesno)](yesno_tutorial.md)
 * [Tutorial for newbie on environment setup](EnvSetup_tutorial.md) 
 * [FAQ](faq_ch.md)
+* [joinAP_Tutorial](joinAP_tutorial.md)
 
 ## DevLog
 
