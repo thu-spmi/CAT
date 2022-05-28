@@ -4,7 +4,7 @@
 * [项目目录结构](#项目目录结构)
 * [0.文件准备](#0-文件准备)
 * [1.数据准备](#1-%E6%95%B0%E6%8D%AE%E5%87%86%E5%A4%87)
-* 	* [prepare_data.sh](#prepare_datash)
+	* [prepare_data.sh](#prepare_datash)
 	* [prepare_dict.sh](#prepare_dictsh)
 	* [T.fst & L.fst](#tfst--lfst)
 	* [G.fst](#gfst)
@@ -17,7 +17,7 @@
 * [7.实验展示](#7-实验展示)
 * [8.结果分析](#8-结果分析)
 
-此文档的目的是让大家了解kaldi->CAT工具包的使用，通过搭建一个简单的语音识别项目，帮助初学者更多了解CAT的工作流程，先知其然再知其所以然，如果想要更多了解建议进一步阅读以下基本文献。
+此文档的目的是，通过介绍如何基于CAT搭建一个简单的语音识别项目，帮助读者更多了解CAT的工作流程，先知其然。欲知所以然，建议进一步阅读以下基本文献。
 
 - L. R. Rabiner, “A tutorial on hidden Markov models and selected applications in speech recognition”, Proceedings of the IEEE, 1989. [PDF](https://web.ece.ucsb.edu/Faculty/Rabiner/ece259/Reprints/tutorial%20on%20hmm%20and%20applications.pdf)
 - A. Graves, S. Fernandez, F. Gomez, and J. Schmidhuber, “Connectionist temporal classiﬁcation: Labelling unsegmented sequence data with recurrent neural networks”, ICML, 2006. [PDF](https://www.cs.toronto.edu/~graves/icml_2006.pdf)
@@ -36,7 +36,7 @@ http://www.openslr.org/1.
 
 ## 项目目录结构
 
-**一个语音识别项目**，指在一个特定的数据集上的项目，通常各个项目在egs文件目录下，也可以尝试训练egs目录下的其它数据集实验。
+**一个语音识别项目**，指在一个特定的数据集上的项目，通常各个项目会安排在egs（examples的缩写）文件目录下。读者也可以尝试训练egs目录下的其它数据集实验。
 
 **yesno**
 
@@ -97,13 +97,13 @@ http://www.openslr.org/1.
      export DATA_ROOT=data/yesno
      ```
 
-     配置全局的环境变量，分别配置CAT、kaldi、Data(数据集的环境变量)，代码来源为`egs\wsj`项目下的同名文件。
+     配置全局的环境变量，分别配置CAT、kaldi、Data（数据集的环境变量），代码来源为`egs\wsj`项目下的同名文件。
      
      CAT toolkit: 一般无需修改默认路径即可
      
-     Kaldi:路径需要修改到下载好的kaldi根目录下
+     Kaldi: 路径需要修改到下载好的kaldi根目录下
      
-     Data:你的yesno根目录下
+     Data: 你的yesno根目录下
 
      创建完后可以在终端里运行一遍`./path.sh`，没有问题后我们进行下一步。
 
@@ -119,7 +119,7 @@ http://www.openslr.org/1.
 
      这里是沿用来自kaldi的并行化工具，适应不同的环境可以配置queue.pl等以及不同的参数。一般情况下我们默认run.pl即可。
 
-3. 创软连接到kaldi以及CAT工具包的目录，便于代码的编写以及迁移
+3. 创建软连接到kaldi以及CAT工具包的目录，便于代码的编写以及迁移
 
    ```shell
    # path ctc-crf
@@ -175,7 +175,7 @@ http://www.openslr.org/1.
 ## 1. 数据准备
 Step 1: [Data preparation](https://github.com/thu-spmi/CAT/blob/master/toolkitworkflow.md#Data-preparation)
 
-我们完成了框架准备自此进入[CAT workflow](https://github.com/thu-spmi/CAT/blob/master/toolkitworkflow.md)的工作流程，我们按顺序编写每个脚本。
+至此我们完成了框架准备，下面进入[CAT workflow](https://github.com/thu-spmi/CAT/blob/master/toolkitworkflow.md)的工作流程，我们按顺序编写每个脚本。
 
 在run.sh中step 1，我们完成以下步骤：获取训练数据，建立所需字典，训练语言模型。
 
@@ -201,7 +201,7 @@ fi
 
 ### prepare_data.sh
 
-我们将数据下载准备的步骤放在prepare_data.sh中完成。在prepare.sh完成后，我们期望获得以及划分为训练集(train)与开发集(dev)的data（wav.scp），说话人信息（spk2utt、utt2spk，这里说话人我们默认他为global），标注文本信息（text），分别存储在data/dev,data/train下。
+我们将数据下载及准备的步骤放在prepare_data.sh中完成。在prepare.sh完成后，我们将获得划分为训练集(train)与开发集(dev)的data（wav.scp）、说话人信息（spk2utt、utt2spk，说话人信息默认为global，即无说话人标签）、标注文本信息（text），分别存储在data/dev、data/train下。下面分四步进行介绍。
 
 1. 在local目录下创建文件prepare_data.sh，并获取数据
 
@@ -228,9 +228,9 @@ fi
 
    这一步完成后，我们在data/waves_yesno下得到原始音频数据集。
 
-2. 由于数据且没有划分，这部分我们将音频数据集划分为训练集(train)和开发集(dev)
+2. 由于原始数据没有划分，这部分我们将音频数据集划分为训练集(train)和开发集(dev)
 
-   注：由于数据量较小这里直接将开发集作为测试集，可以修改
+   注：由于数据量较小，这里直接将开发集作为测试集，可以修改。
 
    ```shell
    echo "Preparing train and dev data"
@@ -244,11 +244,11 @@ fi
    ${local}/create_yesno_waves_test_train.pl waves_all.list waves.dev waves.train
    ```
   
-  我们完成后生成create_yesno_waves_test_train.pl后我们对其进行编写
+  下面编写create_yesno_waves_test_train.pl
    
    **create_yesno_waves_test_train.pl**
 
-   注：这部分代码来源于kaldi中yesno项目
+   注：这部分代码来源于kaldi中yesno项目，等分waves_all.list到waves.dev, waves.train中。
 
    .pl为perl代码，此部分代码比较难理解。
 
@@ -286,9 +286,7 @@ fi
    }
    ```
 
-   等分waves_all.list到waves.dev, waves.train中
-
-我们继续回到prepare.data.sh生成test.txt和wave.scp
+下面我们继续回到prepare.data.sh，生成test.txt和wave.scp。
 
 3. 生成\*_wav.scp, \*.txt(\*代指train, test, dev)
 
@@ -305,7 +303,7 @@ fi
    ${local}/create_yesno_txt.pl waves.dev > test.txt #id to content
    ```
 
-生成*.scp文件格式为音频ID和对应的存储位置
+生成的*.scp文件格式为：音频ID和对应的存储位置。
   
   **create_yesno_wav_scp.pl**
 
@@ -327,7 +325,7 @@ fi
    	print "$l $full_path\n";
    }
    ```
-生成*.txt文件，未见内容为音频ID和对应的文本内容
+生成*.txt文件，内容为音频ID和对应的文本内容。
 
 
    **create_yesno_txt.pl**
@@ -353,7 +351,7 @@ fi
    }
    ```
 
-最后编写prepare_data.sh生成utt2spk，spk2utt
+最后编写prepare_data.sh，生成utt2spk，spk2utt。
    
 
 4. 将数据转移到data/dev, data/train, data/test下，并生成utt2spk, spk2utt
@@ -477,13 +475,13 @@ fi
 
 ### prepare_dict.sh
 
-在prepare_dict.sh中准备我们此次的词典。
+在prepare_dict.sh中准备词典，下面分两步介绍。
 
-通过这部分代码，我们期待在data/dict下获得经过去重和补充噪音<NOISE>、人声噪声<SPOKEN_NOISE>、未知词<UNK>等的词典lexicon.txt，排序并用数字编号的声学单元units.txt，以及用数字标号的词典，lexicon_numbers.txt。
+通过这部分代码，我们将在data/dict下获得经过去重和补充噪音<NOISE>、人声噪声<SPOKEN_NOISE>、未知词<UNK>等的词典lexicon.txt，排序并用数字编号的声学单元units.txt，以及用数字标号的词典lexicon_numbers.txt。
 
-声学单元的选择有多种，可以是音素phone、英文字母character、汉字、片段wordpiece等。词典（lexicon）的作用是，将待识别的词汇表（vocabulary）中的词分解为声学单元的序列。
+声学单元（unit）的选择有多种，可以是音素phone、英文字母character、汉字、片段wordpiece等。词典（lexicon）的作用是，将待识别的词汇表（vocabulary）中的词分解为声学单元的序列。
 
-1. 由于我们yesno实验所需词典较小，词典保存在input/lexicon.txt中
+1. 词典保存在input/lexicon.txt中
 
    ```
    <SIL> SIL #静音silence
@@ -542,7 +540,7 @@ fi
    │   └── lexicon_numbers.txt #用units.txt代表词典标号
    ```
 
-   以下展示dict中文件的部分内容：
+   以下展示dict目录中文件的部分内容：
 
    **lexicon_raw.txt**
 
@@ -608,7 +606,8 @@ FST（Finite State Transducers 有限状态转换器）FST常与WFST（Weighted 
 
 [M. Mohri, F. Pereira, and M. Riley, “Speech Recognition with Weighted Finite-State Transducers”, Handbook on Speech Processing and Speech, Springer, 2008.](https://cs.nyu.edu/~mohri/pub/hbka.pdf)
 
-根据发音词典、CTC需要的token，我们生成词典（Lexicon）的L.fst以及CTC生成的T.fst。此处用到我们在prepare_dict.sh中准备好的lexicon.txt, units.txt, lexicon_numbers.txt这3个文件去生成。
+根据发音词典，我们生成词典（Lexicon）对应L.fst以及CTC对应的T.fst。此处用到我们在prepare_dict.sh中准备好的lexicon.txt, units.txt, lexicon_numbers.txt这3个文件去生成。
+有关Connectionist Temporal Classiﬁcation (CTC)，见[原文介绍](https://www.cs.toronto.edu/~graves/icml_2006.pdf)。T.fst表示状态符号序列（含`<blank>`）到单元（unit）符号序列的映射。
 
 ```shell
 # Compile the lexicon and token FSTs
@@ -619,9 +618,7 @@ ctc-crf/ctc_compile_dict_token.sh --dict-type "phn" \
 
 详见ctc-crf/ctc_compile_dict_token.sh的注释。
 
-***fst文件的可视化，参考[fst可视化教程](https://www.cnblogs.com/welen/p/7611320.html)***
-
-通过这一步，脚本依次通过lexicon_numbers.txt, units.txt生成了words.txt, tokens.txt，进而生成了T.fst, L.fst。
+脚本依次通过lexicon_numbers.txt, units.txt生成了words.txt, tokens.txt，进而生成了T.fst, L.fst。
 
 **words.txt** （代表了L.fst的output symbol inventory，也就是G.fst的input symbol inventory）
 
@@ -637,7 +634,7 @@ YES 5
 </s> 8 #结束
 ```
 
-FST确定化（determinization）是指，对于一个fst图，任意输入序列只对应唯一跳转。消歧符号帮助我们确保我们使用的WFST是确定化的，进一步了解推荐阅读《Kaldi语音识别实战》（作者：陈果果等）第五章。
+FST确定化（determinization）是指，对于一个FST图，任意输入序列只对应唯一跳转。消歧符号（#开头的符号，如#0等）用来确保我们使用的WFST是确定化的，进一步了解推荐阅读《Kaldi语音识别实战》第五章。
 
 **tokens.txt** （记录了L.fst的input symbol inventory，也是T.fst的output symbol inventory）
 
@@ -654,7 +651,7 @@ Y 5
 #3 9 #sil的消歧
 ```
 
-为了方便理解，以下通过fstprint展示我们生成的fst文件：
+为了方便理解，以下通过fstprint展示我们生成的fst文件。fst文件的可视化，参考[fst可视化教程](https://www.cnblogs.com/welen/p/7611320.html)。
 
 **T.fst**
 
@@ -786,7 +783,7 @@ file data/lm/srilm/heldout: 3 sentences, 24 words, 0 OOVs
 0 zeroprobs, logprob= -11.09502 ppl= 2.575885 ppl1= 2.899294
 ```
 
-srilm工具的使用可以见工具下的README，训练中需要处理的文件存放在data/lm目录下，我们将srilm的训练结果存储在data/lm/srilm下。yesno实验使用1-gram的语言模型的结果，储存到srilm.o1g.kn中，语言模型如下：
+srilm工具的使用可以见工具下的README。训练中需要处理的文件存放在data/lm目录下，我们将srilm的训练结果存储在data/lm/srilm下。yesno实验使用1-gram的语言模型的结果，储存到srilm.o1g.kn中，语言模型如下：
 
 **srilm.o1g.km**
 
@@ -806,7 +803,7 @@ ngram 1=7
 \end\
 ```
 
-使用n-gram作为语言模型时，习惯上用以上的arpa格式表示，以上[value] [word]的形式意义为logP(word)=value，画图如下：
+使用n-gram作为语言模型时，习惯上用以上的arpa格式表示，以上[value] [word]的形式意义为logProbability(word)=value，画图如下：
 
 **G.fst**
 
@@ -815,7 +812,7 @@ ngram 1=7
 
 ### TLG.fst
 
-把以上生成的fst文件进行重组，生成TLG.fst。
+把以上生成的FST文件进行组合（compose），生成TLG.fst。
 	
 ![TLG.fst](assets/TLG.fst.png)
 	
@@ -938,7 +935,7 @@ rm -r $tgt_lang/LG.fst   # We don't need to keep this intermediate FST
 
 Step 2: [Feature extraction](https://github.com/thu-spmi/CAT/blob/master/toolkitworkflow.md#Feature-extraction)
 
-第二步，我们提取波形文件的FBank特征（FBank是Filter Bank的缩写，指音频信号经过短时傅里叶变换，得到幅度谱，再经过一组滤波器组的输出），提取的FBank特征存放在fbank文件夹。
+在第2步，我们提取波形文件的FBank特征（FBank是Filter Bank的缩写，指音频信号经过短时傅里叶变换，得到幅度谱，再经过一组滤波器组的输出），提取的FBank特征存放在fbank文件夹。
 
 注意在conf目录下建立fbank.conf文件，内容为：
 
@@ -982,7 +979,7 @@ fi
 
 * utils/fix_data_dir.sh：数据排序与过滤
 
-* steps/compute_cmvn_stats.sh：特征归一化，cmvn是指cepstra mean and variance normalization，即减去均值除以标准差的操作。早期语音识别中提取的音频特征是倒谱，故由此得名。在FBank特征得归一化处理，也沿用了该称呼。
+* steps/compute_cmvn_stats.sh：特征归一化，cmvn是指cepstra mean and variance normalization，即减去均值除以标准差的操作。早期语音识别中提取的音频特征是倒谱，故由此得名。在FBank特征的归一化处理，也沿用了该称呼。
 
 通过这部分脚本的运行，会生成fbank目录内容如下：
 
@@ -1002,15 +999,15 @@ fi
  │   └── raw_fbank_train_sp.1.scp	
  ```
 	
-其中ark文件为FBank提取的特征向量;scp文件是音频文件或说话人与相应的ark文件对应的相对关系
+其中ark文件为FBank提取的特征向量；scp文件记录了音频文件或说话人与相应的ark文件对应的相对关系。
 
-前缀cmvn为说话人(egs:global /...../cmvn_dev_sp.ark:7);raw为音频文件(egs:0_1_1_1_1_1_1_1 /...../raw_fbank_dev_sp.1.ark:16)
+前缀cmvn为说话人(egs:global /...../cmvn_dev_sp.ark:7)，raw为音频文件(egs:0_1_1_1_1_1_1_1 /...../raw_fbank_dev_sp.1.ark:16)。
 	
 ## 3. 准备分母图语言模型
 
 Step 3: [Denominator LM preparation](https://github.com/thu-spmi/CAT/blob/master/toolkitworkflow.md#Denominator-LM-preparation)
 
-在第3步，我们先得到得到训练集中每句话的标签（label）序列，可能用到的标签集（label inventory）保存在units.txt中。然后，通过计算标签序列的语言模型并将其表示成den_lm.fst。最后，由den_lm.fst和标签文件出发，计算出标签序列$l$的对数概率 $logp(l)$，称为path weight。详细的步骤内容见注释。
+在第3步，我们先得到训练集中每句话的标签（label）序列；可能用到的标签集（label inventory）之前已保存在units.txt中。然后，通过计算标签序列的语言模型并将其表示成den_lm.fst（分母图语言模型对应的FST文件，den是denominator的缩写）。最后，由den_lm.fst和标签文件出发，计算出标签序列$l$的对数概率 $logp(l)$，称为path weight。详细的步骤内容见注释。
 
 ```shell
 data_tr=data/train_sp
@@ -1086,7 +1083,7 @@ fi
 
 Step 5: [Model training](https://github.com/thu-spmi/CAT/blob/master/toolkitworkflow.md#Model-training)
 
-此时模型训练需要的所有数据已经准备完成，剩下只需要在exp下创建你的一次实验的文件夹(demo)，建立config.json，此处yesno实验可以将config.json进行修改多次实验：
+此时模型训练需要的所有数据已经准备完成，剩下只需要在exp下创建你的一次实验的文件夹(demo)，建立config.json。此处yesno实验可以将config.json进行修改多次实验：
 
 ```json
 {
@@ -1132,15 +1129,16 @@ Step 5: [Model training](https://github.com/thu-spmi/CAT/blob/master/toolkitwork
 | lossfn       | 损失函数默认crf(ctc-crf)或ctc                                                |
 | lamb         | 稳定ctc loss的权重                                                           |
 | n_layers     | 神经网络循环层数                                                             |
-| idim         | 输入特征的维度,(Fbank中取40维+一阶差分+二阶差分=120维)                                                               |
+| idim         | 输入特征的维度，(Fbank中取40维+一阶差分+二阶差分=120维)                                                               |
 | hdim         | 神经网络每个隐藏层中的单元数                                                  |
-| num_classes  | 神经网络输出层数一般为音素集合数+1(phone+1 for phone-based model).(char+1 for char-based model)                                                         |
+| num_classes  | 神经网络输出层数一般为音素集大小+1（#phone+1 for phone-based model).(#char+1 for char-based model）          |
 | dropout      | 防止过拟合(默认0.5)                                                          |
 | optimizer    | 优化器(默认Adam)                                                             |
 | lr           | 学习率大小                                                                   |
 		
-此处type我们采用LSTM模型,net参数设置训练使用其它模型具体参考ctc_crf/model.py；scheduler参数设置学习的策略，具体参考ctc_crf/scheduler.py.
-optimizer相关参数及设置参考：[优化器相关说明](https://pytorch.org/docs/master/optim.html#torch.optim.Optimizer).
+此处`"type": "LSTM"`表示我们采用LSTM模型，对使用其它模型时有关net参数的设置，具体参考ctc_crf/model.py。
+scheduler参数设置学习调度器，具体参考ctc_crf/scheduler.py。
+optimizer相关参数及设置参考：[优化器相关说明](https://pytorch.org/docs/master/optim.html#torch.optim.Optimizer)。
 
 训练的代码如下：
 
@@ -1222,7 +1220,7 @@ if [ $stage -le 9 ] && [ $stop_stage -ge 9 ]; then
 fi
 ```
 
-恭喜你已经完成了你的第一个yesno语音识别项目的搭建，训练和解码过程。
+恭喜你已经完成了你的第一个语音识别项目（yesno）的搭建——训练及解码过程。
 
 现在你的目录结构应该如下图所示：
 
@@ -1270,13 +1268,11 @@ fi
 
 ## 8. 结果分析
 	
-**我们利用`waves_yesno`提供的60条语音数据按照5：5将数据分为训练集和验证集**	
-	
-**定义合适的学习率、迭代次数，根据梯度下降方法对模型进行分别的训练，并记录每一次训练的平均损失函数值**
+我们利用`waves_yesno`提供的60条语音数据，按照5：5将数据分为训练集和验证集。
 
-以下是进行8次实验的结果对比：
+使用不同的超参设置，进行分别的实验（训练及测试），并记录每一次的实验结果记录如下：
 	
-| Model             | Loss_fune   | N-gram | featrue_size | hidm/layers | Scheduler       | Batch_size | lr    | epoch | min_loss | WER   |
+| Model             | Loss_fune   | N-gram | featrue_size | hidm/layers | Scheduler       | Batch_size | lr    | epoch_max | min_loss | WER   |
 | ----------------- | ----------- | ------ | ------------ | ----------- | --------------- | ---------- | ----- | ----- | -------- | ------|
 | BLSTM             | CTC         | 1-gram | 120          | 320/3       | CosineAnnealing | 4          | 0.001 | 30    | -7.71    | 8.79  |
 | BLSTM             | CTC         | 3-gram | 120          | 320/3       | CosineAnnealing | 4          | 0.001 | 30    | 1.91     | 20.83 |
@@ -1287,8 +1283,8 @@ fi
 | VGG-BLSTM         | CTC-CRF     | 1-gram | 120          | 320/3       | EarlyStop       | 4          | 0.001 | 12    | -16.54   | 1.25  |
 | vGG-BLSTM         | CTC-CRF     | 3-gram | 120          | 320/3       | EarlyStop       | 4          | 0.001 | 30    | -10.89   | 18.75 |
 
-**实验结果可以看出CAT(ctc-crf)明显优于ctc，由于yesno实验数据简单生成的语言模型并不复杂所以1-gram要比多阶语言模型效果更好**
-	 
-**也可以尝试修改`exp/demo/config.json`中参数尝试多次训练**
+从以上实验结果可以看出CAT（ctc-crf）明显优于ctc。注意到，由于yesno数据的特点，1-gram语言模型比多阶语言模型效果更好。
 
-**🐱‍🏍**	
+读者可以尝试修改`exp/demo/config.json`中参数尝试多次实验。
+
+🐱‍🏍
