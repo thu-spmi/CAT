@@ -84,7 +84,7 @@ In this page, we will first introduce how to conduct  **Multi-lingual** experime
     fi
     ```
 
-    Multi/Cross-lingual finetuning is implemented with `ctc/crf/train.py` by adding additional arguments. For `Flat-phone` finetuning, `--den-lm` and `--mc-conf` are used to provide two input files:
+    Multi/Cross-lingual finetuning is implemented with `ctc/crf/train.py` by adding additional arguments. For `Flat-phone` finetuning, `--den-lm` and `--mc-conf` are used to feed two input files:
     - `--den-lm` specifies the file used to construct the `denominator graph` for the finetuned language;
     - `--mc-conf` specifies the configuration file used to adjust the model for finetuning. 
     We take `de` as the language for finetuning and the corresponding file of `conf/mc_flatphone_finetune_de.json` is shown as below:
@@ -114,13 +114,13 @@ In this page, we will first introduce how to conduct  **Multi-lingual** experime
         - `"multi-eval"` and `"multi-finetune-eval"` are used for testing multi-lingual experiments;
         - `"zero-shot-eval"` and `"few-shot-eval"` are used for testing cross-lingual experiments;
       
-      For the testing without finetuning of `Flat-phone` model, you should specify `"mode"` as `"flat-phone"` and `"usg"`   as `"zero-shot-eval"` . Once `"mode"` is set to `"flat_phone"`, the value of `"P"` won't take effect. `"lr"` will only take effect when `"usg"` is set to `"finetune"`. 
+      For the testing without finetuning of `Flat-phone` model, you should specify `"mode"` as `"flat-phone"` and `"usg"`   as `"zero-shot-eval"` . Once `"mode"` is set to `"flat_phone"`, the value of `"P"` will not take effect. `"lr"` will only take effect when `"usg"` is set to `"finetune"`. 
       
     Testing of the target languages can be conducted once finetuning finished, which is shown in `$stage=9` in the above code. Multi/Cross-lingual evaluation is implemented with `ctc/calculate_logits.py` by adding some additional arguments. Care should be taken to set `--resume`, `--config` and the parameters for `ctc-crf/decode.sh`. `conf/mc_flatphone_finetune_eval_de.json` should be the same with that of `conf/mc_flatphone_finetune_de.json`,  except that `"usg"` should be set to `"few-shot-eval"` instead.
 
 - #### testing without finetune
 
-  Testing without finetune only involves the final evaluation stage, thus the finetune stage (stage=8 of the most time) should be commented if existed.
+  Testing without finetune only involves the final evaluation stage, thus the finetune stage (stage=8 for the most time) should be commented if existed.
 
 ```shell
 dir=exp/mc_flatphone
@@ -153,7 +153,7 @@ fi
 
 - #### training
 
-  **JoinAP-Linear** multilingual training is enabled with `ctc-crf/train.py` by add additional  parameter of `--mc-train-pv` , which specifies the `phonological vector` used for multi-lingual training. A typical configuration is shown as below:
+  **JoinAP-Linear** multilingual training is enabled with `ctc-crf/train.py` by add additional  parameter of `--mc-train-pv` , which specifies the `phonological vector` (abbreviated as `pv`) used for multi-lingual training. A typical configuration is shown as below:
 
   ```shell
   
