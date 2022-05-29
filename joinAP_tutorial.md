@@ -1,7 +1,8 @@
 # 基于多语言/跨语言ASR(joinAP)
-### 本文档介绍如何使用joinAP模型进行多语言/跨语言ASR的研究，开始前推荐先阅读以下参考资料了解理论知识以及相关细节
+**本文档介绍如何使用joinAP模型进行多语言/跨语言ASR的研究，开始前推荐先阅读以下参考资料了解理论知识以及相关细节**
 - Chengrui Zhu, Keyu An, Huahuan Zheng and Zhijian Ou, "Multilingual and crosslingual speech recognition using phonological-vector based phone embeddings", IEEE Workshop on Automatic Speech Recognition and Understanding (ASRU), 2021. [pdf](http://oa.ee.tsinghua.edu.cn/~ouzhijian/pdf/ASRU21_JoinAP.pdf)
-#### 本文档将细化说明实验的每一步过程，包括数据获取，数据预处理，发音词典的生成(G2P),音位矢量生成，模型训练评估等。
+
+**本文档将细化说明实验的每一步过程，包括数据获取，数据预处理，发音词典的生成(G2P),音位矢量生成，模型训练评估等。**
 
 * [数据获取及预处理](#数据获取及预处理)
 
@@ -11,7 +12,7 @@
 
 * [训练及评估](#训练及评估)
 
-<a name="数据获取及预处理">**数据获取及预处理**</a>
+## 数据获取及预处理
 
 本次实验我们选择开源Common Voice[数据](https://commonvoice.mozilla.org/zh-CN/datasets)作为我们原始训练语料，我们针对CommonVoiceCorpus5.1中德语(750小时)，法语(604小时)，西班牙语(521小时)，意大利语(167小时)，波兰语(119小时)进行多语言以及跨语言的实验，这些开源数据我们可以直接下载得到。下载好的数据由我们音频以及训练，验证，测试文本组成。
 
@@ -84,7 +85,7 @@ if [ $stage -le 6 ] && [ $stop_stage -ge 6 ]; then
 ```
 生成den_lm.fst。最后，由den_lm.fst和标签文件出发，计算出标签序列$l$的对数概率 $logp(l)，称为path weight整合到data/pickle下。
 
-<a name="发音词典">**发音词典**</a>
+## 发音词典
 
 由于Common Voice数据没有提供相应的词典，所以我们需要自己手动生成。这里我们在**stage1**步骤中：
 
@@ -190,7 +191,7 @@ dict_tmp=/mnt/workspace/liziwei/data/local/dict_tmp/ # 未被注音的词典
 ```
 **dict_tmp目录下已经生成我们所需发音词典**
 
-<a name="音位矢量">**音位矢量**</a>
+## 音位矢量
 
 在多语言声学模型训练时我们希望能用一个矢量表示每个音素，这个矢量包含音素的发音信息。由此我们引入音位矢量对我们最后输出线性层进行修改。音位矢量的形成我们用到了panphon工具包，panphon定义了全部 IPA 音素符号到区别特征的映射，我们可以直接根据 IPA 音素得到它的区别特征表达。
 
@@ -280,7 +281,7 @@ array( [[0, 0, 0, ..., 1, 0, 0],
 
 **至此我们完成了音位矢量的构建**
 
-<a name="训练及评估">**训练及评估**</a>
+## 训练及评估
 
 训练及评估部分具体可以参考[CAT-joinAP](https://github.com/thu-spmi/CAT/blob/master/joinap.md)官方说明，这里我们演示**JoinAP-Linear**
 
