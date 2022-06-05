@@ -256,7 +256,6 @@ dict_tmp=/mnt/workspace/liziwei/data/local/dict_tmp/ # 存放未注音及注音�
 $ pip install numpy
 $ import numpy as np
 $ np.save('de.npy',path)
-
 ```
 
 使用numpy读取音位矢量：
@@ -280,7 +279,7 @@ array( [[0, 0, 0, ..., 1, 0, 0],
 
 至此，完成音位矢量的构建，具体流程如下：
 
-![pv.feature](assets/phonological feature.png)
+![pv.feature](assets/phonological_feature.png)
 
 
 ## 训练及评估
