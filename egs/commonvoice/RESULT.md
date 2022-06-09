@@ -90,5 +90,5 @@ For rescoring with "Trans.", please refer to `local/pytorchnn/readme`.
 
 **Experimental resources**
 
-1. Pronunciation dictionary from [CommonVoice_lexicon](./CommonVoice_lexicon) Note: `de, es` capital.
+1. Pronunciation dictionary from [CommonVoice_lexicon](CommonVoice_lexicon) Note: `de, es` capital.
 2. Phonemic features from [CommonVoice_pv](CommonVoice_pv).
