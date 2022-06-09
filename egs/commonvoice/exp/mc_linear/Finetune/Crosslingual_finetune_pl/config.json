@@ -7,7 +7,7 @@
             "n_layers": 3,
             "idim": 120,
             "hdim": 1024,
-            "num_classes": 85,
+            "num_classes": 49,
             "dropout": 0.5
         }
     },

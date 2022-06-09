@@ -7,7 +7,7 @@
             "n_layers": 3,
             "idim": 120,
             "hdim": 1024,
-            "num_classes": 85,
+            "num_classes": 43,
             "dropout": 0.5
         }
     },
@@ -26,7 +26,7 @@
         },
         "kwargs": {
             "epoch_min": 0,
-            "lr_stop": 1e-6,
+            "lr_stop": 1e-5,
             "reverse_metric_direc": true
         }
     }

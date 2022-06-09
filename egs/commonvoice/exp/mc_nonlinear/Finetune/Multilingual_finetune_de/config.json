@@ -1,13 +1,13 @@
 {
     "net": {
-        "type": "VGGBLSTM_JoinAP_Linear",
+        "type": "VGGBLSTM_JoinAP_NonLinear",
         "lossfn": "crf",
         "lamb": 0.01,
         "kwargs": {
-            "n_layers": 3,
+            "n_layers": 6,
             "idim": 120,
-            "hdim": 1024,
-            "num_classes": 85,
+            "hdim": 320,
+            "num_classes": 43,
             "dropout": 0.5
         }
     },
@@ -25,8 +25,8 @@
             }
         },
         "kwargs": {
-            "epoch_min": 0,
-            "lr_stop": 1e-6,
+            "epoch_min": 2,
+            "lr_stop": 1e-5,
             "reverse_metric_direc": true
         }
     }
