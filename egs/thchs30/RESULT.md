@@ -26,7 +26,7 @@ Results on Thchs30 datasets.
 
 ## Conformer+Transformer rescoring
 
-* AM: Conformer with 7M parameters.3-gram language model and 3-way perturbation is applied.
+* AM: Conformer with 7M parameters. SpecAug and 3-way perturbation is applied.
 
 | Unit  | Test | SP   | Note             |
 | ----- | ---- | ---- | ---------------- |
