@@ -2,7 +2,7 @@
 
 **This part is auto generated, add your details in Appendix**
 
-* Model size/M: 69.63
+* Model size/M: 70.59
 * GPU info \[5\]
   * \[1\] NVIDIA GeForce GTX 1080 Ti
   * \[4\] NVIDIA GeForce GTX 1080
