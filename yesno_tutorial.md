@@ -24,7 +24,7 @@
 - Hongyu Xiang, Zhijian Ou, "CRF-based Single-stage Acoustic Modeling with CTC Topology", ICASSP, 2019. [PDF](http://oa.ee.tsinghua.edu.cn/~ouzhijian/pdf/ctc-crf.pdf)
 - Zhijian Ou, "State-of-the-Art of End-to-End Speech Recognition", Tutorial at The 6th Asian Conference on Pattern Recognition (ACPR2021), Jeju Island, Korea, 2021.  [PDF](http://oa.ee.tsinghua.edu.cn/~ouzhijian/pdf/ACPR2021%20Tutorial%20State-of-the-Art%20of%20End-to-End%20Speech%20Recognition.pdf)
 
-**[CAT workflow](https://github.com/thu-spmi/CAT/blob/master/toolkitworkflow.md)已经整理了CAT的工作流程，分为六步，前五步为训练，第六步是解码。** 这份文档将根据[CAT workflow](https://github.com/thu-spmi/CAT/blob/master/toolkitworkflow.md)，更具体地以一个简单语音识别项目（yesno项目）为例，对CAT工作流程加以解释。
+**[CAT workflow](toolkitworkflow.md)已经整理了CAT的工作流程，分为六步，前五步为训练，第六步是解码。** 这份文档将根据[CAT workflow](toolkitworkflow.md)，更具体地以一个简单语音识别项目（yesno项目）为例，对CAT工作流程加以解释。
 
 yesno语音识别项目，来自[Kaldi中的yesno项目](https://github.com/kaldi-asr/kaldi/tree/master/egs/yesno)。如下所述，yesno项目只含有两个词汇，yes和no；一句话中会包含多个由希伯来语（Hebrew）说的yes和no。
 
@@ -68,7 +68,7 @@ http://www.openslr.org/1.
 └── utils -> /myhome/kaldi/egs/wsj/s5/utils #链接到kaldi中同名目录，用于协助处理，如数据复制与验证等
 ```
 
-接下来我们将利用CAT和yesno数据，一步步搭建一个语音识别项目，再次之前请确保您已经完成了[CAT环境配置](https://github.com/HPLQAQ/CAT-tutorial/blob/master/environment.md)和[CAT的安装](https://github.com/thu-spmi/CAT#Installation)。
+接下来我们将利用CAT和yesno数据，一步步搭建一个语音识别项目，再次之前请确保您已经完成了[CAT环境配置](EnvSetup_tutorial.md)和[CAT的安装](README.md#Installation)。
 
 
 ## 0. 文件准备
@@ -173,9 +173,9 @@ http://www.openslr.org/1.
    $NODE指实验运行的节点数，若运行run.sh时直接传参节点数，用stage和stop_stage控制代码运行部分。
 
 ## 1. 数据准备
-Step 1: [Data preparation](https://github.com/thu-spmi/CAT/blob/master/toolkitworkflow.md#Data-preparation)
+Step 1: [Data preparation](toolkitworkflow.md#Data-preparation)
 
-至此我们完成了框架准备，下面进入[CAT workflow](https://github.com/thu-spmi/CAT/blob/master/toolkitworkflow.md)的工作流程，我们按顺序编写每个脚本。
+至此我们完成了框架准备，下面进入[CAT workflow](toolkitworkflow.md)的工作流程，我们按顺序编写每个脚本。
 
 在run.sh中step 1，我们完成以下步骤：获取训练数据，建立所需字典，训练语言模型。
 
@@ -201,7 +201,7 @@ fi
 
 ### prepare_data.sh
 
-我们将数据下载及准备的步骤放在prepare_data.sh中完成。在prepare.sh完成后，我们将获得划分为训练集(train)与开发集(dev)的data（wav.scp）、说话人信息（spk2utt、utt2spk，说话人信息默认为global，即无说话人标签）、标注文本信息（text），分别存储在data/dev、data/train下。下面分四步进行介绍。
+我们将数据下载及准备的步骤放在prepare_data.sh中完成。在prepare_data.sh完成后，我们将获得划分为训练集(train)与开发集(dev)的data（wav.scp）、说话人信息（spk2utt、utt2spk，说话人信息默认为global，即无说话人标签）、标注文本信息（text），分别存储在data/dev、data/train下。下面分四步进行介绍。
 
 1. 在local目录下创建文件prepare_data.sh，并获取数据
 
@@ -477,9 +477,9 @@ fi
 
 在prepare_dict.sh中准备词典，下面分两步介绍。
 
-通过这部分代码，我们将在data/dict下获得经过去重和补充噪音<NOISE>、人声噪声<SPOKEN_NOISE>、未知词<UNK>等的词典lexicon.txt，排序并用数字编号的声学单元units.txt，以及用数字标号的词典lexicon_numbers.txt。
+通过这部分代码，我们将在data/dict下获得经过去重和补充噪音`<NOISE>`、人声噪声`<SPOKEN_NOISE>`、未知词`<UNK>`等的词典lexicon.txt，排序并用数字编号的声学单元units.txt，以及用数字标号的词典lexicon_numbers.txt。
 
-声学单元（unit）的选择有多种，可以是音素phone、英文字母character、汉字、片段wordpiece等。词典（lexicon）的作用是，将待识别的词汇表（vocabulary）中的词分解为声学单元的序列。
+声学单元（unit）的选择有多种，可以是音素（phone）、英文字母（character）、汉字、片段（wordpiece）等。词典（lexicon）的作用是，将待识别的词汇表（vocabulary）中的词分解为**声学单元**的序列。本文档例子中以音素作为声学单元。
 
 1. 词典保存在input/lexicon.txt中
 
@@ -536,7 +536,7 @@ fi
    │   ├── lexicon_raw.txt #原词典去重和去非语言学发音
    │   ├── units_raw.txt #lexicon_raw词典中音素去重
    │   ├── lexicon.txt #lexicon_raw词典加入非语言学发音并排序
-   │   ├── units.txt #units_raw所有音素标号
+   │   ├── units.txt #units_raw中所有音素标号
    │   └── lexicon_numbers.txt #用units.txt代表词典标号
    ```
 
@@ -563,7 +563,7 @@ fi
    **lexicon.txt**
    
    ```
-   <NOISE> <NSN> #自认噪声
+   <NOISE> <NSN> #自然噪声
    <SPOKEN_NOISE> <SPN> #人声噪声
    <UNK> <SPN> #未知词
    NO N
@@ -597,7 +597,7 @@ fi
 
 ### T.fst & L.fst
 
-FST（Finite State Transducers 有限状态转换器）FST常与WFST（Weighted Finite State Transducers 加权有限状态转换器）的称呼混用，与之差异的是WFST在转移路径上附加了权重。安装openfst正是为了使用(W)FST。如下图所示，理论上，一个WFST表示了输入符号序列和输出符号序列的加权关系。
+FST（Finite State Transducers 有限状态转换器）常与WFST（Weighted Finite State Transducers 加权有限状态转换器）的称呼混用，与之差异的是WFST在转移路径上附加了权重。安装openfst正是为了使用(W)FST。如下图所示，理论上，一个WFST表示了输入符号序列和输出符号序列的加权关系。
 
 ![WFST](assets/WFST.png)
 
@@ -648,7 +648,7 @@ Y 5
 #0 6 #G.fst回退符
 #1 7 #注：#1,#2为对<SPOKEN_NOISE>和<UNK>的消歧，因为两者都映射到<SPN>
 #2 8
-#3 9 #sil的消歧
+#3 9 #SIL的消歧
 ```
 
 为了方便理解，以下通过fstprint展示我们生成的fst文件。fst文件的可视化，参考[fst可视化教程](https://www.cnblogs.com/welen/p/7611320.html)。
@@ -658,7 +658,7 @@ Y 5
 ![T.fst](assets/T.fst.png)
 
 
-**L.fst**（注：如果L.fst中没有#3的话，则T.fst中#3也没有必要。历史上若使用HMM拓扑，则需要引入SIL unit，每个词汇可接SIL也可以不接，因而L.fst需要#3进行消岐。本例使用CTC拓扑，L.fst不用#3）
+**L.fst**（注：如果L.fst中没有#3的话，则T.fst中#3也没有必要。历史上若使用HMM拓扑，则需要引入SIL unit，每个词汇可接SIL也可以不接，因而L.fst需要#3进行消岐。本例使用CTC拓扑，L.fst实际上用不着#3）
 
 ![L.fst](assets/L.fst.png)
 
@@ -689,12 +689,12 @@ Y 3
 
 **T.fst**
 
-![T.fst(new)](https://github.com/HPLQAQ/CAT/blob/master/assets/T.fst(no%20NOISE).png)
+![T.fst(new)](assets/T.fst(no%20NOISE).png)
 
 
 **L.fst**
 
-![L.fst(new)](https://github.com/HPLQAQ/CAT/blob/master/assets/L.fst(no%20NOISE).png)
+![L.fst(new)](assets/L.fst(no%20NOISE).png)
 
 
 ### G.fst
@@ -776,14 +776,14 @@ ngram-count -text $sdir/train -order 1 -limit-vocab -vocab $sdir/wordlist -unk \
 ngram -lm $sdir/srilm.o1g.kn.gz -ppl $sdir/heldout 
 ```
 
-取3句计算困惑度，运行结果如下：
+取3句用SRILM工具计算困惑度，运行结果如下：
 
 ```
 file data/lm/srilm/heldout: 3 sentences, 24 words, 0 OOVs
 0 zeroprobs, logprob= -11.09502 ppl= 2.575885 ppl1= 2.899294
 ```
 
-srilm工具的使用可以见工具下的README。训练中需要处理的文件存放在data/lm目录下，我们将srilm的训练结果存储在data/lm/srilm下。yesno实验使用1-gram的语言模型的结果，储存到srilm.o1g.kn中，语言模型如下：
+SRILM工具的使用可以见该工具下的README。训练中需要处理的文件存放在data/lm目录下，我们将SRILM的训练结果存储在data/lm/srilm下。yesno实验使用1-gram的语言模型的结果，储存到srilm.o1g.kn中，语言模型如下：
 
 **srilm.o1g.km**
 
@@ -944,7 +944,7 @@ Step 2: [Feature extraction](https://github.com/thu-spmi/CAT/blob/master/toolkit
 --num-mel-bins=40
 ```
 
-分别为音频采样率和滤波器个数，yesno数据集音频采样率为8k(8000)，滤波器个数我们取40。
+分别为音频采样率和滤波器个数，yesno数据集音频采样率为8k（8000），滤波器个数我们取40。
 
 ***关于FBank：[特征提取](https://www.jianshu.com/p/b25abb28b6f8)***
 
@@ -1001,9 +1001,9 @@ fi
 	
 其中ark文件为FBank提取的特征向量；scp文件记录了音频文件或说话人与相应的ark文件对应的相对关系。
 
-前缀cmvn格式类似:(egs:global /...path to file/cmvn_dev_sp.ark:7)
+前缀cmvn格式类似：(egs:global /...path to file/cmvn_dev_sp.ark:7)
 
-前缀raw为格式类似(egs:0_1_1_1_1_1_1_1 /.....path to file/raw_fbank_dev_sp.1.ark:16)
+前缀raw为格式类似：(egs:0_1_1_1_1_1_1_1 /.....path to file/raw_fbank_dev_sp.1.ark:16)
 	
 ## 3. 准备分母图语言模型
 
