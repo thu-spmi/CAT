@@ -1,8 +1,9 @@
-# 基于多语言/跨语言ASR(JoinAP)
-**本文档介绍如何使用JoinAP模型进行多语言/跨语言ASR的研究，开始前推荐先阅读以下参考资料了解理论知识以及相关细节**
+# 基于JoinAP的多语言/跨语言语音识别
+**本文档介绍如何使用JoinAP模型进行多语言/跨语言语音识别的研究，推荐先阅读以下参考资料了解理论知识以及相关细节**：
 - Chengrui Zhu, Keyu An, Huahuan Zheng and Zhijian Ou, "Multilingual and crosslingual speech recognition using phonological-vector based phone embeddings", IEEE Workshop on Automatic Speech Recognition and Understanding (ASRU), 2021. [pdf](http://oa.ee.tsinghua.edu.cn/~ouzhijian/pdf/ASRU21_JoinAP.pdf)
+- [THU-SPMI@ASRU2021: 基于音位矢量的多语言与跨语言语音识别，促进多语言信息共享与迁移](https://mp.weixin.qq.com/s?__biz=MzU3MzgyNDMzMQ==&mid=2247484519&idx=1&sn=492cc4e098df0077fc51ecb163d8c8a4&chksm=fd3a8843ca4d015560d9cb3fcfc9e0741c0cd898ad69c7b94b6e092f60ee3e6db3c1f9ccf54d&mpshare=1&scene=1&srcid=0612RqU7DGRZG5XQqg0L2Le1&sharer_sharetime=1655005703359&sharer_shareid=96a0960dd6af6941d3216dad8f2d3a50&key=311fd5318431ff9c5328351edecbba7c5d812fe2ebfc0df6c234172e3cd3b056a5dc35c3c9476a894d7828f7932113f61f420f11bd98bd9f19a18dbbce60d74810202a96eb262756df24294667730f65015d74e3b84a12d358110afd52a3e26cd7bfd692bf4322094d61d031aab32954e42b0043521ae4d7a3ba8b52f177429f&ascene=1&uin=MjI2OTIxNjcxMA%3D%3D&devicetype=Windows+10+x64&version=6209051a&lang=zh_CN&exportkey=AxSPQ4EqXRXSVFCXOPz3zSc%3D&acctmode=0&pass_ticket=5FeYTkI0JWlQDdwbOw%2B90azniyK49b4eF6G1m7lzzoG4aLbog8BRp8ZMiC%2BnfXI5&wx_header=0)
 
-**本文档将细化说明实验的每一步过程，包括数据获取，数据预处理，发音词典的生成(G2P),音位矢量生成，模型训练评估等。**
+**本文档将细化说明实验的每一步过程，包括数据获取，数据预处理，发音词典的生成(G2P)，音位矢量生成，模型训练测试等。**
 
 * [数据获取及预处理](#数据获取及预处理)
 
@@ -10,13 +11,13 @@
 
 * [音位矢量](#音位矢量)
 
-* [训练及评估](#训练及评估)
+* [训练及测试](#训练及测试)
 
 ## 数据获取及预处理
 
-本次实验数据选择开源Common Voice[数据](https://commonvoice.mozilla.org/zh-CN/datasets)作为原始训练语料，针对CommonVoiceCorpus5.1中德语(750小时)，法语(604小时)，西班牙语(521小时)，意大利语(167小时)，波兰语(119小时)进行多语言以及跨语言的实验；这些开源数据可以直接下载得到。下载好的数据由音频及训练，验证，测试文本构成。
+本文档中实验选择开源的[CommonVoice数据](https://commonvoice.mozilla.org/zh-CN/datasets)作为实验数据，针对CommonVoice 5.1中德语（750小时），法语（604小时），西班牙语（521小时），意大利语（167小时），波兰语（119小时）进行多语言以及跨语言语音识别的实验；这些开源数据可以直接下载得到。下载好的数据由音频及训练、验证、测试文本构成。
 
-数据预处理阶段仿照kaldi脚本处理[CAT-commonvoice](https://github.com/thu-spmi/CAT/tree/master/egs/commonvoice),其中 **local**下的脚本文件无需任何改动只需要修改**run_mc.sh** 脚本文件即可。脚本中**stage7**开始为joinAP模型的训练部分，我们目前只说明数据处理前6部分。
+数据预处理阶段的代码位于CAT的[egs\commonvoice目录](https://github.com/thu-spmi/CAT/tree/master/egs/commonvoice)，其中 **local**下的脚本文件无需任何改动，只需要修改**run_mc.sh** 脚本文件即可。**run_mc.sh**脚本中**stage7**开始为JoinAP模型的训练部分，下面说明该脚本进行数据处理的前6部分。
 
 ```
 lang=(de it fr es)
@@ -24,70 +25,56 @@ datadir=/path/to/cv-corpus-5.1-2020-06-22/
 
 saved_dict="saved_dict"
 dict_tmp=data/local/dict_tmp
- 
 ```
-**lang**决定训练的语言种类de(德语)，it(意大利语)，fr(法语)，es(西班牙语)可以根据自己硬件要求及目的进行实验。**datadir**存放我们训练的数据目录
+**lang**决定训练的语言种类de（德语），it（意大利语），fr（法语），es（西班牙语），实验者可以根据自身研究需要选择不同语种来进行实验。**datadir**是存放训练数据的目录。
 
-**saved_dict**存放训练的完整发音词典**dict_tmp**存放从文本数据中切分下的未注音的词典(注音部分后续会对其说明)
+**saved_dict**存放完整发音词典，**dict_tmp**存放从文本数据中切分下的未注音的词典（注音部分后续会对其说明）。
 
 ```
 if [ $stage -le 1 ] && [ $stop_stage -ge 1 ]; then
+```
+这部分代码仿照kaldi处理，主要生成**train,dev,test**下的**wav.scp,text,utt2spk,spk2utt**文件。
 
 ```
-这部分代码仿照kaldi处理，主要生成**train,dev,test**下的**wav.scp,text,utt2spk,spk2utt**文件
-
-
-```
-
 if [ $stage -le 2 ] && [ $stop_stage -ge 2 ]; then
+```
+这部分代码主要是针对Multilingual训练词典进行加噪并排序并用数字编号的声学单元units.txt以及用数字标号的词典lexicon_numbers.txt。以及生成德语，法语，西班牙以及意大利语的TLG.fst。
 
 ```
-这部分主要是针对Multilingual训练词典进行加噪并排序并用数字编号的声学单元units.txt以及用数字标号的词典lexicon_numbers.txt。以及生成德语，法语，西班牙以及意大利语的TLG.fst。
-
-
-```
-
 if [ $stage -le 3 ] && [ $stop_stage -ge 3 ]; then
+```
+这部分代码进行FBank特征提取和特征归一化。由于JoinAP模型基于VGGBLSTM系列模型，所以在位于`conf`目录下的fbank.conf中，设置16K和40维进行特征提取，并同时默认使用三倍数据增广。
+
 
 ```
-这一部分利用FBank进行特征提取和特征归一化由于JoinAP模型基于VGGBLSTM系列模型所以我们`conf`目录下fbank.conf设置16K和40维进行提取且同时默认使用三倍数据增广。
-
-
-```
-
 if [ $stage -le 4 ] && [ $stop_stage -ge 4 ]; then
+```
+这部分代码主要是将单词序列转换为标签序列。
+
 
 ```
-这部分主要是将单词序列转换为标签序列
-
-
-```
-
 if [ $stage -le 5 ] && [ $stop_stage -ge 5 ]; then
-
 ```
-这一部分我们将训练以及测试数据加一阶和二阶差分以便于模型训练
-
+这部分代码将训练以及测试数据加一阶和二阶差分以便于模型训练。
 
 ```
 if [ $stage -le 6 ] && [ $stop_stage -ge 6 ]; then
-
 ```
-生成den_lm.fst。最后由den_lm.fst和标签文件出发，计算出标签序列$l$的对数概率 $logp(l)，称为path weight同时整合到data/pickle下。
+这部分代码生成den_lm.fst。最后由den_lm.fst和标签文件出发，计算出标签序列$l$的对数概率 $logp(l)$，称为path weight，并整合到data/pickle下。
 
 ## 发音词典
 
-由于Common Voice数据没有提供相应的词典，所以需要自己手动生成。这里在**stage1**步骤中有如下一条awk+sed命令：
+由于CommonVoice数据没有提供相应的词典，所以需要实验者自己来生成。**run_mc.sh**在**stage1**步骤中有如下一条awk+sed命令：
 
-`cat data/${train_set}/text | awk '{$1="";print $0}' | sed 's/ /\n/g' | sort -u >$dict_tmp/wordlist_${x}` 这一命令脚本在data/local/dict_tmp目录中生成de,fr,es,it没有注音的词典(wordlist_de,wordlist_it,wordlist_es,wordlist_fr),接下来我们需要利用G2P工具去将未注音的词典去进行注音。
+`cat data/${train_set}/text | awk '{$1="";print $0}' | sed 's/ /\n/g' | sort -u >$dict_tmp/wordlist_${x}` 
 
-**以下说明G2P的安装以及使用**
+这一命令在data/local/dict_tmp目录中生成de、fr、es、it未注音的词典（wordlist_de、wordlist_it、wordlist_es、wordlist_fr），接下来利用G2P工具对未注音的词典进行注音。
 
-**Phonetisaurus G2P**
+**以下说明G2P工具——Phonetisaurus G2P的安装以及使用**
 
-**安装**：[G2P](https://github.com/AdolfVonKleist/Phonetisaurus)
+**[Phonetisaurus G2P工具](https://github.com/AdolfVonKleist/Phonetisaurus)**
 
-创建一个目录用于G2P的安装
+**安装**：创建一个目录用于Phonetisaurus G2P工具的安装
 ```
 $ mkdir g2p
 $ cd g2p/
@@ -107,7 +94,7 @@ $ source ~/.bashrc
 $ cd ..
 ```
 
-从最新github-master git下最新的Phonetisaurus 并使用 python3 绑定进行编译：
+从最新github-master用git下载最新的Phonetisaurus 并使用 python3 绑定进行编译：
 ```
 $ git clone https://github.com/AdolfVonKleist/Phonetisaurus.git
 $ cd Phonetisaurus
@@ -150,9 +137,9 @@ $ cat cmudict.dict \
 $ phonetisaurus-train --lexicon cmudict.formatted.dict --seq2_del
 ```
 
-**至此我们完成了G2P工具安装**
+至此，我们完成了Phonetisaurus G2P工具的安装！
 
-测试：(test.wlist是未注音的词典)
+**测试**：(test.wlist是未注音的词典)
 
 ```
 $ phonetisaurus-apply --model train/model.fst --word_list test.wlist
@@ -165,47 +152,54 @@ excellent  ə k s ə l ə n t
 
 amazing  æ m ˈeɪ z ɪ ŋ
 
-**安装好后的G2P需要训练好的fst各类语言的模型对德语，法语，西班牙，意大利语进行注音**
+**Phonetisaurus G2P工具，可以利用一种语言的基于FST的G2P模型（简称G2P-FST）来对这种语言中的词进行注音**。德语、法语、西班牙、意大利语的已训练好的G2P-FST模型可以在下面网站找到：
 
-**LanguageNet Grapheme-to-Phoneme Transducers**：[FST](https://github.com/uiuc-sst/g2ps)
+**[LanguageNet Grapheme-to-Phoneme Transducers (G2P-FST)](https://github.com/uiuc-sst/g2ps)**
 
-git下已经训练好的FST并测试
+用git下载已经训练好的G2P-FST模型并测试
 ```
 $ git clone https://github.com/uiuc-sst/g2ps
 $ phonetisaurus-g2pfst --model=g2ps/models/akan.fst --word=ahyiakwa
 ```
 
-**注意**：models下的fst文件需要解压
+**注意**：models下的fst文件需要解压。
 
-**运行以下脚本命令可以生成每种语言发音词典**
+运行以下脚本命令可以生成每种语言的发音词典：
 
 ```
-g2ps=/mnt/workspace/liziwei/g2ps/models/ # g2p model 的路径
-dict_tmp=/mnt/workspace/liziwei/data/local/dict_tmp/ # 存放未注音及注音完成后存放目录
+g2ps=g2ps/models/ # g2p model 的路径
+dict_tmp=local/dict_tmp/ # 存放未注音及注音完成后存放目录
     phonetisaurus-apply --model $g2ps/french_8_4_2.fst --word_list $dict_tmp/wordlist_fr > $dict_tmp/lexicon_fr
     phonetisaurus-apply --model $g2ps/german_8_4_2.fst --word_list $dict_tmp/wordlist_de > $dict_tmp/lexicon_de
     phonetisaurus-apply --model $g2ps/spanish_4_3_2.fst --word_list $dict_tmp/wordlist_es > $dict_tmp/lexicon_es
     phonetisaurus-apply --model $g2ps/italian_8_2_3.fst --word_list $dict_tmp/wordlist_it > $dict_tmp/lexicon_it
 ```
-**dict_tmp目录下已经生成我们所需要的发音词典**
+至此，dict_tmp目录下已经生成我们所需要的发音词典。
 
 ## 音位矢量
 
-在多语言声学模型训练时我们希望能用一个矢量表示每个音素并且这个矢量包含音素的发音信息，由此引入音位矢量对模型最后输出线性层进行修改。音位矢量的形成用到了panphon工具包；panphon定义了全部 IPA 音素符号到区别特征的映射；这样可以直接根据 IPA 音素得到它的区别特征表达。
+在多语言声学模型训练时，为了促进多语言信息共享与迁移，[JoinAP论文](http://oa.ee.tsinghua.edu.cn/~ouzhijian/pdf/ASRU21_JoinAP.pdf)引入音位矢量（phonological-vector）来表示每个音素。音位矢量的构建用到了panphon工具包。panphon工具包定义了全部 IPA 音素符号到发音特征（Articulatory Feature, AF）的映射；这样可以根据 IPA 音素得到它的发音特征表达，进而编码成51维音位矢量（描述见后）。
 
-**panphon工具包**[panphon](https://github.com/dmort27/panphon)
+JoinAP（Joining of Acoustics and Phonology）方法，意为结合了声学（Acoustics）和音系学（Phonology）的方法。
+从顶往下，将音素$i$的音位矢量经过变换（phonological transformation），得到音素嵌入（phone embedding）；自底向上，声学深度神经网络（Deep Neural Network、DNN）提取出高层声学特征$h_t$。将音素$i$的phone embedding与声学特征$h_t$做内积，计算出$t$时刻下音素$i$的匹配得分（logit），便可用于基于CTC或CTC-CRF的语音识别。不难看出，JoinAP方法引入音位矢量，对声学神经网络的最后输出线性层进行了修改。
 
-我们需要对每个音素进行手动标记，panphon一共提供24个区别特征，每种特征又被用“+”、“-”、“0”三种符号表示，由此我们将**其中“+”被编码“10”“-”被编码为“01”，“00”则表示“0”符号**。这样一来24 维的区别特征被编码为了 48 维的音位矢量。再加上三个特殊 token：blk（空）、spn（说话噪音）、nsn（自然噪音）一共51维音位矢量。
+<p align="center">
+  <img width="200" src="assets/JoinAP.png" alt="JoinAP">
+</p>
 
-**注意**：映射表中未出现的音素我们称之为集外音素；对于作为分隔符号或停顿语气等对训练无影响的音素可以直接全部标记为0；其它集外音素将其映射到与其它声学上最相似的音素。
+**[panphon工具包](https://github.com/dmort27/panphon)**
 
-**音素映射关系表**[IPA](https://github.com/dmort27/panphon/blob/master/panphon/data/ipa_all.csv)
+我们需要对每个音素单元进行手动标记出其音位矢量。panphon一共提供24个发音特征（AF），每种发音特征分别有“+”、“-”、“0”三种取值；我们将**其中“+”被编码“10”，“-”被编码为“01”，“00”则表示“0”符号**。这样，24维的发音特征被编码为了 48 维的矢量；再加上对三个特殊单元：blk（空）、spn（说话噪音）、nsn（自然噪音）的3维编码，便得到51维音位矢量。
 
-我们可以通过映射表将每个音素进行编码 `以下展示以德语为例`
+**注意**：映射表中未出现的音素，称之为集外音素。对于作为分隔符号或停顿语气等对训练无影响的音素可以直接全部标记为0；其它集外音素将其映射到与其它声学上最相似的音素。
+
+**[panphon提供的IPA音素到发音特征的映射表(IPA2AF)](https://github.com/dmort27/panphon/blob/master/panphon/data/ipa_all.csv)**
+
+我们可以通过IPA2AF映射表对每个音素进行编码，得到音位矢量。 `以下展示以德语为例：`
 
 |    |   token | IPA   |   syl+ |   syl- |   son+ |   son- |   cons+ |   cons- |   cont+ |   cont- |   delrel+ |   delrel- |   lat+ |   lat- |   nas+ |   nas- |   srtid+ |   strid- |   voi+ |   voi- |   sg+ |   sg- |   cg+ |   cg- |   ant+ |   ant- |   cor+ |   cor- |   distr+ |   distr- |   lab+ |   lab- |   hi+ |   hi- |   lo+ |   lo- |   back+ |   back- |   round+ |   round- |   velaric+ |   velaric- |   tense+ |   tense- |   long+ |   long- |   hitone+ |   hitone- |   hireg+ |   hireg- |   blk |   nsn |   spn |
 |---:|--------:|:------|-------:|-------:|-------:|-------:|--------:|--------:|--------:|--------:|----------:|----------:|-------:|-------:|-------:|-------:|---------:|---------:|-------:|-------:|------:|------:|------:|------:|-------:|-------:|-------:|-------:|---------:|---------:|-------:|-------:|------:|------:|------:|------:|--------:|--------:|---------:|---------:|-----------:|-----------:|---------:|---------:|--------:|--------:|----------:|----------:|---------:|---------:|------:|------:|------:|
-|  0 |       1 | blk |      0 |      0 |      0 |      0 |       0 |       0 |       0 |       0 |         0 |         0 |      0 |      0 |      0 |      0 |        0 |        0 |      0 |      0 |     0 |     0 |     0 |     0 |      0 |      0 |      0 |      0 |        0 |        0 |      0 |      0 |     0 |     0 |     0 |     0 |       0 |       0 |        0 |        0 |          0 |          0 |        0 |        0 |       0 |       0 |         0 |         0 |        0 |        0 |     1 |     0 |     0 |
+|  0 |       1 | BLK |      0 |      0 |      0 |      0 |       0 |       0 |       0 |       0 |         0 |         0 |      0 |      0 |      0 |      0 |        0 |        0 |      0 |      0 |     0 |     0 |     0 |     0 |      0 |      0 |      0 |      0 |        0 |        0 |      0 |      0 |     0 |     0 |     0 |     0 |       0 |       0 |        0 |        0 |          0 |          0 |        0 |        0 |       0 |       0 |         0 |         0 |        0 |        0 |     1 |     0 |     0 |
 |  1 |       2 | NSN |      0 |      0 |      0 |      0 |       0 |       0 |       0 |       0 |         0 |         0 |      0 |      0 |      0 |      0 |        0 |        0 |      0 |      0 |     0 |     0 |     0 |     0 |      0 |      0 |      0 |      0 |        0 |        0 |      0 |      0 |     0 |     0 |     0 |     0 |       0 |       0 |        0 |        0 |          0 |          0 |        0 |        0 |       0 |       0 |         0 |         0 |        0 |        0 |     0 |     1 |     0 |
 |  2 |       3 | SPN |      0 |      0 |      0 |      0 |       0 |       0 |       0 |       0 |         0 |         0 |      0 |      0 |      0 |      0 |        0 |        0 |      0 |      0 |     0 |     0 |     0 |     0 |      0 |      0 |      0 |      0 |        0 |        0 |      0 |      0 |     0 |     0 |     0 |     0 |       0 |       0 |        0 |        0 |          0 |          0 |        0 |        0 |       0 |       0 |         0 |         0 |        0 |        0 |     0 |     0 |     1 |
 |  3 |       4 | #     |      0 |      0 |      0 |      0 |       0 |       0 |       0 |       0 |         0 |         0 |      0 |      0 |      0 |      0 |        0 |        0 |      0 |      0 |     0 |     0 |     0 |     0 |      0 |      0 |      0 |      0 |        0 |        0 |      0 |      0 |     0 |     0 |     0 |     0 |       0 |       0 |        0 |        0 |          0 |          0 |        0 |        0 |       0 |       0 |         0 |         0 |        0 |        0 |     0 |     0 |     0 |
@@ -250,7 +244,7 @@ dict_tmp=/mnt/workspace/liziwei/data/local/dict_tmp/ # 存放未注音及注音�
 | 42 |      43 | ʒ     |      0 |      1 |      0 |      1 |       1 |       0 |       1 |       0 |         0 |         1 |      0 |      1 |      0 |      1 |        1 |        0 |      1 |      0 |     0 |     1 |     0 |     1 |      0 |      1 |      1 |      0 |        1 |        0 |      0 |      1 |     0 |     1 |     0 |     1 |       0 |       1 |        0 |        1 |          0 |          1 |        0 |        0 |       0 |       1 |         0 |         0 |        0 |        0 |     0 |     0 |     0 |
 
 
-**手动编码完成后还需将其转换成`numpy`格式文件以便于模型训练**
+**手动编码完成后，可将其转换成`numpy`格式文件用来存储诸音素的音位矢量（以下称pv文件），以便于模型训练。**
 
 ```
 $ pip install numpy
@@ -277,16 +271,16 @@ array( [[0, 0, 0, ..., 1, 0, 0],
      [0, 1, 0, ..., 0, 0, 0]], dtype=int64)
 ```
 
-至此，完成音位矢量的构建，具体流程如下：
+至此，完成音位矢量的构建，具体流程可概括如下：
 
 ![pv.feature](assets/phonological_feature.png)
 
 
-## 训练及评估
+## 训练及测试
 
-训练及评估部分具体可以参考[CAT-JoinAP](https://github.com/thu-spmi/CAT/blob/master/joinap.md)官方说明，这里我们只对**JoinAP-Linear**作为演示
+训练及测试部分具体可以参考[CAT-JoinAP](https://github.com/thu-spmi/CAT/blob/master/joinap.md)官方说明，下面只对**JoinAP-Linear**作为演示。
 
-**训练部分代码**
+**训练代码**
 
 ```
 PARENTDIR='.'
@@ -321,11 +315,9 @@ if [ $stage -le 7 ] && [ $stop_stage -ge 7 ]; then
 fi
 
 ```
-训练的这部和单语种训练相同唯一区别添加了`--mc-train-pv`这个参数，指定路径为我们起始构建的多语种的音位矢量`numpy`文件。
+在CAT中，JoinAP-Linear多语言训练与单语言训练基本相同，唯一区别在于添加了`--mc-train-pv`这个参数，用于为前面构建的多语言的音位矢量`numpy`文件来指定路径。
 
-
-**Finetune部分代码**
-
+**Finetune代码**
 
 ```
 finetune_dir="exp/mc_linear_finetune_de/"
@@ -346,7 +338,7 @@ if [ $stage -le 8 ] && [ $stop_stage -ge 8 ]; then
     python3 ctc-crf/train.py --seed=0               \
         --world-size 1 --rank $NODE                 \
         --batch_size=128                            \
-	--grad-accum-fold=2                           \
+	    --grad-accum-fold=2                           \
         --mc-train-pv=./embedding/mul.npy            \
         --resume=$dir/ckpt/bestckpt.pt              \
         --den-lm=data/den_meta_de/den_lm.fst        \
@@ -359,11 +351,11 @@ if [ $stage -le 8 ] && [ $stop_stage -ge 8 ]; then
 fi
 
 ```
-Finrtune这部分是对目标语言(de,fr,es,it)进行微调当然你也可以不进行微调直接tesing但我们通过大量实验已证明经过微调后的目标语言准确性会更好。
+Finetune是对目标语言（de、fr、es、it）进行微调。测试时，可以不进行微调直接测试；实验表明经过在各目标语言的数据上进行微调，可以提高对目标语言的语音识别准确率。
 
-`--grad-accum-fold` 梯度累加(默认为1)变向增加batch_size。
+`--grad-accum-fold` 梯度累加（默认为1），等效于增加batch_size。
 
-`mc-conf` conf目录下json文件相关参数配置：
+`mc-conf` 用来指定conf目录下用于相关参数配置的json文件路径。该json文件格式如下：
 
 ```
 {
@@ -378,24 +370,16 @@ Finrtune这部分是对目标语言(de,fr,es,it)进行微调当然你也可以�
 }
 
 ```
-`src_token`：原始模型单元
- 
-`des_token`: 训练目标语言单元
+* `src_token`：原始模型单元
+* `des_token`: 目标语言单元
+* `P`: finetune时目标语言的音位矢量pv文件
+* `lr`: 模型微调时的学习率
+* `hdim`：隐含层维度
+* `odim`：目标语言的音素集数量
+* `mode`: 三种模型类型 `["flat_phone", "joinap_linear", "joinap_nonlinear"]`
+* `usg`: `["fientune", "zero-shot-eval", "few-shot-eval", "multi-eval", "multi-finetune-eval"]`；Finetune时默认选择`finetune`即可。
 
-`P`: finetune目标语言音位矢量
- 
-`lr`: 模型微调时候学习率
-
-`hdim`：隐含层维度
-
-`odim`：目标语言的音素集数量
-
-`mode`: 三种模型类型 `["flat_phone", "joinap_linear", "joinap_nonlinear"]`
-
-`usg`: `["fientune", "zero-shot-eval", "few-shot-eval", "multi-eval", "multi-finetune-eval"]`；Finetune阶段我们默认选择`finetune` 即可 
-
-
-**测试部分代码**
+**测试代码**
 
 
 ```
@@ -421,9 +405,9 @@ if [ $stage -le 9 ] && [ $stop_stage -ge 9 ]; then
     done
 fi
 ```
-**注意**：这时`mc-train-pv`要指定我们目标语言(de,es,fr,it)的音位矢量
+**注意**：这时`mc-train-pv`要指定目标语言（de、es、fr、it之一）的音位矢量pv文件
 
-`--mc-conf` conf目录下json文件相关参数配置：
+`--mc-conf` 仍然用来指定conf目录下用于相关参数配置的json文件路径。该json文件格式如下：
 
 ```
 {
@@ -437,16 +421,13 @@ fi
     "usg": "multi-finetune-eval"
 }
 ```
-与Finetune阶段不同的是`usg`需要修改：
+与Finetune时不同的是`usg`字段需要修改，其不同取字表示不同的意思：
 
-`multi-finetune-eval` 经过Finetune后多语言(de,fr,es,it)测试评估
+* `multi-finetune-eval` 经过Finetune后多语言(de,fr,es,it)测试
+* `multi-eval` 没有经过Finetune多语言(de,fr,es,it)测试
+* `few-shot-eval` 经过Finetune跨语言(egs:pl,pt)测试
+* `zero-shot-eval` 没有Finetune跨语言(egs:pl,pt)测试
 
-`multi-eval` 没有经过Finetune多语言(de,fr,es,it)测试评估
-
-`few-shot-eval` 经过Finetune跨语言(egs:pl,pt)测试评估
-
-`zero-shot-eval` 没有Finetune跨语言(egs:pl,pt)测试评估
-
-**至此我们完成**
+**至此我们完成基于JoinAP的多语言/跨语言语音识别实验的全部步骤！**
 
 ✈-🐱‍🏍
