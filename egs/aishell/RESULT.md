@@ -26,7 +26,7 @@ Results on Aishell datasets.
 | phone | 6.26 | Y    | Y    |
 
 
-## Conformer+Transformer rescoring
+## Conformer
 
 * AM: Conformer with 7M parameters. SpecAug and 3-way perturbation is applied.
 

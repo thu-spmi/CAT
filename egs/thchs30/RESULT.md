@@ -24,7 +24,7 @@ Results on Thchs30 datasets.
 | phone | 6.01 | Y    |
 
 
-## Conformer+Transformer rescoring
+## Conformer
 
 * AM: Conformer with 7M parameters. SpecAug and 3-way perturbation is applied.
 

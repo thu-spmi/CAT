@@ -38,7 +38,7 @@ if [ $stage -le 1 ] && [ $stop_stage -ge 1 ]; then
 ```
 if [ $stage -le 2 ] && [ $stop_stage -ge 2 ]; then
 ```
-这部分代码主要是针对Multilingual训练词典进行加噪并排序并用数字编号的声学单元units.txt以及用数字标号的词典lexicon_numbers.txt。以及生成德语，法语，西班牙以及意大利语的TLG.fst。
+这部分代码主要是针对Multilingual训练词典进行去重和加入噪音`NOISE`、人声噪声`SPOKEN_NOISE`、未知词`UNK`并排序用数字编号的声学单元units.txt以及用数字标号的词典lexicon_numbers.txt。以及生成德语，法语，西班牙以及意大利语的TLG.fst。
 
 ```
 if [ $stage -le 3 ] && [ $stop_stage -ge 3 ]; then
@@ -423,10 +423,10 @@ fi
 ```
 与Finetune时不同的是`usg`字段需要修改，其不同取字表示不同的意思：
 
-* `multi-finetune-eval` 经过Finetune后多语言(de,fr,es,it)测试
-* `multi-eval` 没有经过Finetune多语言(de,fr,es,it)测试
-* `few-shot-eval` 经过Finetune跨语言(egs:pl,pt)测试
-* `zero-shot-eval` 没有Finetune跨语言(egs:pl,pt)测试
+* `multi-finetune-eval` 表示选择目标语言(de,fr,es,it)其中之一经过微调(Finetune)后多语言(de,fr,es,it)测试
+* `multi-eval` 表示目标语言(de,fr,es,it)不经过任何微调(Finetune)的多语言(de,fr,es,it)测试
+* `few-shot-eval` 表示训练好的多语言模型(de,fr,es,it)针对一种新语言(egs:pl,pt)进行微调(Finetune)后的跨语言测试
+* `zero-shot-eval` 表示训练好的多语言模型(de,fr,es,it)针对新语言不进行任何微调(Finetune)跨语言测试
 
 **至此我们完成基于JoinAP的多语言/跨语言语音识别实验的全部步骤！**
 
