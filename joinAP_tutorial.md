@@ -38,7 +38,7 @@ if [ $stage -le 1 ] && [ $stop_stage -ge 1 ]; then
 ```
 if [ $stage -le 2 ] && [ $stop_stage -ge 2 ]; then
 ```
-这部分代码主要是针对Multilingual训练词典进行去重和加入噪音`NOISE`、人声噪声`SPOKEN_NOISE`、未知词`UNK`并排序用数字编号的声学单元units.txt以及用数字标号的词典lexicon_numbers.txt。以及生成德语，法语，西班牙以及意大利语的TLG.fst。
+这部分代码主要是针对Multilingual构建词典，加入噪音`NOISE`、人声噪声`SPOKEN_NOISE`、未知词`UNK`，创建数字编号的声学单元units.txt、数字编号的词典lexicon_numbers.txt、L.fst的输入符号集words.txt、L.fst的输出符号集token.txt，进而生成T.fst和L.fst文件。由data/train/text、dict/lexicon.txt，生成的语言模型G.fst。最后，组合生成一种语言的TLG.fst用于训练。
 
 ```
 if [ $stage -le 3 ] && [ $stop_stage -ge 3 ]; then
