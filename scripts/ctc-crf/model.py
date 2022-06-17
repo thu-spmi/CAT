@@ -352,6 +352,173 @@ class ConformerNet(nn.Module):
 
         return logits, ls
 
+class ConformerNet_JoinAP_Linear(nn.Module):
+    """The conformer model with convolution subsampling
 
+    Args:
+        num_cells (int): number of conformer blocks
+        idim (int): dimension of input features
+        hdim (int): hidden size in conformer blocks
+        num_classes (int): number of output classes
+        conv_multiplier (int): the multiplier to conv subsampling module
+        dropout_in (float): the dropout rate to input of conformer blocks (after the linear and subsampling layers)
+        res_factor (float): the weighted-factor of residual-connected shortcut in feed-forward module
+        d_head (int): dimension of heads in multi-head attention module
+        num_heads (int): number of heads in multi-head attention module
+        kernel_size (int): kernel size in convolution module
+        multiplier (int): multiplier of depth conv in convolution module 
+        dropout (float): dropout rate to all conformer internal modules
+        delta_feats (bool): True if the input features contains delta and delta-delta features; False if not.
+        pv : phoneme matrix
+        original by Chengrui Zhu and Wenjie Peng
+        Modify part of the code by Ziwei Li
+    """
+
+    def __init__(
+            self,
+            num_cells: int,
+            idim: int,
+            hdim: int,
+            num_classes: int,
+            conv_multiplier: int = 144,
+            dropout_in: float = 0.2,
+            res_factor: float = 0.5,
+            d_head: int = 36,
+            num_heads: int = 4,
+            kernel_size: int = 32,
+            multiplier: int = 1,
+            dropout: float = 0.1,
+            pv: str=None,
+            delta_feats=False):
+        super().__init__()
+
+        if delta_feats:
+            idim = idim // 3
+        self.conv_subsampling = nnlayers.Conv2dSubdampling(
+            conv_multiplier, stacksup=delta_feats)
+        self.linear_drop = nn.Sequential(OrderedDict({
+            'linear': nn.Linear((idim // 4) * conv_multiplier, hdim),
+            'dropout': nn.Dropout(dropout_in)
+        }))
+        self.cells = nn.ModuleList()
+        pe = nnlayers.PositionalEncoding(hdim)
+        for i in range(num_cells):
+            cell = nnlayers.ConformerCell(
+                hdim, res_factor, d_head, num_heads, kernel_size, multiplier, dropout)
+            self.cells.append(cell)
+            # FIXME: Note that this is somewhat hard-code style
+            cell.mhsam.mha.pe = pe
+        #self.classifier = nn.Linear(hdim, num_classes)
+
+        self.A = nn.Linear(51, hdim)
+        self.P, p_c = self.init_pv(pv)
+        self.linear = nn.Linear(p_c, num_classes)
+
+    def init_pv(self, fin):
+        pv = load_pv(fin)
+        P = nn.Parameter(pv)
+        return P, P.size()[0]
+
+    def forward(self, x: torch.Tensor, lens: torch.Tensor):
+        x_subsampled, ls_subsampled = self.conv_subsampling(x, lens)
+        out = self.linear_drop(x_subsampled)
+        ls = ls_subsampled
+        for cell in self.cells:
+            out, ls = cell(out, ls)
+
+        top = self.A(self.P)
+        top = top.T
+        top = self.linear(top)
+
+        logits = torch.einsum("bth, hc->btc", out, top)
+        #logits = self.classifier(out)
+        return logits, ls
+
+
+class ConformerNet_JoinAP_NonLinear(nn.Module):
+    """The conformer model with convolution subsampling
+
+    Args:
+        num_cells (int): number of conformer blocks
+        idim (int): dimension of input features
+        hdim (int): hidden size in conformer blocks
+        num_classes (int): number of output classes
+        conv_multiplier (int): the multiplier to conv subsampling module
+        dropout_in (float): the dropout rate to input of conformer blocks (after the linear and subsampling layers)
+        res_factor (float): the weighted-factor of residual-connected shortcut in feed-forward module
+        d_head (int): dimension of heads in multi-head attention module
+        num_heads (int): number of heads in multi-head attention module
+        kernel_size (int): kernel size in convolution module
+        multiplier (int): multiplier of depth conv in convolution module 
+        dropout (float): dropout rate to all conformer internal modules
+        delta_feats (bool): True if the input features contains delta and delta-delta features; False if not.
+        pv : phoneme matrix
+        original by Chengrui Zhu and Wenjie Peng
+        Modify part of the code by Ziwei Li
+    """
+
+    def __init__(
+            self,
+            num_cells: int,
+            idim: int,
+            hdim: int,
+            num_classes: int,
+            conv_multiplier: int = 144,
+            dropout_in: float = 0.2,
+            res_factor: float = 0.5,
+            d_head: int = 36,
+            num_heads: int = 4,
+            kernel_size: int = 32,
+            multiplier: int = 1,
+            dropout: float = 0.1,
+            pv: str=None,
+            delta_feats=False):
+        super().__init__()
+
+        if delta_feats:
+            idim = idim // 3
+        self.conv_subsampling = nnlayers.Conv2dSubdampling(
+            conv_multiplier, stacksup=delta_feats)
+        self.linear_drop = nn.Sequential(OrderedDict({
+            'linear': nn.Linear((idim // 4) * conv_multiplier, hdim),
+            'dropout': nn.Dropout(dropout_in)
+        }))
+        self.cells = nn.ModuleList()
+        pe = nnlayers.PositionalEncoding(hdim)
+        for i in range(num_cells):
+            cell = nnlayers.ConformerCell(
+                hdim, res_factor, d_head, num_heads, kernel_size, multiplier, dropout)
+            self.cells.append(cell)
+            # FIXME: Note that this is somewhat hard-code style
+            cell.mhsam.mha.pe = pe
+        #self.classifier = nn.Linear(hdim, num_classes)
+
+        self.A = nn.Linear(512, hdim)
+        self.A1 = nn.Linear(51, 512)
+        self.sig = nn.Sigmoid()
+        self.P = self.init_pv(pv)
+
+    def init_pv(self, fin):
+        pv = load_pv(fin)
+        P = nn.Parameter(pv, requires_grad = False)
+        return P
+
+    def forward(self, x: torch.Tensor, lens: torch.Tensor):
+        x_subsampled, ls_subsampled = self.conv_subsampling(x, lens)
+        out = self.linear_drop(x_subsampled)
+        ls = ls_subsampled
+        for cell in self.cells:
+            out, ls = cell(out, ls)
+        #logits = self.classifier(out)
+
+        p_out = self.A1(self.P)
+        p_out = self.sig(p_out)
+        p_out = self.A(p_out)
+        
+        logits = torch.einsum('ijk, mk -> ijm', out, p_out)
+
+        return logits, ls
+
+    
 # TODO: (Huahuan) I removed all chunk-related modules.
 #       cc @aky15 you may need to add it in v2 standard
