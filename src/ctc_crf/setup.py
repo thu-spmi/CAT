@@ -20,7 +20,7 @@ ctc_dir = os.path.realpath("./gpu_ctc/build")
 
 if __name__ == "__main__":
     setup(name='ctc_crf',
-          version="0.1.0",
+          version="0.1.1",
           packages=find_packages(),
           ext_modules=[
               CppExtension(
