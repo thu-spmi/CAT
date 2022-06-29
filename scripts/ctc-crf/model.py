@@ -370,8 +370,6 @@ class ConformerNet_JoinAP_Linear(nn.Module):
         dropout (float): dropout rate to all conformer internal modules
         delta_feats (bool): True if the input features contains delta and delta-delta features; False if not.
         pv : phoneme matrix
-        original by Chengrui Zhu and Wenjie Peng
-        Modify part of the code by Ziwei Li
     """
 
     def __init__(
@@ -453,8 +451,6 @@ class ConformerNet_JoinAP_NonLinear(nn.Module):
         dropout (float): dropout rate to all conformer internal modules
         delta_feats (bool): True if the input features contains delta and delta-delta features; False if not.
         pv : phoneme matrix
-        original by Chengrui Zhu and Wenjie Peng
-        Modify part of the code by Ziwei Li
     """
 
     def __init__(
@@ -496,12 +492,13 @@ class ConformerNet_JoinAP_NonLinear(nn.Module):
         self.A = nn.Linear(512, hdim)
         self.A1 = nn.Linear(51, 512)
         self.sig = nn.Sigmoid()
-        self.P = self.init_pv(pv)
+        self.P, p_c = self.init_pv(pv)
+        self.linear = nn.Linear(p_c, num_classes)
 
     def init_pv(self, fin):
         pv = load_pv(fin)
         P = nn.Parameter(pv, requires_grad = False)
-        return P
+        return P, P.size()[0]
 
     def forward(self, x: torch.Tensor, lens: torch.Tensor):
         x_subsampled, ls_subsampled = self.conv_subsampling(x, lens)
@@ -515,7 +512,8 @@ class ConformerNet_JoinAP_NonLinear(nn.Module):
         p_out = self.sig(p_out)
         p_out = self.A(p_out)
         
-        logits = torch.einsum('ijk, mk -> ijm', out, p_out)
+        logits = torch.einsum('ijk, km -> ijm', out, p_out)
+        logits = self.linear(logits)
 
         return logits, ls
 
