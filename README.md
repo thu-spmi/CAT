@@ -52,10 +52,10 @@ Please cite CAT using:
 
 * [Basic usage](RequestForExperiments.md#Workflow)
 * [Step-by-step workflow](toolkitworkflow.md)
-* [Tutorial on building your first CAT project (yesno)](yesno_tutorial.md)
-* [Tutorial for newbie on environment setup](EnvSetup_tutorial.md) 
+* [Tutorial on building your first CAT project (yesno)](yesno_tutorial_ch.md)
+* [Tutorial for newbie on environment setup](EnvSetup_tutorial_ch.md) 
 * [FAQ](faq_ch.md)
-* [JoinAP_Tutorial](joinAP_tutorial.md)
+* [JoinAP_Tutorial](joinap_tutorial_ch.md)
 
 ## DevLog
 
