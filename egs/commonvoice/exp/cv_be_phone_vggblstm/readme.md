@@ -8,7 +8,7 @@
 
 ### Appendix
 
-*Based on CommonVoice Belarusian VGGBLSTM model training
+* Based on CommonVoice Belarusian VGGBLSTM model training
 
 ### WER
 ```
