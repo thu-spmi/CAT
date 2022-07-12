@@ -88,7 +88,3 @@ For rescoring with "Trans.", please refer to `local/pytorchnn/readme`.
 |zh|24.86 (1h)| 88.41 |
 |pl|8.10 (10min)| 31.80 |
 
-**Experimental resources**
-
-1. Pronunciation dictionary from [CommonVoice_lexicon](CommonVoice_lexicon) Note: `de, es` capital.
-2. Phonemic features from [CommonVoice_pv](CommonVoice_pv).
