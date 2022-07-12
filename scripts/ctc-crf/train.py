@@ -148,7 +148,6 @@ def build_model(args, configuration, train=True) -> nn.Module:
 
     am_model = net(**net_kwargs)    # type:nn.Module
     if not train:
-        am_model=net(**net_kwargs)
         return am_model
 
     if 'lossfn' not in netconfigs:
