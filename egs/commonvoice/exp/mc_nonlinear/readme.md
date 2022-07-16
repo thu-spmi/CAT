@@ -15,12 +15,12 @@
 
 ### Multilingual WER
 
-|language|w/ [finetune](./Finetune/)|w/o finetune| 
+|language|w/o finetune| w/ [finetune](./Finetune/)|
 |---|---|---|
-|de|12.89|13.95|
-|fr|20.39|24.61|
-|it|21.18|24.21|
-|es|13.23|15.01|
+|de|13.95|12.89|
+|fr|24.61|20.39|
+|it|24.21|21.18|
+|es|15.01|13.23|
 
 ### Crosslingual WER
 

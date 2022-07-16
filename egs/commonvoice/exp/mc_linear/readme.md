@@ -14,12 +14,12 @@
 
 ### Multilingual WER
 
-|language|w/ [finetune](./Finetune/)|w/o finetune| 
+|language|w/o finetune|w/ [finetune](./Finetune/)|
 |---|---|---|
-|de|12.83|13.70|
-|fr|20.46|22.48|
-|it|21.46|23.65|
-|es|13.39|14.90|
+|de|13.70|12.83|
+|fr|22.48|20.46|
+|it|23.65|21.46|
+|es|14.90|13.39|
 
 
 ### Crosslingual WER
@@ -28,7 +28,6 @@
 |---|---|---|
 |pl|35.90|7.73 (10min)|
 |zh|90.36|23.90 (1h)|
-
 
 ### Monitor figure
 ![monitor](./monitor.png)
