@@ -27,7 +27,8 @@
 
 `exp/` dir is what we care about. 
 
-In this dir, you define your own experiments as sub-directories, liked `exp/<myexp1>`, `exp/<myexp2>`, etc. Inside the experiment dir, the files and their meanings are as follows:
+In the `exp` directory, you define your own experiments as sub-directories, for example, `exp/<myexp1>`, `exp/<myexp2>`. Note that `<myexp1>` is just an example. **Naming** is important, which should carry key information and could contain numeric IDs for clear differentiation.
+Inside the experiment dir, the files and their meanings are as follows:
 
 ```
 exp/myexp/
@@ -52,9 +53,12 @@ exp/myexp/
 
 ### Configure RESULT.md<a name='howto-sup-readme'></a>
 
-We don't place any restriction to RESULT.md.
+We do not place much restriction to RESULT.md. **A rule of thumb**: it should contain necessary information about features, acoustic models, language models, neural network architectures, number of parameters, and so on.
+The purpose is for readers to appreciate your results and compare with state-of-the-art results. Benchmarking results over a number of widely-used datasets can be found [here](https://github.com/thu-spmi/ASR-Benchmarks).
 
-It is a good practice to include a well-maintained results table as follows:![sup-result](assets/sup-result-wsj.png)
+
+It is a good practice to include a well-maintained results table as follows. Please use hyperlinks to link to the detailed readme.md in the specific `exp` directory.
+![sup-result](assets/sup-result-wsj.png)
 
 ### Configure readme.md for a single-running experiment<a name='howto-sr-readme'></a>
 
