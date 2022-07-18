@@ -89,3 +89,69 @@ For rescoring with "Trans.", please refer to `local/pytorchnn/readme`.
 |es|14.10|13.26|[mc_nonlinear](exp/mc_nonlinear) |
 |pl|31.80 |8.10 (10min)|[mc_nonlinear](exp/mc_nonlinear) |
 |zh|88.41 |24.86 (1h)|[mc_nonlinear](exp/mc_nonlinear) |
+
+### JoinAP-Linear_Conformer
+
+* AM: ConformerNet_JoinAP_Linear with 47M parameters.SpecAug is applied.
+* Hyper-parameters of AM training: `lamb=0.01, hdim=360, lr=0.0003`
+
+|language|w/ finetune | exp link          |
+|---|-------------------------------| -------- |
+|de|11.54| [mc_linear_conformer](exp/mc_linear_conformer/) |
+|fr|20.48| [mc_linear_conformer](exp/mc_linear_conformer/) |
+|it|19.56| [mc_linear_conformer](exp/mc_linear_conformer/) |
+|es|11.79| [mc_linear_conformer](exp/mc_linear_conformer/) |
+|pl|5.38 (1h)| [mc_linear_conformer](exp/mc_linear_conformer/) |
+|ja|18.99 (10h)| [mc_linear_conformer](exp/mc_linear_conformer/) |
+
+### JoinAP-Nonlinear_Conformer
+
+* AM: ConformerNet_JoinAP_Linear with 47M parameters.SpecAug is applied.
+* Hyper-parameters of AM training: `lamb=0.01, hdim=360, lr=0.0003`
+
+|language|w/ finetune | exp link          |
+|---|-------------------------------| -------- |
+|de|11.65| [mc_nonlinear_conformer](exp/mc_nonlinear_conformer/) |
+|fr|20.53| [mc_nonlinear_conformer](exp/mc_nonlinear_conformer/) |
+|it|19.60| [mc_nonlinear_conformer](exp/mc_nonlinear_conformer/) |
+|es|11.86| [mc_nonlinear_conformer](exp/mc_nonlinear_conformer/) |
+|pl|5.39 (1h)|[mc_nonlinear_conformer](exp/mc_nonlinear_conformer/) |
+|ja|20.08 (10h)| [mc_nonlinear_conformer](exp/mc_nonlinear_conformer/) |
+
+## Mono-lingual
+
+### VGGBLSTM 
+
+* Based on Mozilla Common Voice 9.0 with validated speech and paired text.
+* Time: Data valid time (hours)
+* SP: 3-way speed perturbation
+* AM: VGGBLSTM with 16M parameters.
+* Hyper-parameters of AM training: `lamb=0.01, n_layers=6, hdim=320, lr=0.001`
+
+|language|Time |Unit |SP |test| exp link |
+|--------|-----|-----|---|----|----------|
+| be(Belarus)     | 1020 | phone| N | 8.20 | [cv_be_phone_vggblstm](exp/cv_be_phone_vggblstm/) |
+| in(Indonesia)     | 26    | phone | N | 12.18 | [cv_in_phone_vggblstm](exp/cv_in_phone_vggblstm/) |
+| ja(Japanese)     | 46    | phone | N | 16.04 | [cv_ja_phone_vggblstm](exp/cv_ja_phone_vggblstm/) |
+| pt(Portugal)     | 115   | phone | N | 6.40  | [cv_pt_phone_vggblstm](exp/cv_pt_phone_vggblstm/) |
+| ru(Russian)     | 165   | phone | N | 6.17  | [cv_ru_phone_vggblstm](exp/cv_ru_phone_vggblstm/) |
+| th(Thai)     | 145   | phone | Y | 10.92 | [cv_th_phone_vggblstm](exp/cv_th_phone_vggblstm/) |
+| uk(Ukraine)     | 66    | phone | N | 15.98 | [cv_uk_phone_vggblstm](exp/cv_uk_phone_vggblstm/) |
+| hk(Hongkong)     | 102   | phone | N | 16.30 | [cv_hk_phone_vggblstm](exp/cv_hk_phone_vggblstm/) |
+| tw(Taiwan)     | 67    | phone | N | 17.54 | [cv_tw_phone_vggblstm](exp/cv_tw_phone_vggblstm/) |   
+
+### Conformer
+
+* AM: ConformerNet_JoinAP_Linear with 47M parameters.SpecAug is applied.
+* Hyper-parameters of AM training: `lamb=0.01, hdim=360, lr=0.0003`
+
+|language|Time |Unit |SP |test| exp link |
+|--------|-----|-----|---|----|----------|
+| ar(Arab)     | 87  | phone | N | 39.83 | [cv_ar_phone_conformer](exp/cv_ar_phone_conformer/) |
+
+* AM: ConformerNet_JoinAP_Linear with 7M parameters.SpecAug is applied.
+* Hyper-parameters of AM training: `lamb=0.01, hdim=128, lr=0.0003`
+
+|language|Time |Unit |SP |test| exp link |
+|--------|-----|-----|---|----|----------|
+| ur(Urdu)     | 12  | phone | N | 49.32| [cv_ur_phone_conformer](exp/cv_ur_phone_conformer/) |
