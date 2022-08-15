@@ -2,31 +2,32 @@
 
 **This part is auto generated, add your details in Appendix**
 
-* Model size/M: 69.62
+* Model size/M: 69.63
 * GPU info \[3\]
-  * \[3\] NVIDIA GeForce RTX 3090
+  * \[3\] Tesla P100-PCIE-16GB
 
 ### Appendix
 
 * Multilingual training with `JoinAP Linear` mode on the data pooled of `de`, `fr`, `it` and `es` from CommonVoice 5.1.
 
+* Crosslingual training with `JoinAP Linear` mode on the data pooled of `pl`, `zh` from CommonVoice 5.1 and aishell-1.
+
 ### Multilingual WER
 
-|language|w/ finetune|w/o finetune| 
+|language|w/o finetune|w/ [finetune](./Finetune/)|
 |---|---|---|
-|de|12.45|13.72|
-|fr|19.54|22.73|
-|it|21.70|25.85|
-|es|13.19|13.93|
+|de|13.70|12.83|
+|fr|22.48|20.46|
+|it|23.65|21.46|
+|es|14.90|13.39|
 
 
 ### Crosslingual WER
 
-|language|w/o finetune| w/ finetune (hours of data)|
+|language|w/o finetune| w/ [finetune](./Finetune)|
 |---|---|---|
-|zh|89.51|25.21 (1h)|
-|pl|35.73|7.50 (10min)|
-
+|pl|35.90|7.73 (10min)|
+|zh|90.36|23.90 (1h)|
 
 ### Monitor figure
 ![monitor](./monitor.png)

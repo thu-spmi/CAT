@@ -6,7 +6,7 @@
 * [Overview](#Overview)
 * [Key Features](#Key-Features)
 * [Installation](#Installation)
-* [Quick start](#Quick-start)
+* [Further Reading](#Further-Reading)
 * [DevLog](#DevLog)
 
 ## Overview
@@ -48,14 +48,16 @@ Please cite CAT using:
 
 [English](install.md) | [中文](install_ch.md)
 
-## Quick start
+## Further Reading
 
 * [Basic usage](RequestForExperiments.md#Workflow)
 * [Step-by-step workflow](toolkitworkflow.md)
+* [Tutorial on building your first CAT project (yesno)](yesno_tutorial_ch.md)
+* [Tutorial for newbie on environment setup](EnvSetup_tutorial_ch.md) 
+* [FAQ](faq_ch.md)
+* [JoinAP_Tutorial](joinap_tutorial_ch.md)
 
 ## DevLog
-
-* 2022.02: add support of [JoinAP](./joinap.md) by Chengrui Zhu.
 
 * 2021.07: add support of Deformable TDNN by Keyu An.
 

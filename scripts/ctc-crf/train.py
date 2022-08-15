@@ -14,6 +14,7 @@ import dataset as DataSet
 from ctc_crf import CRFContext
 from ctc_crf import CTC_CRF_LOSS as CRFLoss
 from ctc_crf import WARP_CTC_LOSS as CTCLoss
+from mc_lingual import load_pv
 
 import os
 import argparse
