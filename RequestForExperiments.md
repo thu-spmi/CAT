@@ -53,11 +53,14 @@ exp/myexp/
 
 ### Configure RESULT.md<a name='howto-sup-readme'></a>
 
-We do not place much restriction to RESULT.md. **A rule of thumb**: it should contain necessary information about features, acoustic models, language models, neural network architectures, number of parameters, and so on.
+We do not place much restriction to RESULT.md. **A rule of thumb**: it should contain necessary information about *features, acoustic models, language models, neural network architectures, number of parameters*, and so on.
 The purpose is for readers to appreciate your results and compare with state-of-the-art results. Benchmarking results over a number of widely-used datasets can be found [here](https://github.com/thu-spmi/ASR-Benchmarks).
 
 
-It is a good practice to include a well-maintained results table as follows. Please use hyperlinks to link to the detailed readme.md in the specific `exp` directory.
+It is a good practice to include a well-maintained results table as follows. 
+
+**Updated:** 
+Use hyperlinks to link to the detailed readme.md in the specific `exp` directory. See the examples of using `exp link` in [AISHELL-1 RESULT.md](https://github.com/NLPvv/CAT/blob/master/egs/aishell/RESULT.md).
 ![sup-result](assets/sup-result-wsj.png)
 
 ### Configure readme.md for a single-running experiment<a name='howto-sr-readme'></a>

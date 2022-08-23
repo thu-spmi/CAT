@@ -55,15 +55,16 @@ Please cite CAT using:
 * [Tutorial on building your first CAT project (yesno)](yesno_tutorial_ch.md)
 * [Tutorial for newbie on environment setup](EnvSetup_tutorial_ch.md) 
 * [FAQ](faq_ch.md)
-* [JoinAP_Tutorial](joinap_tutorial_ch.md)
 
 ## DevLog
 
-* 2021.07: add support of Deformable TDNN by Keyu An.
+* 2022.05: Release the code for Join Acoustics and Phonology (JoinAP) for Multi/Cross-lingual ASR [Readme](joinap.md) | [Tutorial](joinap_tutorial_ch.md) | [ASRU2021 Paper](http://oa.ee.tsinghua.edu.cn/~ouzhijian/pdf/ASRU21_JoinAP.pdf) | [Slides](http://oa.ee.tsinghua.edu.cn/~ouzhijian/pdf/asru2021_JoinAP_slides.pdf) | [Video](https://www.bilibili.com/video/BV1X44y1Y7zm)
 
-* 2021.07: add support of [Wordpieces](wordpieces.md) by Wenjie Peng.
+* 2021.07: add support of Deformable TDNN by Keyu An. [INTERSPEECH2021 Paper](http://oa.ee.tsinghua.edu.cn/~ouzhijian/pdf/is2021_deformable.pdf)
 
-* 2021.05: add support of [Conformer](conformer.md) and SpecAug by Huahuan Zheng.
+* 2021.07: add support of Wordpieces by Wenjie Peng. [Readme](wordpieces.md) | [Paper](https://arxiv.org/abs/2107.03007)
+
+* 2021.05: add support of Conformer and SpecAug by Huahuan Zheng. [Readme](conformer.md) | [Paper](https://arxiv.org/abs/2107.03007)
 
 * CAT v2 (master branch)
 
@@ -74,5 +75,5 @@ Please cite CAT using:
 | Branch     | Flexible configuration | Easily reproduce | Distributed training | Chunk streaming model | Recipes                                            |
 | ---------- | ---------------------- | ---------------- | -------------------- | --------------------- | -------------------------------------------------- |
 | v1         |                        |                  | ✅                    | ✅                     | aishell, formosa, hkust, libri, swbd, thchs30, wsj |
-| v2 (master) | ✅                      | ✅                | ✅                    |                       | swbd, wsj, libri, commonvoice German                     |
+| v2 (master) | ✅                      | ✅                | ✅                    |                       | aishell-1, commonvoice, libri, swbd, thchs30, wsj, yesno  |
 
