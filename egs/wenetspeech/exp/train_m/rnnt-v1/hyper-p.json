@@ -1,0 +1,50 @@
+{
+    "data": {
+        "train": "train_m",
+        "dev": [
+            "dev"
+        ],
+        "test": [
+            "dev",
+            "test_meeting",
+            "test_net"
+        ],
+        "filter": ":1000"
+    },
+    "tokenizer": {
+        "type": "SentencePieceTokenizer",
+        "option-train": {
+            "model_type": "char",
+            "add_dummy_prefix": false,
+            "use_all_vocab": true,
+            "model_prefix": "sentencepiece/wenetspeech_char/spm",
+            "vocab_size": 5147
+        }
+    },
+    "train": {
+        "bin": "cat.rnnt.train",
+        "option": {
+            "amp": true,
+            "batch_size": 512,
+            "grad_norm": 5.0,
+            "dynamic_batch_mode": 1
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "best",
+            "num": 10
+        },
+        "infer": {
+            "bin": "cat.rnnt.decode",
+            "option": {
+                "beam_size": 16,
+                "cpu": true,
+                "nj": 48
+            }
+        },
+        "er": {
+            "cer": true
+        }
+    }
+}

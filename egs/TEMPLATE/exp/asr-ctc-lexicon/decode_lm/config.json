@@ -1,0 +1,10 @@
+{
+    "decoder": {
+        "type": "NGram",
+        "kwargs": {
+            "f_binlm": "exp/asr-ctc-lexicon/decode_lm/2gram.arpa",
+            "gram_order": 2,
+            "num_classes": 4
+        }
+    }
+}

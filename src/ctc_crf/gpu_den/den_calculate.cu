@@ -2,7 +2,7 @@
 // Apache 2.0.
 // This file contains functions for calculating the denominator gradients in log domain.
 
-#include <iostream>
+#include <cstdio>
 #include <cstdlib>
 #include <vector>
 // for each state
@@ -305,8 +305,6 @@ void Init(const char * fst_name, int n_gpus, int * gpus) {
     DEN_NUM_ARCS = num_arcs;
     DEN_NUM_STATES = num_states;
 
-    // std::cout << "DEN_NUM_ARCS: " << DEN_NUM_ARCS << std::endl;
-    // std::cout << "DEN_NUM_STATES: " << DEN_NUM_STATES << std::endl;
 
     std::vector<Transition> transition_alpha(num_arcs);
     std::vector<Transition> transition_beta(num_arcs);
@@ -331,7 +329,7 @@ void Init(const char * fst_name, int n_gpus, int * gpus) {
         }
     }
     if (count != num_arcs) {
-        std::cerr << "count does not equal to num_arcs" << std::endl;
+        fprintf(stderr, "count does not equal to num_arcs\n");
         exit(-1);
     }
 
@@ -352,7 +350,7 @@ void Init(const char * fst_name, int n_gpus, int * gpus) {
         }
     }
     if (count != num_arcs) {
-        std::cerr << "count does not equal to num_arcs" << std::endl;
+        fprintf(stderr, "count does not equal to num_arcs\n");
         exit(-1);
     }
 
@@ -375,7 +373,6 @@ void Init(const char * fst_name, int n_gpus, int * gpus) {
     CHECK_CUDA(cudaGetDevice(&prev_device));
 
     for (int i = 0; i < n_gpus; i++) {
-        std::cout << "gpu i: " << gpus[i] << std::endl;
         CHECK_CUDA(cudaSetDevice(gpus[i]));
         CHECK_CUDA(cudaMalloc((void**)&TRANSITION_ALPHA[i], sizeof(Transition)*num_arcs));
         CHECK_CUDA(cudaMalloc((void**)&TRANSITION_BETA[i], sizeof(Transition)*num_arcs));

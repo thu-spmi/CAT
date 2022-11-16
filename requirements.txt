@@ -1,0 +1,27 @@
+# gather >= 0.2.3
+-e git+https://github.com/maxwellzh/torch-gather.git#egg=gather
+# warp-rnnt >= 0.8.0
+-e git+https://github.com/maxwellzh/warp-rnnt.git#egg=warp-rnnt
+# webdataset do not use 'pip install webdataset', that's outdated
+-e git+https://github.com/webdataset/webdataset.git@d7334016f44a03c4a385971aa835c4f460d3f30a#egg=webdataset
+# kenlm
+# -e git+https://github.com/kpu/kenlm.git#egg=kenlm
+# cuda edit distance
+-e git+https://github.com/maxwellzh/pytorch-edit-distance.git#egg=torch_edit_distance
+# cuda ctc align
+-e git+https://github.com/maxwellzh/ctc-align-cuda.git#egg=ctc_align
+
+# module dependencies
+torch>=1.9.0
+tqdm>=4.62.3
+matplotlib>=3.4.3
+sentencepiece>=0.1.96
+kaldiio>=2.17.2
+# dependency issue, see https://github.com/protocolbuffers/protobuf/issues/10051
+protobuf==3.20.2
+tensorboard>=2.6.0
+jiwer>=2.2.0
+pyyaml>=6.0
+transformers>=4.12.3
+jieba>=0.42.1
+numpy>=1.23.2

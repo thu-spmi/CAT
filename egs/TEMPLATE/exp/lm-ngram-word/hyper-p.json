@@ -1,0 +1,21 @@
+{
+    "data": {
+        "train": "data/local-lm/ptb.train.txt",
+        "test": [
+            "data/local-lm/ptb.valid.txt",
+            "data/local-lm/ptb.test.txt"
+        ]
+    },
+    "tokenizer": {
+        "type": "SentencePieceTokenizer",
+        "option-train": {
+            "model_type": "word",
+            "vocab_size": 10000,
+            "use_all_vocab": true,
+            "model_prefix": "sentencepiece/ptb-word/spm"
+        },
+        "|V|": 10000,
+        "file": "exp/lm-ngram-word/tokenizer.tknz"
+    },
+    "inference": {}
+}

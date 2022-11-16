@@ -1,0 +1,1877 @@
+{
+    "type": "object",
+    "properties": {
+        "trainer": {
+            "type": "object",
+            "properties": {},
+            "description": "Please refer to build_model() function in hyper:train:bin for configuring help."
+        },
+        "encoder": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "examples": [
+                        "AbsEncoder",
+                        "BLSTMN",
+                        "ConformerLSTM",
+                        "ConformerNet",
+                        "LSTM",
+                        "LSTMrowCONV",
+                        "TDNN_LSTM",
+                        "TDNN_NAS",
+                        "VGGLSTM",
+                        "Wav2Vec2Encoder"
+                    ]
+                }
+            },
+            "description": "Configuration of Transducer transcription network / encoder.",
+            "required": [
+                "type",
+                "kwargs"
+            ],
+            "allOf": [
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "AbsEncoder"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "kwargs": {
+                                "type": "object",
+                                "properties": {
+                                    "with_head": {
+                                        "type": "boolean",
+                                        "default": true
+                                    },
+                                    "num_classes": {
+                                        "type": "number",
+                                        "default": -1
+                                    },
+                                    "n_hid": {
+                                        "type": "number",
+                                        "default": -1
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "BLSTMN"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "kwargs": {
+                                "type": "object",
+                                "properties": {
+                                    "idim": {
+                                        "type": "number"
+                                    },
+                                    "hdim": {
+                                        "type": "number"
+                                    },
+                                    "n_layers": {
+                                        "type": "number"
+                                    },
+                                    "dropout": {
+                                        "type": "number"
+                                    },
+                                    "num_classes": {
+                                        "type": "number",
+                                        "default": -1
+                                    },
+                                    "with_head": {
+                                        "type": "boolean",
+                                        "default": true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "ConformerLSTM"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "kwargs": {
+                                "type": "object",
+                                "properties": {
+                                    "hdim_lstm": {
+                                        "type": "number"
+                                    },
+                                    "num_lstm_layers": {
+                                        "type": "number"
+                                    },
+                                    "dropout_lstm": {
+                                        "type": "number"
+                                    },
+                                    "bidirectional": {
+                                        "type": "boolean",
+                                        "default": false
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "ConformerNet"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "kwargs": {
+                                "type": "object",
+                                "properties": {
+                                    "num_cells": {
+                                        "type": "number"
+                                    },
+                                    "idim": {
+                                        "type": "number"
+                                    },
+                                    "hdim": {
+                                        "type": "number"
+                                    },
+                                    "num_classes": {
+                                        "type": "number",
+                                        "default": -1
+                                    },
+                                    "conv": {
+                                        "default": "conv2d"
+                                    },
+                                    "conv_multiplier": {
+                                        "type": "number"
+                                    },
+                                    "dropout_in": {
+                                        "type": "number",
+                                        "default": 0.2
+                                    },
+                                    "res_factor": {
+                                        "type": "number",
+                                        "default": 0.5
+                                    },
+                                    "d_head": {
+                                        "type": "number",
+                                        "default": -1
+                                    },
+                                    "num_heads": {
+                                        "type": "number",
+                                        "default": 4
+                                    },
+                                    "kernel_size": {
+                                        "type": "number",
+                                        "default": 32
+                                    },
+                                    "multiplier": {
+                                        "type": "number",
+                                        "default": 1
+                                    },
+                                    "dropout": {
+                                        "type": "number",
+                                        "default": 0.1
+                                    },
+                                    "dropout_attn": {
+                                        "type": "number",
+                                        "default": 0.0
+                                    },
+                                    "delta_feats": {
+                                        "type": "boolean",
+                                        "default": false
+                                    },
+                                    "with_head": {
+                                        "type": "boolean",
+                                        "default": true
+                                    },
+                                    "subsample_norm": {
+                                        "type": "string",
+                                        "default": "none"
+                                    },
+                                    "time_reduction_factor": {
+                                        "type": "number",
+                                        "default": 1
+                                    },
+                                    "time_reduction_pos": {
+                                        "type": "number",
+                                        "default": -1
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "LSTM"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "kwargs": {
+                                "type": "object",
+                                "properties": {
+                                    "idim": {
+                                        "type": "number"
+                                    },
+                                    "hdim": {
+                                        "type": "number"
+                                    },
+                                    "n_layers": {
+                                        "type": "number"
+                                    },
+                                    "dropout": {
+                                        "type": "number"
+                                    },
+                                    "num_classes": {
+                                        "type": "number",
+                                        "default": -1
+                                    },
+                                    "with_head": {
+                                        "type": "boolean",
+                                        "default": true
+                                    },
+                                    "bidirectional": {
+                                        "type": "boolean",
+                                        "default": false
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "LSTMrowCONV"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "kwargs": {
+                                "type": "object",
+                                "properties": {
+                                    "idim": {
+                                        "type": "number"
+                                    },
+                                    "hdim": {
+                                        "type": "number"
+                                    },
+                                    "n_layers": {
+                                        "type": "number"
+                                    },
+                                    "dropout": {
+                                        "type": "number"
+                                    },
+                                    "with_head": {
+                                        "type": "boolean",
+                                        "default": true
+                                    },
+                                    "num_classes": {
+                                        "type": "number",
+                                        "default": -1
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "TDNN_LSTM"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "kwargs": {
+                                "type": "object",
+                                "properties": {
+                                    "idim": {
+                                        "type": "number"
+                                    },
+                                    "hdim": {
+                                        "type": "number"
+                                    },
+                                    "n_layers": {
+                                        "type": "number"
+                                    },
+                                    "dropout": {
+                                        "type": "number"
+                                    },
+                                    "num_classes": {
+                                        "type": "number",
+                                        "default": -1
+                                    },
+                                    "with_head": {
+                                        "type": "boolean",
+                                        "default": true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "TDNN_NAS"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "kwargs": {
+                                "type": "object",
+                                "properties": {
+                                    "idim": {
+                                        "type": "number"
+                                    },
+                                    "hdim": {
+                                        "type": "number"
+                                    },
+                                    "dropout": {
+                                        "type": "number",
+                                        "default": 0.5
+                                    },
+                                    "num_classes": {
+                                        "type": "number",
+                                        "default": -1
+                                    },
+                                    "with_head": {
+                                        "type": "boolean",
+                                        "default": true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "VGGLSTM"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "kwargs": {
+                                "type": "object",
+                                "properties": {
+                                    "idim": {
+                                        "type": "number"
+                                    },
+                                    "hdim": {
+                                        "type": "number"
+                                    },
+                                    "n_layers": {
+                                        "type": "number"
+                                    },
+                                    "dropout": {
+                                        "type": "number"
+                                    },
+                                    "num_classes": {
+                                        "type": "number",
+                                        "default": -1
+                                    },
+                                    "with_head": {
+                                        "type": "boolean",
+                                        "default": true
+                                    },
+                                    "in_channel": {
+                                        "type": "number",
+                                        "default": 3
+                                    },
+                                    "bidirectional": {
+                                        "type": "number",
+                                        "default": false
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "Wav2Vec2Encoder"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "kwargs": {
+                                "type": "object",
+                                "properties": {
+                                    "pretrained_model": {
+                                        "type": "string"
+                                    },
+                                    "use_wav2vec2_encoder": {
+                                        "type": "boolean",
+                                        "default": false
+                                    },
+                                    "tune_wav2vec2": {
+                                        "type": "boolean",
+                                        "default": false
+                                    },
+                                    "enc_head_type": {
+                                        "type": "string",
+                                        "default": "ConformerNet"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "decoder": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "examples": [
+                        "AbsDecoder",
+                        "CausalTransformer",
+                        "EmbConv1D",
+                        "Embedding",
+                        "ILM",
+                        "LSTM",
+                        "MultiDecoder",
+                        "NGram",
+                        "SyllableEnhancedLSTM",
+                        "ZeroDecoder"
+                    ]
+                }
+            },
+            "description": "Configuration of Transducer prediction network / LM.",
+            "required": [
+                "type",
+                "kwargs"
+            ],
+            "allOf": [
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "AbsDecoder"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "kwargs": {
+                                "type": "object",
+                                "properties": {
+                                    "num_classes": {
+                                        "type": "number",
+                                        "default": -1
+                                    },
+                                    "dim_emb": {
+                                        "type": "number",
+                                        "default": -1
+                                    },
+                                    "dim_hidden": {
+                                        "type": "number",
+                                        "default": -1
+                                    },
+                                    "padding_idx": {
+                                        "type": "number",
+                                        "default": -1
+                                    },
+                                    "tied": {
+                                        "type": "boolean",
+                                        "default": false
+                                    },
+                                    "with_head": {
+                                        "type": "boolean",
+                                        "default": true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "CausalTransformer"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "kwargs": {
+                                "type": "object",
+                                "properties": {
+                                    "num_classes": {
+                                        "type": "number"
+                                    },
+                                    "dim_hid": {
+                                        "type": "number"
+                                    },
+                                    "num_head": {
+                                        "type": "number"
+                                    },
+                                    "num_layers": {
+                                        "type": "number"
+                                    },
+                                    "attn_dropout": {
+                                        "type": "number",
+                                        "default": 0.1
+                                    },
+                                    "with_head": {
+                                        "type": "boolean",
+                                        "default": true
+                                    },
+                                    "padding_idx": {
+                                        "type": "number",
+                                        "default": -1
+                                    },
+                                    "use_cache": {
+                                        "type": "boolean",
+                                        "default": false
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "EmbConv1D"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "kwargs": {
+                                "type": "object",
+                                "properties": {
+                                    "num_classes": {
+                                        "type": "number"
+                                    },
+                                    "edim": {
+                                        "type": "number"
+                                    },
+                                    "conv_dim": {
+                                        "type": "number"
+                                    },
+                                    "kernel_size": {
+                                        "type": "number",
+                                        "default": 3
+                                    },
+                                    "act": {
+                                        "default": "relu"
+                                    },
+                                    "with_head": {
+                                        "type": "boolean",
+                                        "default": true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "Embedding"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "kwargs": {
+                                "type": "object",
+                                "properties": {
+                                    "dim_emb": {
+                                        "type": "number"
+                                    },
+                                    "num_classes": {
+                                        "type": "number",
+                                        "default": -1
+                                    },
+                                    "padding_idx": {
+                                        "type": "number",
+                                        "default": -1
+                                    },
+                                    "tied": {
+                                        "type": "boolean",
+                                        "default": false
+                                    },
+                                    "with_head": {
+                                        "type": "boolean",
+                                        "default": true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "ILM"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "kwargs": {
+                                "type": "object",
+                                "properties": {
+                                    "f_rnnt_config": {
+                                        "type": "string"
+                                    },
+                                    "f_check": {
+                                        "type": "string"
+                                    },
+                                    "lazy_init": {
+                                        "type": "boolean",
+                                        "default": false
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "LSTM"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "kwargs": {
+                                "type": "object",
+                                "properties": {
+                                    "num_classes": {
+                                        "type": "number"
+                                    },
+                                    "hdim": {
+                                        "type": "number"
+                                    },
+                                    "norm": {
+                                        "type": "boolean",
+                                        "default": false
+                                    },
+                                    "variational_noise": {},
+                                    "padding_idx": {
+                                        "type": "number",
+                                        "default": -1
+                                    },
+                                    "with_head": {
+                                        "type": "boolean",
+                                        "default": true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "MultiDecoder"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "kwargs": {
+                                "type": "object",
+                                "properties": {
+                                    "weights": {},
+                                    "f_configs": {},
+                                    "f_checks": {}
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "NGram"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "kwargs": {
+                                "type": "object",
+                                "properties": {
+                                    "gram_order": {
+                                        "type": "number"
+                                    },
+                                    "num_classes": {
+                                        "type": "number"
+                                    },
+                                    "f_binlm": {
+                                        "type": "string"
+                                    },
+                                    "bos_id": {
+                                        "type": "number",
+                                        "default": 0
+                                    },
+                                    "eos_id": {
+                                        "type": "number",
+                                        "default": -1
+                                    },
+                                    "unk_id": {
+                                        "type": "number",
+                                        "default": 1
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "SyllableEnhancedLSTM"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "kwargs": {
+                                "type": "object",
+                                "properties": {
+                                    "syllable_data": {
+                                        "type": "string"
+                                    },
+                                    "num_classes": {
+                                        "type": "number"
+                                    },
+                                    "hdim": {
+                                        "type": "number"
+                                    },
+                                    "norm": {
+                                        "type": "boolean",
+                                        "default": false
+                                    },
+                                    "variational_noise": {},
+                                    "padding_idx": {
+                                        "type": "number",
+                                        "default": -1
+                                    },
+                                    "with_head": {
+                                        "type": "boolean",
+                                        "default": true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "ZeroDecoder"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "kwargs": {
+                                "type": "object",
+                                "properties": {
+                                    "hdim": {
+                                        "type": "number"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "specaug": {
+            "type": "object",
+            "properties": {
+                "apply_time_warp": {
+                    "type": "boolean",
+                    "default": true
+                },
+                "time_warp_window": {
+                    "type": "number",
+                    "default": 0.2
+                },
+                "apply_freq_mask": {
+                    "type": "boolean",
+                    "default": true
+                },
+                "freq_mask_width_range": {
+                    "default": [
+                        0.0,
+                        0.15
+                    ]
+                },
+                "num_freq_mask": {
+                    "type": "number",
+                    "default": 2
+                },
+                "apply_time_mask": {
+                    "type": "boolean",
+                    "default": true
+                },
+                "time_mask_width_range": {
+                    "default": [
+                        0.0,
+                        0.1
+                    ]
+                },
+                "num_time_mask": {
+                    "type": "number",
+                    "default": 2
+                },
+                "delta_feats": {
+                    "type": "boolean",
+                    "default": false
+                }
+            },
+            "description": "Configuration of SpecAugument."
+        },
+        "joiner": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "examples": [
+                        "AbsJointNet",
+                        "ConvJoiner",
+                        "HAT",
+                        "JointNet",
+                        "LogAdd"
+                    ]
+                }
+            },
+            "description": "Configuration of Transducer joiner network.",
+            "required": [
+                "type",
+                "kwargs"
+            ],
+            "allOf": [
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "AbsJointNet"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "kwargs": {
+                                "type": "object",
+                                "properties": {}
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "ConvJoiner"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "kwargs": {
+                                "type": "object",
+                                "properties": {
+                                    "odim_enc": {
+                                        "type": "number"
+                                    },
+                                    "odim_pred": {
+                                        "type": "number"
+                                    },
+                                    "num_classes": {
+                                        "type": "number"
+                                    },
+                                    "hdim": {
+                                        "type": "number"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "HAT"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "kwargs": {
+                                "type": "object",
+                                "properties": {
+                                    "odim_enc": {
+                                        "type": "number"
+                                    },
+                                    "odim_pred": {
+                                        "type": "number"
+                                    },
+                                    "num_classes": {
+                                        "type": "number"
+                                    },
+                                    "hdim": {
+                                        "type": "number",
+                                        "default": -1
+                                    },
+                                    "join_mode": {
+                                        "default": "add"
+                                    },
+                                    "act": {
+                                        "default": "tanh"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "JointNet"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "kwargs": {
+                                "type": "object",
+                                "properties": {
+                                    "odim_enc": {
+                                        "type": "number"
+                                    },
+                                    "odim_pred": {
+                                        "type": "number"
+                                    },
+                                    "num_classes": {
+                                        "type": "number"
+                                    },
+                                    "hdim": {
+                                        "type": "number",
+                                        "default": -1
+                                    },
+                                    "join_mode": {
+                                        "default": "add"
+                                    },
+                                    "act": {
+                                        "default": "tanh"
+                                    },
+                                    "compact": {
+                                        "type": "boolean",
+                                        "default": false
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "LogAdd"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "kwargs": {
+                                "type": "object",
+                                "properties": {
+                                    "compact": {
+                                        "type": "boolean",
+                                        "default": false
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "scheduler": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "examples": [
+                        "Scheduler",
+                        "SchedulerCosineAnnealing",
+                        "SchedulerEarlyStop",
+                        "SchedulerEarlyStopWithWarmup",
+                        "SchedulerFixedStop",
+                        "SchedulerLinearAnnealing",
+                        "SchedulerNoam",
+                        "SchedulerNoamEarlyStop"
+                    ]
+                },
+                "optimizer": {
+                    "type": "object",
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "examples": [
+                                "ASGD",
+                                "Adadelta",
+                                "Adagrad",
+                                "Adam",
+                                "AdamW",
+                                "Adamax",
+                                "LBFGS",
+                                "NAdam",
+                                "Optimizer",
+                                "RAdam",
+                                "RMSprop",
+                                "Rprop",
+                                "SGD",
+                                "SparseAdam"
+                            ]
+                        },
+                        "zeroredundancy": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    },
+                    "description": "Configuration of optimizer.",
+                    "required": [
+                        "type",
+                        "kwargs"
+                    ],
+                    "allOf": [
+                        {
+                            "if": {
+                                "properties": {
+                                    "type": {
+                                        "const": "ASGD"
+                                    }
+                                }
+                            },
+                            "then": {
+                                "properties": {
+                                    "kwargs": {
+                                        "type": "object",
+                                        "properties": {
+                                            "params": {},
+                                            "lr": {
+                                                "default": 0.01
+                                            },
+                                            "lambd": {
+                                                "default": 0.0001
+                                            },
+                                            "alpha": {
+                                                "default": 0.75
+                                            },
+                                            "t0": {
+                                                "default": 1000000.0
+                                            },
+                                            "weight_decay": {
+                                                "default": 0
+                                            },
+                                            "foreach": {}
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "if": {
+                                "properties": {
+                                    "type": {
+                                        "const": "Adadelta"
+                                    }
+                                }
+                            },
+                            "then": {
+                                "properties": {
+                                    "kwargs": {
+                                        "type": "object",
+                                        "properties": {
+                                            "params": {},
+                                            "lr": {
+                                                "default": 1.0
+                                            },
+                                            "rho": {
+                                                "default": 0.9
+                                            },
+                                            "eps": {
+                                                "default": 1e-06
+                                            },
+                                            "weight_decay": {
+                                                "default": 0
+                                            },
+                                            "foreach": {}
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "if": {
+                                "properties": {
+                                    "type": {
+                                        "const": "Adagrad"
+                                    }
+                                }
+                            },
+                            "then": {
+                                "properties": {
+                                    "kwargs": {
+                                        "type": "object",
+                                        "properties": {
+                                            "params": {},
+                                            "lr": {
+                                                "default": 0.01
+                                            },
+                                            "lr_decay": {
+                                                "default": 0
+                                            },
+                                            "weight_decay": {
+                                                "default": 0
+                                            },
+                                            "initial_accumulator_value": {
+                                                "default": 0
+                                            },
+                                            "eps": {
+                                                "default": 1e-10
+                                            },
+                                            "foreach": {}
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "if": {
+                                "properties": {
+                                    "type": {
+                                        "const": "Adam"
+                                    }
+                                }
+                            },
+                            "then": {
+                                "properties": {
+                                    "kwargs": {
+                                        "type": "object",
+                                        "properties": {
+                                            "params": {},
+                                            "lr": {
+                                                "default": 0.001
+                                            },
+                                            "betas": {
+                                                "default": [
+                                                    0.9,
+                                                    0.999
+                                                ]
+                                            },
+                                            "eps": {
+                                                "default": 1e-08
+                                            },
+                                            "weight_decay": {
+                                                "default": 0
+                                            },
+                                            "amsgrad": {
+                                                "default": false
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "if": {
+                                "properties": {
+                                    "type": {
+                                        "const": "AdamW"
+                                    }
+                                }
+                            },
+                            "then": {
+                                "properties": {
+                                    "kwargs": {
+                                        "type": "object",
+                                        "properties": {
+                                            "params": {},
+                                            "lr": {
+                                                "default": 0.001
+                                            },
+                                            "betas": {
+                                                "default": [
+                                                    0.9,
+                                                    0.999
+                                                ]
+                                            },
+                                            "eps": {
+                                                "default": 1e-08
+                                            },
+                                            "weight_decay": {
+                                                "default": 0.01
+                                            },
+                                            "amsgrad": {
+                                                "default": false
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "if": {
+                                "properties": {
+                                    "type": {
+                                        "const": "Adamax"
+                                    }
+                                }
+                            },
+                            "then": {
+                                "properties": {
+                                    "kwargs": {
+                                        "type": "object",
+                                        "properties": {
+                                            "params": {},
+                                            "lr": {
+                                                "default": 0.002
+                                            },
+                                            "betas": {
+                                                "default": [
+                                                    0.9,
+                                                    0.999
+                                                ]
+                                            },
+                                            "eps": {
+                                                "default": 1e-08
+                                            },
+                                            "weight_decay": {
+                                                "default": 0
+                                            },
+                                            "foreach": {}
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "if": {
+                                "properties": {
+                                    "type": {
+                                        "const": "LBFGS"
+                                    }
+                                }
+                            },
+                            "then": {
+                                "properties": {
+                                    "kwargs": {
+                                        "type": "object",
+                                        "properties": {
+                                            "params": {},
+                                            "lr": {
+                                                "default": 1
+                                            },
+                                            "max_iter": {
+                                                "default": 20
+                                            },
+                                            "max_eval": {},
+                                            "tolerance_grad": {
+                                                "default": 1e-07
+                                            },
+                                            "tolerance_change": {
+                                                "default": 1e-09
+                                            },
+                                            "history_size": {
+                                                "default": 100
+                                            },
+                                            "line_search_fn": {}
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "if": {
+                                "properties": {
+                                    "type": {
+                                        "const": "NAdam"
+                                    }
+                                }
+                            },
+                            "then": {
+                                "properties": {
+                                    "kwargs": {
+                                        "type": "object",
+                                        "properties": {
+                                            "params": {},
+                                            "lr": {
+                                                "default": 0.002
+                                            },
+                                            "betas": {
+                                                "default": [
+                                                    0.9,
+                                                    0.999
+                                                ]
+                                            },
+                                            "eps": {
+                                                "default": 1e-08
+                                            },
+                                            "weight_decay": {
+                                                "default": 0
+                                            },
+                                            "momentum_decay": {
+                                                "default": 0.004
+                                            },
+                                            "foreach": {}
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "if": {
+                                "properties": {
+                                    "type": {
+                                        "const": "Optimizer"
+                                    }
+                                }
+                            },
+                            "then": {
+                                "properties": {
+                                    "kwargs": {
+                                        "type": "object",
+                                        "properties": {
+                                            "params": {},
+                                            "defaults": {}
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "if": {
+                                "properties": {
+                                    "type": {
+                                        "const": "RAdam"
+                                    }
+                                }
+                            },
+                            "then": {
+                                "properties": {
+                                    "kwargs": {
+                                        "type": "object",
+                                        "properties": {
+                                            "params": {},
+                                            "lr": {
+                                                "default": 0.001
+                                            },
+                                            "betas": {
+                                                "default": [
+                                                    0.9,
+                                                    0.999
+                                                ]
+                                            },
+                                            "eps": {
+                                                "default": 1e-08
+                                            },
+                                            "weight_decay": {
+                                                "default": 0
+                                            },
+                                            "foreach": {}
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "if": {
+                                "properties": {
+                                    "type": {
+                                        "const": "RMSprop"
+                                    }
+                                }
+                            },
+                            "then": {
+                                "properties": {
+                                    "kwargs": {
+                                        "type": "object",
+                                        "properties": {
+                                            "params": {},
+                                            "lr": {
+                                                "default": 0.01
+                                            },
+                                            "alpha": {
+                                                "default": 0.99
+                                            },
+                                            "eps": {
+                                                "default": 1e-08
+                                            },
+                                            "weight_decay": {
+                                                "default": 0
+                                            },
+                                            "momentum": {
+                                                "default": 0
+                                            },
+                                            "centered": {
+                                                "default": false
+                                            },
+                                            "foreach": {}
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "if": {
+                                "properties": {
+                                    "type": {
+                                        "const": "Rprop"
+                                    }
+                                }
+                            },
+                            "then": {
+                                "properties": {
+                                    "kwargs": {
+                                        "type": "object",
+                                        "properties": {
+                                            "params": {},
+                                            "lr": {
+                                                "default": 0.01
+                                            },
+                                            "etas": {
+                                                "default": [
+                                                    0.5,
+                                                    1.2
+                                                ]
+                                            },
+                                            "step_sizes": {
+                                                "default": [
+                                                    1e-06,
+                                                    50
+                                                ]
+                                            },
+                                            "foreach": {}
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "if": {
+                                "properties": {
+                                    "type": {
+                                        "const": "SGD"
+                                    }
+                                }
+                            },
+                            "then": {
+                                "properties": {
+                                    "kwargs": {
+                                        "type": "object",
+                                        "properties": {
+                                            "params": {},
+                                            "lr": {},
+                                            "momentum": {
+                                                "default": 0
+                                            },
+                                            "dampening": {
+                                                "default": 0
+                                            },
+                                            "weight_decay": {
+                                                "default": 0
+                                            },
+                                            "nesterov": {
+                                                "default": false
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "if": {
+                                "properties": {
+                                    "type": {
+                                        "const": "SparseAdam"
+                                    }
+                                }
+                            },
+                            "then": {
+                                "properties": {
+                                    "kwargs": {
+                                        "type": "object",
+                                        "properties": {
+                                            "params": {},
+                                            "lr": {
+                                                "default": 0.001
+                                            },
+                                            "betas": {
+                                                "default": [
+                                                    0.9,
+                                                    0.999
+                                                ]
+                                            },
+                                            "eps": {
+                                                "default": 1e-08
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                }
+            },
+            "description": "Configuration of Scheduler.",
+            "required": [
+                "type",
+                "kwargs"
+            ],
+            "allOf": [
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "Scheduler"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "kwargs": {
+                                "type": "object",
+                                "properties": {
+                                    "optimizer": {},
+                                    "reverse": {
+                                        "type": "boolean",
+                                        "default": false
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "SchedulerCosineAnnealing"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "kwargs": {
+                                "type": "object",
+                                "properties": {
+                                    "optimizer": {},
+                                    "min_lr": {
+                                        "type": "number"
+                                    },
+                                    "stop_step": {
+                                        "type": "number"
+                                    },
+                                    "period": {
+                                        "type": "number",
+                                        "default": 0
+                                    },
+                                    "decay_factor": {
+                                        "type": "number",
+                                        "default": 1.0
+                                    },
+                                    "reverse": {
+                                        "type": "boolean",
+                                        "default": false
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "SchedulerEarlyStop"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "kwargs": {
+                                "type": "object",
+                                "properties": {
+                                    "optimizer": {},
+                                    "min_step": {
+                                        "type": "number"
+                                    },
+                                    "stop_lr": {
+                                        "type": "number",
+                                        "default": 1e-05
+                                    },
+                                    "n_tol": {
+                                        "type": "number",
+                                        "default": 0
+                                    },
+                                    "gamma": {
+                                        "type": "number",
+                                        "default": 0.1
+                                    },
+                                    "reverse": {
+                                        "type": "boolean",
+                                        "default": false
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "SchedulerEarlyStopWithWarmup"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "kwargs": {
+                                "type": "object",
+                                "properties": {
+                                    "optimizer": {},
+                                    "batch_size": {
+                                        "type": "number"
+                                    },
+                                    "warmup_step": {
+                                        "type": "number"
+                                    },
+                                    "ref_bs": {
+                                        "type": "number"
+                                    },
+                                    "ref_lr": {
+                                        "type": "number",
+                                        "default": 0.0
+                                    },
+                                    "stop_lr": {
+                                        "type": "number",
+                                        "default": 1e-05
+                                    },
+                                    "n_tol": {
+                                        "type": "number",
+                                        "default": 1
+                                    },
+                                    "gamma": {
+                                        "type": "number",
+                                        "default": 0.1
+                                    },
+                                    "reverse": {
+                                        "type": "boolean",
+                                        "default": false
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "SchedulerFixedStop"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "kwargs": {
+                                "type": "object",
+                                "properties": {
+                                    "optimizer": {},
+                                    "stop_step": {
+                                        "type": "number"
+                                    },
+                                    "reverse": {
+                                        "type": "boolean",
+                                        "default": false
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "SchedulerLinearAnnealing"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "kwargs": {
+                                "type": "object",
+                                "properties": {
+                                    "optimizer": {},
+                                    "min_step": {
+                                        "type": "number"
+                                    },
+                                    "stop_lr": {
+                                        "type": "number"
+                                    },
+                                    "stop_step": {
+                                        "type": "number"
+                                    },
+                                    "reverse": {
+                                        "type": "boolean",
+                                        "default": false
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "SchedulerNoam"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "kwargs": {
+                                "type": "object",
+                                "properties": {
+                                    "optimizer": {},
+                                    "dim_model": {
+                                        "type": "number"
+                                    },
+                                    "warmup_step": {
+                                        "type": "number"
+                                    },
+                                    "stop_step": {
+                                        "type": "number"
+                                    },
+                                    "peak_factor": {
+                                        "type": "number",
+                                        "default": 1.0
+                                    },
+                                    "reverse": {
+                                        "type": "boolean",
+                                        "default": false
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "SchedulerNoamEarlyStop"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "kwargs": {
+                                "type": "object",
+                                "properties": {
+                                    "optimizer": {},
+                                    "dim_model": {
+                                        "type": "number"
+                                    },
+                                    "warmup_step": {
+                                        "type": "number"
+                                    },
+                                    "peak_factor": {
+                                        "type": "number",
+                                        "default": 1.0
+                                    },
+                                    "stop_lr": {
+                                        "type": "number",
+                                        "default": 1e-05
+                                    },
+                                    "n_tol": {
+                                        "type": "number",
+                                        "default": 0
+                                    },
+                                    "gamma": {
+                                        "type": "number",
+                                        "default": 0.1
+                                    },
+                                    "min_step": {
+                                        "default": -1
+                                    },
+                                    "reverse": {
+                                        "type": "boolean",
+                                        "default": false
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+    },
+    "description": "Settings of NN training.",
+    "required": [
+        "scheduler"
+    ]
+}

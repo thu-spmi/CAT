@@ -1,0 +1,10 @@
+{
+    "decoder": {
+        "type": "NGram",
+        "kwargs": {
+            "f_binlm": "exp/lm/lm-v6/3gram.klm",
+            "gram_order": 3,
+            "num_classes": 498115
+        }
+    }
+}

@@ -1,0 +1,54 @@
+{
+    "data": {
+        "train": [
+            "train-clean-100",
+            "train-clean-360",
+            "train-other-500"
+        ],
+        "dev": [
+            "dev-clean",
+            "dev-other"
+        ],
+        "test": [
+            "dev-clean",
+            "dev-other",
+            "test-clean",
+            "test-other"
+        ],
+        "filter": "10:2000"
+    },
+    "tokenizer": {
+        "type": "SentencePieceTokenizer",
+        "option-train": {
+            "model_type": "unigram",
+            "model_prefix": "sentencepiece/libri_unigram_1024/spm",
+            "vocab_size": 1024
+        }
+    },
+    "train": {
+        "bin": "cat.rnnt.train",
+        "option": {
+            "amp": true,
+            "batch_size": 128,
+            "grad_accum_fold": 16,
+            "dynamic_batch_mode": 1
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "best",
+            "num": 10
+        },
+        "infer": {
+            "bin": "cat.rnnt.decode",
+            "option": {
+                "beam_size": 16,
+                "cpu": true,
+                "nj": 48
+            }
+        },
+        "er": {
+            "cer": false
+        }
+    }
+}

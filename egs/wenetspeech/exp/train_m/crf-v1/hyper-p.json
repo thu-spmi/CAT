@@ -1,0 +1,29 @@
+{
+    "data": {
+        "train": "train_m",
+        "dev": [
+            "dev"
+        ],
+        "test": [
+            "dev",
+            "test_net",
+            "test_meeting"
+        ],
+        "filter": ":1000"
+    },
+    "train": {
+        "bin": "cat.ctc.train",
+        "option": {
+            "amp": true,
+            "batch_size": 512,
+            "grad_norm": 5.0,
+            "dynamic_batch_mode": 1
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "last",
+            "num": 10
+        }
+    }
+}

@@ -1,0 +1,28 @@
+{
+    "decoder": {
+        "type": "CausalTransformer",
+        "kwargs": {
+            "attn_dropout": 0.1,
+            "dim_hid": 768,
+            "num_classes": 1024,
+            "num_head": 12,
+            "num_layers": 12
+        }
+    },
+    "scheduler": {
+        "type": "SchedulerNoam",
+        "optimizer": {
+            "type": "Adam",
+            "kwargs": {
+                "lr": 0.001,
+                "weight_decay": 1e-06
+            }
+        },
+        "kwargs": {
+            "dim_model": 768,
+            "peak_factor": 1.0,
+            "warmup_step": 25000,
+            "stop_step": 1200000
+        }
+    }
+}

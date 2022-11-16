@@ -1,0 +1,73 @@
+{
+    "specaug": {
+        "freq_mask_width_range": 0.34,
+        "num_freq_mask": 2,
+        "num_time_mask": 5,
+        "time_mask_width_range": 0.1,
+        "time_warp_window": 0.2
+    },
+    "trainer": {
+        "compact": true,
+        "predictor_mask_range": 0.2,
+        "num_predictor_mask": 4
+    },
+    "joiner": {
+        "type": "JointNet",
+        "kwargs": {
+            "odim_enc": 256,
+            "odim_pred": 256,
+            "hdim": 256,
+            "num_classes": 2000,
+            "compact": true
+        }
+    },
+    "encoder": {
+        "type": "ConformerNet",
+        "kwargs": {
+            "num_cells": 12,
+            "idim": 80,
+            "hdim": 256,
+            "conv": "vgg2l",
+            "num_heads": 4,
+            "dropout": 0.3,
+            "dropout_attn": 0.3,
+            "kernel_size": 12,
+            "with_head": false,
+            "num_classes": 2000,
+            "time_reduction_factor": 2
+        }
+    },
+    "decoder": {
+        "type": "LSTM",
+        "kwargs": {
+            "num_classes": 2000,
+            "hdim": 256,
+            "num_layers": 1,
+            "with_head": false,
+            "variational_noise": [
+                0.0,
+                0.075
+            ]
+        }
+    },
+    "scheduler": {
+        "type": "SchedulerNoam",
+        "optimizer": {
+            "type": "Adam",
+            "kwargs": {
+                "lr": 0.0003,
+                "betas": [
+                    0.9,
+                    0.98
+                ],
+                "weight_decay": 1e-06
+            }
+        },
+        "kwargs": {
+            "peak_factor": 1.0,
+            "dim_model": 256,
+            "warmup_step": 15000,
+            "stop_step": 50000
+        }
+    }
+}

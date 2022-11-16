@@ -1,0 +1,36 @@
+{
+    "data": {
+        "train": "train_si284-3sp",
+        "dev": "test_dev93-3sp",
+        "test": [
+            "test_dev93",
+            "test_eval92"
+        ],
+        "filter": ":2000"
+    },
+    "tokenizer": {
+        "type": "LexiconTokenizer",
+        "option-init": {
+            "lexicon": "data/cmudict.txt"
+        }
+    },
+    "train": {
+        "bin": "cat.ctc.train",
+        "option": {
+            "amp": true,
+            "batch_size": 256
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "last",
+            "num": 2
+        },
+        "infer": {
+            "bin": "cat.ctc.cal_logit",
+            "option": {
+                "nj": 16
+            }
+        }
+    }
+}

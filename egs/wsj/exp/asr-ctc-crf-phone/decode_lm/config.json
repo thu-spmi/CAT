@@ -1,0 +1,10 @@
+{
+    "decoder": {
+        "type": "NGram",
+        "kwargs": {
+            "f_binlm": "exp/asr-ctc-crf-phone/decode_lm/4gram.arpa",
+            "gram_order": 4,
+            "num_classes": 127924
+        }
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "data": {
+        "train": "yesno"
+    },
+    "tokenizer": {
+        "type": "SimpleTokenizer",
+        "option-init": {
+            "dmap": "exp/asr-ctc-lexicon/local/lexicon.txt",
+            "read_index_from_file": false
+        },
+        "|V|": 4,
+        "file": "exp/asr-ctc-lexicon/decode_lm/tokenizer.tknz"
+    },
+    "inference": {},
+    "commit": "d43b70416911b47882f6f360ec41add206a2fb1d"
+}

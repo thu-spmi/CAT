@@ -1,0 +1,34 @@
+{
+    "trainer": {
+        "decoder": {
+            "beam_size": 16,
+            "num_classes": 7
+        }
+    },
+    "encoder": {
+        "type": "LSTM",
+        "kwargs": {
+            "bidirectional": true,
+            "dropout": 0.2,
+            "hdim": 512,
+            "idim": 80,
+            "n_layers": 2,
+            "num_classes": 7,
+            "with_head": true
+        }
+    },
+    "scheduler": {
+        "type": "SchedulerCosineAnnealing",
+        "kwargs": {
+            "min_lr": 0.0001,
+            "stop_step": 200
+        },
+        "optimizer": {
+            "type": "Adam",
+            "kwargs": {
+                "lr": 0.001
+            },
+            "zeroredundancy": true
+        }
+    }
+}

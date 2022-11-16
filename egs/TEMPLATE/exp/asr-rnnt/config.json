@@ -1,0 +1,49 @@
+{
+    "trainer": {
+        "compact": true
+    },
+    "joiner": {
+        "type": "JointNet",
+        "kwargs": {
+            "odim_enc": 512,
+            "odim_pred": 256,
+            "num_classes": 8,
+            "compact": true
+        }
+    },
+    "decoder": {
+        "type": "LSTM",
+        "kwargs": {
+            "hdim": 256,
+            "num_classes": 8,
+            "with_head": false
+        }
+    },
+    "encoder": {
+        "type": "LSTM",
+        "kwargs": {
+            "bidirectional": true,
+            "hdim": 256,
+            "idim": 80,
+            "dropout": 0.0,
+            "n_layers": 2,
+            "num_classes": 8,
+            "with_head": false
+        }
+    },
+    "scheduler": {
+        "type": "SchedulerCosineAnnealing",
+        "kwargs": {
+            "min_lr": 1e-06,
+            "period": 500,
+            "stop_step": 500
+        },
+        "optimizer": {
+            "zeroredundancy": true,
+            "type": "Adam",
+            "kwargs": {
+                "lr": 0.001
+            }
+        }
+    }
+}

@@ -1,0 +1,38 @@
+{
+    "data": {
+        "train": "data/local-lm/ptb.train.txt",
+        "dev": "data/local-lm/ptb.valid.txt",
+        "test": [
+            "data/local-lm/ptb.test.txt",
+            "data/local-lm/ptb.valid.txt"
+        ],
+        "packing-text-lm": {
+            "truncate": 32
+        }
+    },
+    "tokenizer": {
+        "type": "SentencePieceTokenizer",
+        "option-train": {
+            "model_type": "word",
+            "vocab_size": 10000,
+            "use_all_vocab": true,
+            "model_prefix": "sentencepiece/ptb-word/spm"
+        },
+        "|V|": 10000,
+        "file": "exp/lm-nn/tokenizer.tknz"
+    },
+    "train": {
+        "bin": "cat.lm.train",
+        "option": {
+            "amp": true,
+            "batch_size": 64,
+            "check-freq": 500
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "last",
+            "num": 2
+        }
+    }
+}

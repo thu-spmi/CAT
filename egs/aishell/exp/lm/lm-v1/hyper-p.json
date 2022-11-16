@@ -1,0 +1,39 @@
+{
+    "data": {
+        "train": "train",
+        "dev": "dev",
+        "test": [
+            "dev",
+            "test"
+        ],
+        "packing-text-lm": {
+            "truncate": 32,
+            "nj": 48
+        }
+    },
+    "tokenizer": {
+        "type": "SentencePieceTokenizer",
+        "file": "exp/rnnt/rnnt-v15/tokenizer.tknz",
+        "|V|": 4232
+    },
+    "env": {
+        "CUDA_VISIBLE_DEVICES": "0"
+    },
+    "train": {
+        "bin": "cat.lm.train",
+        "option": {
+            "amp": true,
+            "batch_size": 2048,
+            "grad_norm": 5.0,
+            "check_freq": 500
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "best",
+            "num": 5
+        },
+        "ppl": {}
+    },
+    "commit": "fbce69aa90bed4c3b04de4eaafccbd35a2916368"
+}

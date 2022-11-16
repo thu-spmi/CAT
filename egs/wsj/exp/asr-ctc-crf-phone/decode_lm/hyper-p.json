@@ -1,0 +1,12 @@
+{
+    "data": {
+        "train": "data/extra.corpus"
+    },
+    "tokenizer": {
+        "type": "SimpleTokenizer",
+        "option-init": {
+            "dmap": "data/cmudict.txt",
+            "read_index_from_file": false
+        }
+    }
+}

@@ -1,0 +1,20 @@
+{
+    "data": {
+        "train": "train_l",
+        "test": [
+            "test_net",
+            "test_meeting"
+        ]
+    },
+    "tokenizer": {
+        "type": "SentencePieceTokenizer",
+        "option-train": {
+            "model_type": "char",
+            "add_dummy_prefix": false,
+            "use_all_vocab": true,
+            "model_prefix": "sentencepiece/wenetspeech_l_char/spm",
+            "vocab_size": 5536
+        }
+    },
+    "inference": {}
+}

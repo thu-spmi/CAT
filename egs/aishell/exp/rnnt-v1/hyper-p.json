@@ -1,0 +1,50 @@
+{
+    "data": {
+        "train": [
+            "train",
+            "train-sp0.9",
+            "train-sp1.1"
+        ],
+        "dev": "dev",
+        "test": [
+            "thaudio-dev",
+            "thaudio-test"
+        ],
+        "filter": ":2000",
+        "lang": "zh-cn"
+    },
+    "tokenizer": {
+        "type": "SentencePieceTokenizer",
+        "file": "exp/rnnt/rnnt-v15/tokenizer.tknz"
+    },
+    "train": {
+        "bin": "cat.rnnt.train",
+        "option": {
+            "amp": true,
+            "batch_size": 512,
+            "check_freq": 1000,
+            "dynamic_batch_mode": 0,
+            "dynamic_bucket_size": 230400,
+            "grad-norm": 2.0
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "best",
+            "num": 10
+        },
+        "infer": {
+            "bin": "cat.rnnt.decode",
+            "option": {
+                "beam_size": 16,
+                "cpu": true,
+                "nj": 48,
+                "resume": "exp/rnnt/rnnt-v19-torchaudio/check/best-10.pt"
+            }
+        },
+        "er": {
+            "cer": true
+        }
+    },
+    "commit": "d1b16c2de4e755d8b2535e64002d454532d920c3"
+}

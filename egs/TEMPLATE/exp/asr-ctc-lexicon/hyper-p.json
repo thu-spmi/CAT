@@ -1,0 +1,41 @@
+{
+    "data": {
+        "train": "yesno",
+        "dev": "yesno",
+        "test": "yesno",
+        "filter": "10:2000"
+    },
+    "tokenizer": {
+        "type": "LexiconTokenizer",
+        "option-init": {
+            "lexicon": "exp/asr-ctc-lexicon/local/lexicon.txt"
+        },
+        "|V|": 7,
+        "file": "exp/asr-ctc-lexicon/tokenizer.tknz"
+    },
+    "env": {
+        "CUDA_VISIBLE_DEVICES": "9"
+    },
+    "train": {
+        "bin": "cat.ctc.train",
+        "option": {
+            "amp": true,
+            "batch_size": 4,
+            "check_freq": 50
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "best",
+            "num": 2
+        },
+        "infer": {
+            "bin": "cat.ctc.cal_logit",
+            "option": {
+                "nj": 2,
+                "resume": "exp/asr-ctc-lexicon/check/best-2.pt"
+            }
+        }
+    },
+    "commit": "d43b70416911b47882f6f360ec41add206a2fb1d"
+}

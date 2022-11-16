@@ -1,0 +1,27 @@
+{
+    "decoder": {
+        "type": "CausalTransformer",
+        "kwargs": {
+            "attn_dropout": 0.2,
+            "dim_hid": 256,
+            "num_classes": 10000,
+            "num_head": 2,
+            "num_layers": 4,
+            "with_head": true
+        }
+    },
+    "scheduler": {
+        "type": "SchedulerCosineAnnealing",
+        "kwargs": {
+            "min_lr": 1e-05,
+            "stop_step": 2000
+        },
+        "optimizer": {
+            "type": "Adam",
+            "zeroredundancy": true,
+            "kwargs": {
+                "lr": 0.001
+            }
+        }
+    }
+}

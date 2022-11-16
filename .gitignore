@@ -1,7 +1,24 @@
+# settings
+src/
+test_*
+tmp_*
 egs/**/data/
 egs/**/exp/
-egs/**/fbank/
-.vscode/
+egs/**/sentencepiece
+.vscode
+*.tknz
+*.fst
+*.txt
+*.klm
+*.arpa
+*.bin
+*.tar
+*.png
+*.jpg
+*.pt
+*.tmp
+tmp/
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

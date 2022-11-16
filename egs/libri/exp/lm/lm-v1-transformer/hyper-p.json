@@ -1,0 +1,39 @@
+{
+    "data": {
+        "train": [
+            "train-clean-100",
+            "train-clean-360",
+            "train-other-500",
+            "data/librispeech.txt"
+        ],
+        "dev": [
+            "dev-clean",
+            "dev-other"
+        ],
+        "test": [
+            "dev-clean",
+            "dev-other",
+            "test-clean",
+            "test-other"
+        ],
+        "packing-text-lm": {
+            "truncate": 128
+        }
+    },
+    "tokenizer": {
+        "type": "SentencePieceTokenizer",
+        "option-train": {
+            "model_type": "unigram",
+            "vocab_size": 1024,
+            "model_prefix": "sentencepiece/libri_unigram_1024/spm"
+        }
+    },
+    "train": {
+        "bin": "cat.lm.train",
+        "option": {
+            "amp": true,
+            "batch_size": 2048,
+            "grad-norm": 5.0
+        }
+    }
+}

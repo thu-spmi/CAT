@@ -1,0 +1,39 @@
+{
+    "data": {
+        "train": "train_si284-3sp",
+        "dev": "test_dev93-3sp",                                                    
+        "test": [
+            "test_dev93",
+            "test_eval92"
+        ],
+        "filter": ":2000"
+    },
+   "tokenizer": {
+        "type": "SentencePieceTokenizer",
+        "option-train": {
+            "model_type": "bpe",
+            "vocab_size": 2000,
+            "model_prefix": "sentencepiece/wsj_bpe2k/spm"
+        }
+    },
+    "train": {
+        "bin": "cat.rnnt.train",
+        "option": {
+            "amp": true,
+            "batch_size": 256
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "last",
+            "num": 5
+        },
+        "infer": {
+            "bin": "cat.rnnt.decode",
+            "option": {
+                "beam_size": 16,
+                "nj": 16
+            }
+        }
+    }
+}

@@ -1,0 +1,12 @@
+{
+    "data": {
+        "train": "yesno",
+        "dev": "yesno",
+        "test": "yesno"
+    },
+    "tokenizer": {
+        "|V|": 8,
+        "file": "exp/asr-ctc-crf/tokenizer.tknz"
+    },
+    "inference": {}
+}

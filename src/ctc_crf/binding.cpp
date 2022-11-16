@@ -1,141 +1,126 @@
-// Copyright 2016 SeanNaren (https://github.com/SeanNaren/warp-ctc)
-//           2018-2019 Tsinghua University, Author: Hongyu Xiang
-// Apache 2.0.
-// pytorch binding for CTC-CRF
+/*
+* Copyright 2016 SeanNaren (https://github.com/SeanNaren/warp-ctc)
+*           2018-2019 Tsinghua University, Author: Hongyu Xiang, Hu Juntao (hujuntao_123@outlook.com)
+*           2021-2022 Tsinghua University, Author: Huahuan Zheng
+* Apache 2.0.
+* Pytorch binding for CTC-CRF
+*/
 
-#include <TH.h>
-#include <THC.h>
-#include <THCTensor.h>
-#include <iostream>
-#include <algorithm>
 #include "gpu_ctc/ctc.h"
+#include <c10/cuda/CUDAStream.h>
+#include <algorithm>
+#include <torch/extension.h>
 
-extern THCState *state;
 extern int DEN_NUM_ARCS;
 extern int DEN_NUM_STATES;
 
 #undef ATOMIC_CONST
 #define ATOMIC_CONST 32
 
-extern "C" {
-// void init_env(void);
-void Init(const char * fst_name, int n_gpus, int * gpus);
-void Release(int n_gpus, int *gpus);
+extern "C"
+{
+    void Init(const char *fst_name, int n_gpus, int *gpus);
 
-void compute_alpha(float *alpha,
-                   float *logits,
-                   const int batch_size,
-                   int T,
-                   const int alpha_size,
-                   int logits_size,
-                   int *input_lengths,
-                   float * loglikelihood,
-                   cudaStream_t stream);
+    void Release(int n_gpus, int *gpus);
 
-void compute_beta_and_grad(float *beta,
-                           const float * const alpha,
-                           const float * const logits,
-                           const float * const alpha_lld,
-                           float *grad_storage,
-                           float *grad_net,
-                           const int batch_size,
-                           const int T,
-                           const int beta_size,
-                           const int logits_size,
-                           const int * const input_lengths,
-                           float * loglikelihood,
-                           cudaStream_t stream);
+    void compute_alpha(float *alpha,
+                       float *logits,
+                       const int batch_size,
+                       int T,
+                       const int alpha_size,
+                       int logits_size,
+                       int *input_lengths,
+                       float *loglikelihood,
+                       cudaStream_t stream);
 
+    void compute_beta_and_grad(float *beta,
+                               const float *const alpha,
+                               const float *const logits,
+                               const float *const alpha_lld,
+                               float *grad_storage,
+                               float *grad_net,
+                               const int batch_size,
+                               const int T,
+                               const int beta_size,
+                               const int logits_size,
+                               const int *const input_lengths,
+                               float *loglikelihood,
+                               cudaStream_t stream);
+}
 
-void init_env(const char * fst_name, THIntTensor *gpus) {
-    int *gpus_ptr = THIntTensor_data(gpus);
-    int n_gpus = THIntTensor_size(gpus, 0);
+void init_env(const char *fst_name, torch::Tensor gpus)
+{
+    int *gpus_ptr = (int *)gpus.data_ptr();
+    int n_gpus = gpus.size(0);
     Init(fst_name, n_gpus, gpus_ptr);
 }
 
-void release_env(THIntTensor *gpus) {
-    int *gpus_ptr = THIntTensor_data(gpus);
-    int n_gpus = THIntTensor_size(gpus, 0);
+void release_env(torch::Tensor gpus)
+{
+    int *gpus_ptr = (int *)gpus.data_ptr();
+    int n_gpus = gpus.size(0);
     Release(n_gpus, gpus_ptr);
 }
 
-void gpu_den(THCudaTensor *logits,
-             THCudaTensor *grad_net,
-             THCudaIntTensor *input_lengths,
-             THCudaTensor *costs_alpha,
-             THCudaTensor *costs_beta)
+void gpu_den(torch::Tensor logits,
+             torch::Tensor grad_net,
+             torch::Tensor input_lengths,
+             torch::Tensor costs_alpha,
+             torch::Tensor costs_beta)
 {
-    float *logits_ptr = THCudaTensor_data(state, logits);
-    float *grad_net_ptr = THCudaTensor_data(state, grad_net);
-    int *input_lengths_ptr = THCudaIntTensor_data(state, input_lengths);
-    float *costs_alpha_ptr = THCudaTensor_data(state, costs_alpha);
-    float *costs_beta_ptr = THCudaTensor_data(state, costs_beta);
-    
-    int logits_size = THCudaTensor_size(state, logits, 2);
-    int T = THCudaTensor_size(state, logits, 1);
-    int batch_size = THCudaTensor_size(state, logits, 0);
+    int logits_size = logits.size(2);
+    int T = logits.size(1);
+    int batch_size = logits.size(0);
 
-    cudaStream_t stream = THCState_getCurrentStream(state);
+    cudaStream_t stream = c10::cuda::getCurrentCUDAStream(logits.device().index());
 
-    float *alpha = (float*)THCudaMalloc(state, sizeof(float)*(T+1)*batch_size*DEN_NUM_STATES);
-    float *beta = (float*)THCudaMalloc(state, sizeof(float)*2*batch_size*DEN_NUM_STATES);
-    float *grad_storage = (float*)THCudaMalloc(state, sizeof(float)*ATOMIC_CONST*batch_size*logits_size);
+    auto alpha = torch::empty({T+1, batch_size, DEN_NUM_STATES}, torch::dtype(torch::kFloat32).device(logits.device()));
+    auto beta = torch::empty({2, batch_size, DEN_NUM_STATES}, torch::dtype(torch::kFloat32).device(logits.device()));
+    auto grad_storage = torch::empty({ATOMIC_CONST, batch_size, logits_size}, torch::dtype(torch::kFloat32).device(logits.device()));
 
-    // std::cout << logits_size << " " << T << " " << batch_size << std::endl;
-
-    compute_alpha(alpha, logits_ptr, batch_size, T, DEN_NUM_STATES, logits_size, input_lengths_ptr, costs_alpha_ptr, stream);
-    compute_beta_and_grad(beta, alpha, logits_ptr, costs_alpha_ptr, grad_storage, grad_net_ptr, batch_size, T,
-        DEN_NUM_STATES, logits_size, input_lengths_ptr, costs_beta_ptr, stream);
-
-    THCudaFree(state, (void*)alpha);
-    THCudaFree(state, (void*)beta);
-    THCudaFree(state, (void*)grad_storage);
+    compute_alpha(alpha.data_ptr<float>(), logits.data_ptr<float>(), batch_size, T, DEN_NUM_STATES, logits_size, input_lengths.data_ptr<int>(), costs_alpha.data_ptr<float>(), stream);
+    compute_beta_and_grad(beta.data_ptr<float>(), alpha.data_ptr<float>(), logits.data_ptr<float>(), costs_alpha.data_ptr<float>(), grad_storage.data_ptr<float>(), grad_net.data_ptr<float>(), batch_size, T,
+                          DEN_NUM_STATES, logits_size, input_lengths.data_ptr<int>(), costs_beta.data_ptr<float>(), stream);
 }
 
-
-
-void gpu_ctc(THCudaTensor *probs,
-             THCudaTensor *grads,
-             THIntTensor *labels,
-             THIntTensor *label_sizes,
-             THIntTensor *sizes,
+void gpu_ctc(torch::Tensor probs,
+             torch::Tensor grads,
+             torch::Tensor labels,
+             torch::Tensor label_sizes,
+             torch::Tensor sizes,
              int minibatch_size,
-             THFloatTensor *costs,
+             torch::Tensor costs,
              int blank_label)
 {
-    float *probs_ptr = THCudaTensor_data(state, probs);
-    float *grads_ptr;
-    if (THCudaTensor_storage(state, grads)) {
-        grads_ptr = THCudaTensor_data(state, grads);
-    } else {
-        grads_ptr = NULL; // this will trigger the score forward code path
-    }
+    float *grads_ptr = grads.storage() ? grads.data_ptr<float>() : NULL;
 
-    int *sizes_ptr = THIntTensor_data(sizes);
-    int *labels_ptr = THIntTensor_data(labels);
-    int *label_sizes_ptr = THIntTensor_data(label_sizes);
-    float *costs_ptr = THFloatTensor_data(costs);
-
-    int probs_size = THFloatTensor_size(probs, 2);
+    int probs_size = probs.size(2);
 
     ctcOptions options;
     memset(&options, 0, sizeof(options));
     options.blank_label = blank_label;
-    options.stream = THCState_getCurrentStream(state);
+    options.stream = c10::cuda::getCurrentCUDAStream(probs.device().index());
 
     size_t gpu_size_bytes;
-    get_workspace_size(label_sizes_ptr, sizes_ptr,
+    get_workspace_size(label_sizes.data_ptr<int>(), sizes.data_ptr<int>(),
                        probs_size, minibatch_size,
                        options, &gpu_size_bytes);
 
-    void* gpu_workspace = THCudaMalloc(state, gpu_size_bytes);
+    auto gpu_workspace = torch::empty({gpu_size_bytes/4}, torch::dtype(torch::kFloat32).device(probs.device()));
 
-    compute_ctc_loss(probs_ptr, grads_ptr,
-                     labels_ptr, label_sizes_ptr,
-                     sizes_ptr, probs_size,
-                     minibatch_size, costs_ptr,
-                     gpu_workspace, options);
+    compute_ctc_loss(probs.data_ptr<float>(), grads_ptr,
+                     labels.data_ptr<int>(), label_sizes.data_ptr<int>(),
+                     sizes.data_ptr<int>(), probs_size,
+                     minibatch_size, costs.data_ptr<float>(),
+                     (void *)gpu_workspace.data_ptr<float>(), options);
 
-    THCudaFree(state, (void *) gpu_workspace);
 }
+
+// pybind11
+PYBIND11_MODULE(TORCH_EXTENSION_NAME, m)
+{
+    m.def("gpu_den", &gpu_den, "CTC CRF gpu_den");
+    m.def("init_env", &init_env, "CTC CRF init_env");
+    m.def("release_env", &release_env, "CTC CRF release_env");
+    m.def("gpu_ctc", &gpu_ctc, "CTC CRF gpu_ctc");
 }
