@@ -1,6 +1,6 @@
-# Copyright 2021 Tsinghua University
+# Copyright 2022 Tsinghua University
 # Apache 2.0.
-# Author: Zheng Huahuan (maxwellzh@outlook.com)
+# Author: Huahuan Zheng (maxwellzh@outlook.com)
 
 """
 Parallel decode with distributed GPU/CPU support 
@@ -106,11 +106,11 @@ def dataserver(args, q: mp.Queue):
     for batch in tqdm(testloader, desc="RNN-T decode", total=len(testloader), disable=(args.silent), leave=False):
         key = batch[0][0]
         """
-        NOTE: 
+        NOTE (Huahuan):
         In some cases (decoding with large beam size or large LMs like Transformer), 
-        ... the decoding consumes too much memory and would probably causes OOV error.
+        ... the decoding consumes too much memory and would probably causes OOM error.
         So I add checkpointing output in the nbest list. However, things would be
-        ... complicated when first decoding w/o lm, save the checkpoint to nbest list
+        ... complicated say if we first decoding w/o lm, save the checkpoint to nbest list
         ... then continue decoding w/ lm.
         I just assume users won't do that.
         """

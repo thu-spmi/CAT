@@ -1,5 +1,7 @@
 # TEMPLATE
 
+Here are some toy examples you can finish in minutes. But before starting on larger datasets like Librispeech, it is recommended to read through the [Training pipeline](#training-pipeline) to understand what is done at each stage.
+
 ## Run templates
 
 ### Speech recognition
@@ -56,7 +58,6 @@ bash local/lm_data.sh
    ```bash
    bash utils/pipeline/ngram.sh exp/lm-ngram-word -o 3
    ```
-
 
 ## Training pipeline
 
@@ -116,8 +117,9 @@ Note that data prepare is not included in standard pipelines. It's your duty to 
 
 ## Configuration manual
 
-   I'm sorry that currently there is no such a detailed document that explains how to configure the settings. However, for most of the basic use cases, the template experiments can be taken as references, and the [configure_guide](../../docs/configure_guide.md) might help, more or less.
-   For more advanced settings and usages, you probably need to dive into the codes, but don't worry, most of the codes are well-commented🤓. 
+   We're sorry that currently there is no such a detailed document that explains how to configure the settings. However, for most of the basic use cases, the template experiments can be taken as references, and the [configuration guideline](../../docs/configure_guide.md) might help, more or less.
+
+   For more advanced settings and usages, you probably need to dive into the codes, but don't worry, most of the codes are well commented 🤓. 
 
 ## Training with large dataset
 

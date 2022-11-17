@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright Tsinghua University 2021
+# Copyright Tsinghua University 2022
 # Author: Huahuan Zheng (maxwellzh@outlook.com)
 # Script for training n-gram LM
 set -u

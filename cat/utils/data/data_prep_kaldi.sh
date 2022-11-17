@@ -1,5 +1,5 @@
 # prepare spec feats by kaldi tool
-# author: Zheng Huahuan
+# author: Huahuan Zheng
 set -e
 <<"PARSER"
 ("data_dir", type=str, nargs='+',

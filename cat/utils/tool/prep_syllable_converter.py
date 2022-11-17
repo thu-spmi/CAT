@@ -1,7 +1,7 @@
 """
 Prepare Chinese character index to syllable index mapping.
 
-Author: Zheng Huahuan
+Author: Huahuan Zheng
 """
 import sys
 import pickle

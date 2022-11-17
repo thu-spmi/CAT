@@ -504,8 +504,9 @@ class SentencePieceTokenizer(AbsTokenizer):
             raise RuntimeError(
                 f"{self.__class__.__name__}: sentencepiece model path \'{model_file}\' is invalid.")
         self._tokenzier = sp.SentencePieceProcessor(model_file=model_file)
-        # FIXME: I cannot find a method to export SentencePieceProcessor object to a file
-        #        so here I make a redundant copy of the source file.
+        # FIXME (Huahuan): 
+        #     I cannot figure out a way to export SentencePieceProcessor object to a file
+        #     so here I make a redundant copy of the source file.
         self.byte_model = file2bin(model_file)
 
     def encode(self, strings: Union[str, Iterable[str]]) -> Union[List[int], List[List[int]]]:

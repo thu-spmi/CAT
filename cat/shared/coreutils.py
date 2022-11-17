@@ -1,6 +1,6 @@
-# Copyright 2021 Tsinghua University
+# Copyright 2022 Tsinghua University
 # Apache 2.0.
-# Author: Zheng Huahuan (maxwellzh@outlook.com)
+# Author: Huahuan Zheng (maxwellzh@outlook.com)
 
 """basic functions impl"""
 

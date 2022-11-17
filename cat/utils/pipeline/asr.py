@@ -110,11 +110,13 @@ def pack_data(
     for f in f_opened.values():
         f.close()
 
-    # in order to store labels in a ndarray,
-    # first I pad all labels to the max length with -1 (this won't take many memory since labels are short compared to frames)
-    # then store the length in the last place, such as
-    # [0 1 2 3] -> [0 1 2 3 -1 -1 4]
-    # then we can access the data via array[:array[-1]]
+    """NOTE (Huahuan):
+        In order to store labels in a ndarray,
+        first I pad all labels to the max length with -1 (this won't take many memory since labels are short compared to frames)
+        then store the length in the last place, such as
+        [0 1 2 3] -> [0 1 2 3 -1 -1 4]
+        then we can access the data via array[:array[-1]]
+    """
     cnt_tokens = sum(x.shape[0] for x in labels)
     max_len_label = max(x.shape[0] for x in labels)
     labels = np.array([

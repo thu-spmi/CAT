@@ -29,7 +29,7 @@ Performance is evaluated on CER (%).
 
 *The `rnnt` & `ctc` decode without LM.
 
-**1000-hour train-l**
+**10000-hour train-l**
 
 | model                          |   dev    | test-net | test-meeting | aishell-1 test |
 | ------------------------------ |:--------:|:--------:|:------------:|:--------------:|

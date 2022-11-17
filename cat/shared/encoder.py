@@ -1,7 +1,7 @@
-# Copyright 2021 Tsinghua University
+# Copyright 2022 Tsinghua University
 # Apache 2.0.
 # Author: Keyu An,
-#         Zheng Huahuan (maxwellzh@outlook.com)
+#         Huahuan Zheng (maxwellzh@outlook.com)
 
 """Decoder modules impl
 """

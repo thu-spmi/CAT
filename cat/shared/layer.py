@@ -1,8 +1,8 @@
-# Copyright 2021 Tsinghua University
+# Copyright 2022 Tsinghua University
 # Apache 2.0.
 # Author: Hongyu Xiang,
 #         Keyu An,
-#         Zheng Huahuan (maxwellzh@outlook.com)
+#         Huahuan Zheng (maxwellzh@outlook.com)
 
 """basic nn layers impl"""
 
@@ -138,7 +138,7 @@ class Conv2dSubdampling(nn.Module):
         return out, lens_out
 
 
-'''
+'''NOTE (Huahuan):
 VGG2L with 1/4 subsample of time dimension.
 In ESPNET impl, there is no normalization, so I just follow it.
 Reference:

@@ -2,13 +2,12 @@ from setuptools import setup, find_packages
 
 setup(
     name='cat',
-    version='0.7.0',
+    version='3.0.0',
     packages=find_packages(exclude=['src', 'tools']),
-    description="Transducer for speech recognition.",
+    description="CRF-based ASR Toolkit.",
     long_description=open('README.md', 'r').read(),
-    author="Huahuan Zheng",
-    author_email="maxwellzh@outlook.com",
-    url="https://github.com/maxwellzh/Transducer-dev",
+    author="THU-SPMI Lab.",
+    url="https://github.com/thu-spmi/CAT",
     platforms=["Linux x86-64"],
     license="Apache 2.0"
 )

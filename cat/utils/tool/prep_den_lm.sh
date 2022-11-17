@@ -1,5 +1,5 @@
 # prepare denominator LM (for CRF training.)
-# author: Zheng Huahuan
+# author: Huahuan Zheng
 set -e
 <<"PARSER"
 ("r_specifier", type=str, help="Input file (raw text with ids). Use /dev/stdin if needed.")

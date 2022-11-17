@@ -1,5 +1,5 @@
 """
-Author: Zheng Huahuan
+Author: Huahuan Zheng
 
 Get prune argument for kenlm lmplz
 

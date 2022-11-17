@@ -1,5 +1,5 @@
 # get bigcidian for segmentation or phone-based training
-# author: Zheng Huahuan
+# author: Huahuan Zheng
 
 set -e
 set -u
