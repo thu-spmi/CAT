@@ -1,0 +1,42 @@
+{
+    "specaug": {
+        "freq_mask_width_range": 0.35,
+        "num_freq_mask": 2,
+        "num_time_mask": 10,
+        "time_mask_width_range": 0.05
+    },
+    "encoder": {
+        "type": "ConformerNet",
+        "kwargs": {
+            "num_cells": 6,
+            "idim": 80,
+            "hdim": 512,
+            "conv": "conv2d",
+            "num_heads": 4,
+            "dropout": 0.3,
+            "kernel_size": 12,
+            "num_classes": 2000,
+            "with_head": true
+        }
+    },
+    "scheduler": {
+        "type": "SchedulerNoam",
+        "kwargs": {
+            "stop_step": 21000,
+            "dim_model": 512,
+            "warmup_step": 10000,
+            "peak_factor": 1.0
+        },
+        "optimizer": {
+            "type": "Adam",
+            "kwargs": {
+                "lr": 0.0003,
+                "betas": [
+                    0.9,
+                    0.98
+                ],
+                "weight_decay": 1e-06
+            }
+        }
+    }
+}

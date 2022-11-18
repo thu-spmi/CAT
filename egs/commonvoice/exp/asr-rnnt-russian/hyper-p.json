@@ -1,0 +1,52 @@
+{
+    "data": {
+        "train": "excluded_train",
+        "dev": [
+            "dev"
+        ],
+        "test": [
+            "dev",
+            "test"
+        ],
+        "filter": "10:1000"
+    },
+    "tokenizer": {
+        "type": "SentencePieceTokenizer",
+        "option-train": {
+            "model_type": "bpe",
+            "add_dummy_prefix": false,
+            "model_prefix": "sentencepiece/commonvoice_ru/spm",
+            "vocab_size": 2000
+        },
+        "|V|": 2000,
+        "file": "exp/asr-rnnt-russian/tokenizer.tknz"
+    },
+    "train": {
+        "bin": "cat.rnnt.train",
+        "option": {
+            "amp": true,
+            "batch_size": 256,
+            "grad-accum-fold": 2,
+            "dynamic_batch_mode": 1
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "best",
+            "num": 10
+        },
+        "infer": {
+            "bin": "cat.rnnt.decode",
+            "option": {
+                "beam_size": 16,
+                "cpu": true,
+                "nj": 48,
+                "resume": "exp/asr-rnnt-russian/check/best-10.pt"
+            }
+        },
+        "er": {
+            "orcale": true
+        }
+    },
+    "commit": "86e5f129e86921b01f3974a7bf93793e3337d01d"
+}

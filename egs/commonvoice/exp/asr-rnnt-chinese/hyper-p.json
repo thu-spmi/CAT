@@ -1,0 +1,54 @@
+{
+    "data": {
+        "train": "excluded_train",
+        "dev": [
+            "dev"
+        ],
+        "test": [
+            "dev",
+            "test"
+        ],
+        "filter": "10:1000"
+    },
+    "tokenizer": {
+        "type": "SentencePieceTokenizer",
+        "option-train": {
+            "model_type": "char",
+            "add_dummy_prefix": false,
+            "use_all_vocab": true,
+            "model_prefix": "sentencepiece/commonvoice/spm",
+            "vocab_size": 4786
+        },
+        "|V|": 4786,
+        "file": "exp/asr-rnnt/tokenizer.tknz"
+    },
+    "train": {
+        "bin": "cat.rnnt.train",
+        "option": {
+            "amp": true,
+            "batch_size": 256,
+            "grad-accum-fold": 2,
+            "dynamic_batch_mode": 1
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "best",
+            "num": 10
+        },
+        "infer": {
+            "bin": "cat.rnnt.decode",
+            "option": {
+                "beam_size": 16,
+                "cpu": true,
+                "nj": 48,
+                "resume": "exp/asr-rnnt/check/best-10.pt"
+            }
+        },
+        "er": {
+            "cer": true,
+            "orcale": true
+        }
+    },
+    "commit": "86e5f129e86921b01f3974a7bf93793e3337d01d"
+}

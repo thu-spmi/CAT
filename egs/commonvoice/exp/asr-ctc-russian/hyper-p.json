@@ -1,0 +1,54 @@
+{
+    "data": {
+        "train": "excluded_train",
+        "dev": [
+            "dev"
+        ],
+        "test": [
+            "dev",
+            "test"
+        ],
+        "filter": "10:2000"
+    },
+    "tokenizer": {
+        "type": "SentencePieceTokenizer",
+        "option-train": {
+            "vocab_size": 2000,
+            "add_dummy_prefix": false,
+            "model_type": "bpe",
+            "model_prefix": "sentencepiece/commonvoice/spm"
+        },
+        "|V|": 2000,
+        "file": "exp/asr-ctc-russian/tokenizer.tknz"
+    },
+    "env": {
+        "CUDA_VISIBLE_DEVICES": "0,1,2,3,4,5,6,7,8,9"
+    },
+    "train": {
+        "bin": "cat.ctc.train",
+        "option": {
+            "amp": true,
+            "batch_size": 256,
+            "dynamic_batch_mode": 1,
+            "grad_accum_fold": 2
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "best",
+            "num": 10
+        },
+        "infer": {
+            "bin": "cat.ctc.decode",
+            "option": {
+                "beam_size": 32,
+                "nj": 48,
+                "resume": "exp/asr-ctc-russian/check/best-10.pt"
+            }
+        },
+        "er": {
+            "orcale": true
+        }
+    },
+    "commit": "86e5f129e86921b01f3974a7bf93793e3337d01d"
+}
