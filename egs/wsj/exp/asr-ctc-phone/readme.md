@@ -12,8 +12,8 @@
 
 ### Result
 ```
-eval92  %SER 52.55 | %WER 7.09 [ 400 / 5643, 30 ins, 71 del, 299 sub ]
-dev93   %SER 69.58 | %WER 12.00 [ 988 / 8234, 65 ins, 211 del, 712 sub ]
+eval92  %SER 51.49 | %WER 6.79 [ 383 / 5643, 30 ins, 54 del, 299 sub ]
+dev93   %SER 69.77 | %WER 11.88 [ 978 / 8234, 60 ins, 211 del, 707 sub ]
 ```
 
 |     training process    |
