@@ -1,6 +1,6 @@
 ## Data
 
-Source: [Common Voice Corpus 11.0](https://commonvoice.mozilla.org/zh-CN/datasets)
+Source: [Common Voice Corpus](https://commonvoice.mozilla.org)
 
 ### Data preparation
 
@@ -9,27 +9,26 @@ You should first follow the **Common Voice** official guide to download the data
 Then prepare data with:
 
 ```
-# you can use Common Voice any version data, here I use CV-11.0 by default
-# keep your data paths real
-bash local/data.sh <data path/language>
+# Any version of Common Voice data is OK. Here CV-11.0 is used by default
+bash local/data.sh /path/to/data
 ```
 
 ### Result
 
 Performance is evaluated on CER (%).
 
-130 hours **Chinese(China)** speech data
+130 hours **Chinese (China)** speech data
 
-| model                         | Unit   | SP | dev   | test  |
-| ----------------------------- | -----  | -- | ----- | ----  |
-| [rnnt](exp/asr-rnnt-chinese/) | char   | N  | 18.14 | 17.14 |
+| model                         | Unit   | dev   | test  |
+| ----------------------------- | -----  | ----- | ----  |
+| [rnnt](exp/asr-rnnt-chinese/) | char   | 18.14 | 17.14 |
 
 
 Performance is evaluated on WER (%).
 
 180 hours **Russian** speech data
 
-| model                         | Unit   | SP | dev   | test  |
-| ----------------------------- | -----  | -- | ----- | ----  |
-| [rnnt](exp/asr-rnnt-russian/) | BPE-2k | N  | 6.44  | 8.55  |
-| [ctc](exp/asr-ctc-russian/)   | BPE-2K | N  | 16.22 | 19.50 |
+| model                         | Unit   | dev   | test  |
+| ----------------------------- | -----  | ----- | ----  |
+| [rnnt](exp/asr-rnnt-russian/) | bpe-2k | 6.44  | 8.55  |
+| [ctc](exp/asr-ctc-russian/)   | bpe-2K | 16.22 | 19.50 |
