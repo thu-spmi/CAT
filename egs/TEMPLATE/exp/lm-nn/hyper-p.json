@@ -17,9 +17,10 @@
             "vocab_size": 10000,
             "use_all_vocab": true,
             "model_prefix": "sentencepiece/ptb-word/spm"
-        },
-        "|V|": 10000,
-        "file": "exp/lm-nn/tokenizer.tknz"
+        }
+    },
+    "env": {
+        "CUDA_VISIBLE_DEVICES": "0"
     },
     "train": {
         "bin": "cat.lm.train",

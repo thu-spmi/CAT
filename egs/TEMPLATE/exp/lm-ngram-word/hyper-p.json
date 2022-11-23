@@ -13,9 +13,7 @@
             "vocab_size": 10000,
             "use_all_vocab": true,
             "model_prefix": "sentencepiece/ptb-word/spm"
-        },
-        "|V|": 10000,
-        "file": "exp/lm-ngram-word/tokenizer.tknz"
+        }
     },
     "inference": {}
 }
