@@ -2,7 +2,7 @@
 train command:
 
 ```bash
-utils/pipeline/ngram.sh exp/lm/lm-v5
+utils/pipeline/ngram.sh exp/lm/lm-v1-char-5gram
 ```
 
 property:

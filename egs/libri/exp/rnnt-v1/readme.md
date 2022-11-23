@@ -25,7 +25,7 @@ dev_other       %SER 45.32 | %WER 5.33 [ 2716 / 50948, 250 ins, 217 del, 2249 su
 test_clean      %SER 28.51 | %WER 2.40 [ 1262 / 52576, 145 ins, 103 del, 1014 sub ]
 test_other      %SER 46.51 | %WER 5.42 [ 2836 / 52343, 302 ins, 236 del, 2298 sub ]
 
-+ transformer lm with large corpus tuned
++ transformer lm with large corpus tuned [alpha, beta]
 %SER 23.94 | %WER 1.81 [ 983 / 54402, 102 ins, 90 del, 791 sub ]        [0.5625, 1.0]
 %SER 36.56 | %WER 4.03 [ 2052 / 50948, 169 ins, 217 del, 1666 sub ]     [0.9375, 1.0]
 %SER 24.31 | %WER 1.94 [ 1022 / 52576, 116 ins, 103 del, 803 sub ]      [0.5625, 0.75]

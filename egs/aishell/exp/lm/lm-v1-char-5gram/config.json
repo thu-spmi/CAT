@@ -2,7 +2,7 @@
     "decoder": {
         "type": "NGram",
         "kwargs": {
-            "f_binlm": "exp/lm/lm-v5/5gram.bin",
+            "f_binlm": "exp/lm/lm-v1-char-5gram/5gram.bin",
             "gram_order": 5,
             "num_classes": 4232
         }

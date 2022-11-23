@@ -14,11 +14,10 @@
         "type": "SentencePieceTokenizer",
         "option-train": {
             "model_type": "bpe",
-            "model_prefix": "sentencepiece/commonvoice_ru/spm",
+            "add_dummy_prefix": false,
+            "model_prefix": "sentencepiece/cv_ru/spm",
             "vocab_size": 2000
-        },
-        "|V|": 2000,
-        "file": "exp/asr-rnnt-russian/tokenizer.tknz"
+        }
     },
     "train": {
         "bin": "cat.rnnt.train",
@@ -39,13 +38,9 @@
             "option": {
                 "beam_size": 16,
                 "cpu": true,
-                "nj": 48,
-                "resume": "exp/asr-rnnt-russian/check/best-10.pt"
+                "nj": 48
             }
         },
-        "er": {
-            "oracle": false
-        }
-    },
-    "commit": "86e5f129e86921b01f3974a7bf93793e3337d01d"
+        "er": {}
+    }
 }

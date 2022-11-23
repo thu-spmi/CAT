@@ -8,7 +8,7 @@
 
 ### Notes
 
-* CTC-CRF training 23 epochs
+* CTC-CRF training for around 23 epochs
 
 ### Result
 ```

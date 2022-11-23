@@ -1,6 +1,6 @@
 # Configuration
 
-Basically, I use two files to control the whole pipeline of data-preparation / tokenizer training / model training / evaluation, which commonly look like
+Basically, we use two files to control the whole pipeline of **data-preparation / tokenizer training / model training / evaluation**, which commonly look like
 
 ```
 egs/[task]/exp/template

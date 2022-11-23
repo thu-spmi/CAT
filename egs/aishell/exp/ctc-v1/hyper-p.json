@@ -12,11 +12,13 @@
     },
     "tokenizer": {
         "type": "SentencePieceTokenizer",
-        "|V|": 4232,
-        "file": "exp/archive/test-ctc-base/tokenizer.tknz"
-    },
-    "env": {
-        "CUDA_VISIBLE_DEVICES": "4,5,6,7,8,9"
+        "option-train": {
+            "model_type": "char",
+            "vocab_size": 4232,
+            "add_dummy_prefix": false,
+            "use_all_vocab": true,
+            "model_prefix": "sentencepiece/aishell_char/spm"
+        }
     },
     "train": {
         "bin": "cat.ctc.train",
@@ -43,6 +45,5 @@
         "er": {
             "cer": true
         }
-    },
-    "commit": "fbce69aa90bed4c3b04de4eaafccbd35a2916368"
+    }
 }

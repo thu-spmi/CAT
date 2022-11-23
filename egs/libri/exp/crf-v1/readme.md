@@ -8,65 +8,27 @@
 
 ### Notes
 
-- derived from `rnnt-v1`, trained with CTC-CRF phone-based
-- This experiment is originally conduct on old code base, so it's not guaranteed to precisely reproduce the results.
-
-### Data preparation
-
-```bash
-# configure experiment path
-export dir=exp/crf-v1
-
-# 0. prepare librispeech data
-bash local/data_kaldi.sh
-
-# 1. prepare librispeech lexicon
-bash local/prepare_lexicon.sh
-
-# 2. train the tokenizer
-python utils/pipeline/asr.py $dir --sto 1
-
-# 3. prepare denominator LM
-mkdir -p $dir/den_meta
-## configute kaldi path accoring to yours
-export KALDI_ROOT=/opt/kaldi
-
-cat data/src/train-*/text |
-    bash utils/tool/prep_den_lm.sh \
-        /dev/stdin $dir/den_meta/den-lm.fst \
-        -tokenizer $dir/tokenizer.tknz
-
-# 4. set den lm path in config.json, this requires hand-craft modification
-# set $dir/config.json:trainer:den_lm="exp/crf-v1/tokenizer.tknz"
-
-# 5. train the nn model
-python utils/pipeline/asr.py $dir --sta 2 --sto 3
-
-# 6. decode with FST, TODO
-```
-
+- Same encoder as `rnnt-v1`, trained with CTC-CRF phone-based
+- This experiment is originally conducted on old code base, so it's not guaranteed to precisely reproduce the results.
 
 ### Result
 ```
-best 10
-%WER 2.60 [ 1413 / 54402, 122 ins, 250 del, 1041 sub ] exp/crf-v1/decode_dev_clean_fglarge/wer_11_1.0
-%WER 5.93 [ 3023 / 50948, 246 ins, 535 del, 2242 sub ] exp/crf-v1/decode_dev_other_fglarge/wer_17_0.0
-%WER 2.93 [ 1539 / 52576, 132 ins, 299 del, 1108 sub ] exp/crf-v1/decode_test_clean_fglarge/wer_13_0.5
-%WER 6.18 [ 3237 / 52343, 277 ins, 617 del, 2343 sub ] exp/crf-v1/decode_test_other_fglarge/wer_14_1.0
+model averaging on last 10 of the checkpoints
+%WER 2.42 [ 1317 / 54402, 139 ins, 227 del, 951 sub ] exp/crf-v2/fglarge/dev_clean/wer_12_1.0
+%WER 5.30 [ 2698 / 50948, 264 ins, 399 del, 2035 sub ] exp/crf-v2/fglarge/dev_other/wer_17_0.0
+%WER 2.63 [ 1383 / 52576, 153 ins, 251 del, 979 sub ] exp/crf-v2/fglarge/test_clean/wer_15_0.0
+%WER 5.44 [ 2846 / 52343, 282 ins, 508 del, 2056 sub ] exp/crf-v2/fglarge/test_other/wer_17_0.0
 
-last 10
-%WER 2.42 [ 1319 / 54402, 115 ins, 271 del, 933 sub ] exp/crf-v1//fglarge/dev_clean/wer_15_1.0
-%WER 5.33 [ 2718 / 50948, 261 ins, 424 del, 2033 sub ] exp/crf-v1//fglarge/dev_other/wer_17_0.0
-%WER 2.74 [ 1442 / 52576, 137 ins, 270 del, 1035 sub ] exp/crf-v1//fglarge/test_clean/wer_13_0.5
-%WER 5.53 [ 2893 / 52343, 274 ins, 500 del, 2119 sub ] exp/crf-v1//fglarge/test_other/wer_14_0.5
-%WER 12.24 [ 2176 / 17783, 529 ins, 431 del, 1216 sub ] exp/crf-v1//fglarge/tlv2-dev/wer_13_1.0
-%WER 11.86 [ 3262 / 27500, 558 ins, 753 del, 1951 sub ] exp/crf-v1//fglarge/tlv2-test/wer_13_1.0
-
-rescore with lm
-dev_clean   %SER 26.01 | %WER 2.06 [ 1120 / 54402, 143 ins, 82 del, 895 sub ]
-dev_other   %SER 39.46 | %WER 4.52 [ 2303 / 50948, 277 ins, 181 del, 1845 sub ]
-test_clean  %SER 27.56 | %WER 2.35 [ 1236 / 52576, 180 ins, 85 del, 971 sub ]
-test_other  %SER 43.25 | %WER 4.84 [ 2532 / 52343, 301 ins, 187 del, 2044 sub ]
+rescore + transformer lm
+following kaldi settings, we tune the lm weights at each dataset respectively.
+procedure of rescoring with NN LM:
+1. Decode with WFST to get the lattice.
+2. Convert lattice to our customized nbeslist format
+3. Rescore the nbestlist files with NN LM (see `cat/lm/rescore.py`)
+%SER 25.97 | %WER 2.05 [ 1114 / 54402, 129 ins, 199 del, 786 sub ]    alpha = 1.9375 | beta = -0.25
+%SER 39.77 | %WER 4.54 [ 2312 / 50948, 227 ins, 353 del, 1732 sub ]   alpha = 2.0 | beta = -0.5
+%SER 27.33 | %WER 2.25 [ 1182 / 52576, 149 ins, 205 del, 828 sub ]    alpha = 1.3125 | beta = -0.5
+%SER 43.42 | %WER 4.73 [ 2476 / 52343, 241 ins, 431 del, 1804 sub ]   alpha = 1.5 | beta = -0.25
 ```
 
 ### Monitor figure

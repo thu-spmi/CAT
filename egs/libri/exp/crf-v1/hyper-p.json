@@ -21,9 +21,7 @@
         "type": "LexiconTokenizer",
         "option-init": {
             "lexicon": "data/local/librispeech-lexicon.txt"
-        },
-        "|V|": 71,
-        "file": "exp/crf-v1/tokenizer.tknz"
+        }
     },
     "train": {
         "bin": "cat.ctc.train",

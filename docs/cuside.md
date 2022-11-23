@@ -1,43 +1,41 @@
 ## Streaming Speech Recognition
 
-Streaming speech recognition refers to recognition while the speaker is speaking, rather than waiting for the speaker to speak a complete sentence before starting recognition.
+Streaming speech recognition refers to perform recognition simultaneously when the speaker is speaking, rather than waiting for the speaker to complete a sentence before starting recognition.
 
-However, the neural network structures commonly used in the industry at present, such as the **transformer** and **conformer** based on the self-attention mechanism, all rely on the entire sentence as input, so they are not suitable for low-latency speech recognition.
+However, the neural network architectures commonly used at present, such as the **transformer** and **conformer**, are based on the self-attention mechanism, and thus rely on the entire sentence as input. So they are not directly suitable for low-latency speech recognition.
 
-In order to solve this problem, many systems adopt a chunk model. Specifically, a sentence will be divided into multiple blocks, and then sent to the neural network for recognition block by block, thus reducing the delay to the length of one block.
+In order to solve this problem, many systems adopt **chunk models**. Specifically, a sentence will be divided into multiple chunks, and then sent to the neural network for recognition chunk by chunk. In this way, the latency is reduced to about the length of one chunk.
 
-## Context aware block
+## Context Sensitive Chunk
 
-In block-based low-latency speech recognition models, a common practice is to attach certain historical frames and future frames to each block to provide context information and form a context sensitive chunk.
+In chunk-based low-latency speech recognition models, a common practice is to attach certain historical frames and future frames to each chunk to provide context information and form a **context sensitive chunk**.
 
-Existing work has shown that context information is crucial to accurate acoustic modeling, and the lack of context information will cause more than **10%** loss of recognition accuracy.
+Existing work has shown that context information is crucial to accurate acoustic modeling, and the lack of context information will cause more than 10% loss of recognition accuracy.
 
-However, in order to obtain future information, the model has to wait until a certain number of future frames arrive before starting recognition, which significantly increases the recognition latency.
+However, in order to get future information, the model has to wait until a certain number of future frames arrive before starting recognition, which significantly increases the recognition latency.
 
-To solve this problem, we propose a low-latency speech recognition framework based on **Chunking, Simulating future context and Decoding** (CUSIDE).
+To solve this problem, we propose a new framework - **Chunking, Simulating Future Context and Decoding (CUSIDE)** for streaming speech recognition.
 
 ## CUSIDE
 
-In the CUSIDE model, the model uses simulated future frames instead of real future frames for recognition,and reduce reliance on future information and reduce recognition delays.
+The CUSIDE model uses simulated future frames instead of real future frames for recognition, and thus reduce reliance on future information and reduce recognition delays.
 
-The simulation frame is generated in a streaming manner using a generator, which consists of a generator encoder and a generator predictor, which can be trained in an unsupervised manner (because the corresponding prediction target can be obtained by moving the input frame forward, here We are inspired by the unsupervised representation learning method APC), which does not require additional annotation information.
+The **simulation frames** are generated in a streaming manner using a **simulator**, which consists of a **simulation encoder** and a **simulated predictor**. The simulator can be trained in an unsupervised manner, because the target future frame can be obtained by shifting the real future frame backward. Here we are inspired by the unsupervised representation learning method (APC), which does not require additional annotation information.
 
-Except, we have also reduced the performance gap between the streaming model and the non-streaming model through methods such as streaming and non-streaming model sharing parameters and joint training (unified streaming/non-streaming model), in the **aishell1** data set Achieved industry-leading results.
+In addition, we unify streaming and non-streaming model by weight sharing and joint training (called unified streaming/non-streaming model) to reduce performance gap between streaming and non-streaming models. We obtain new state-of-the-art streaming ASR results on the AISHELL-1 dataset (4.79% CER).
 
-## Parameters Description
+## Model hyper-parameters
 
-Main code at `cat/rnnt/train_unified.py`,Parameters:
+The main code is in `cat/rnnt/train_unified.py` with the following hyper-parameters configured in `trainer` in `config.json`.
 
-- `config.json` **trainer** configure the following parameters
-
-  - `downsampling_ratio`: Input the downsampling rate before and after the encoder, default **8**.
-  - `chunk_size`: chunk_size(frames),default **40**.
-  - `context_size_left`: left context frame,default **40**.
-  - `context_size_right`: right context frame,default **40**.
-  - `jitter_range`: chunk size jitter range,default **2**. 
-  - `mel_dim`: Mel-spectrograms dim,default **80**,
-  - `simu`: simulated future frames,encoder GRU and predictor is a simple feed-forward neural network,defaul **false**.
-  - `simu_loss_weight`: A weighting factor for the composite loss. Default **L1 loss**.
+- `downsampling_ratio`: the downsampling rate before and after the encoder, default **8**.
+- `chunk_size`: chunk_size (frames),default **40**.
+- `context_size_left`: left context frame number, default **40**.
+- `context_size_right`: right context frame number, default **40**.
+- `jitter_range`: chunk size jitter range, default **2**.  Note that `jitter_range` denotes the jitter range after encoder output, which amounts to `jitter_range`*`downsampling_ratio` (frames) in the encoder input.
+- `mel_dim`: Mel-spectrogram dimension, default **80**,
+- `simu`: simulated future frames. By default, the simulation encoder is a uni-directional GRU and the predictor is a simple feed-forward neural network.
+- `simu_loss_weight`: The weight for the simulation loss (**L1 loss** by default),  i.e., \alpha in Algorithm 1 in the CUSIDE paper.
 
 ```python
     "trainer": {
@@ -53,17 +51,22 @@ Main code at `cat/rnnt/train_unified.py`,Parameters:
     }
 ```
 
-## Training process
+## Training
 
-- Training process, streaming model and non-streaming model perform parameter sharing and joint training.For training data,streaming and non-streaming get loss in order.
-- `chunk_forward()` for training forward by streaming `chunk_infer()` for testing forward by streaming.In differ  `chunk size jitter` used during training and the use of random future information (future information is randomly selected from a. simulated future frames; b. w/o future frames; c. real future frames),but for testing `chunk_size` fixed and one of the three cases is fixed according to the setting.
-- `chunk_forward()` and `chunk_infer()` divide chunks and stitch context for each chunk.Dividing chunks is achieved by reshaping,and the context is obtained by shifting the sequence of chunks to the left or right through the relationship between the context and the current chunk: for example, consider the case where the left context, chunk size, and right context are all 40, then the current chunk The left contxt of the current chunk is actually the previous chunk, and the right context of the current chunk is actually the next chunk. If the simulated future frame is used, the right context of the current chunk is the output after the simu net receives the current chunk.
-- During training, we simulate the future context of all chunks at one time, instead of simulating block by block.
-- `forward()` non-streaming is the same as training a standard non-streaming model, and will not be repeated here.
+- In training, streaming model and non-streaming model have shared parameters and are jointly trained. For each training utterance, the streaming and non-streaming losses are calculated respectively and summed together as show in Algorithm 1 in the CUSIDE paper.
+- `chunk_forward()` is the function, performing forward calculation in the streaming manner **in training**; `chunk_infer()` is the function, performing forward calculation in the streaming manner **in testing**. The difference between the two functions is as follow:
+   - `chunk_forward()` is used **in training**, which uses **chunk size jitter** and **stochastic future context**. Stochastic future context means that the future context is randomly chosen from three settings, a) using simulated future frames; b) no future frames; c) using real future frames. 
+   - `chunk_infer()`  is used **in testing**, which uses a fixed chunk size and, in experiments, employs a fixed setting for future context, from one of the three settings introduced above.
+- The key operations in both `chunk_forward()` and `chunk_infer()`  are dividing chunks and splicing context frames to each chunk. 
+   - Dividing chunks is realized  by reshaping of the tensors.
+   - Splicing context frames is obtained by shifting the sequence of chunks to the left or the right according to the relationship between the context and the current chunk. For example, consider the setting where the left context, chunk size, and right context are all of 40 frames. Then, the left context of the current chunk is actually the previous chunk, while the right context of the current chunk is actually the next chunk. If the simulated future frames are used, the right context of the current chunk is obtained by feeding the current chunk to the simulator.
+
+- In training, the future context of all chunks in an utterance are simulated at one time, instead of simulating chunk by chunk.
+- The `forward()` function also contains the code to perform forward calculation in the non-streaming manner, which is taken the same as in a standard non-streaming model.
 
 ## Decoding
 
-- For decoding `unified` true is required,`streaming` parameter controls streaming and non-streaming decoding.
+- For decoding setting configured by `infer` in `hyper-p.json`, `unified` is required to be true. `streaming`  determines whether streaming or non-streaming decoding is taken.
 
 ```python
 "infer": {

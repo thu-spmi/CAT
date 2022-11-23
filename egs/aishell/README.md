@@ -50,10 +50,10 @@ NOTE: some of the experiments are conduct on previous code base, therefore, the 
 
 Evaluated by CER (%)
 
-| EXP ID                               | dev  | test | notes                                           |
-| ------------------------------------ |:----:|:----:| ----------------------------------------------- |
-| [rnnt](exp/rnnt-v1) | 4.25 | 4.47 | best result, rescored with word lm              |
-| [ctc](exp/ctc-v1)                    | 4.25 | 4.75 | ctc rescored with word lm                       |
+| EXP ID              | dev  | test | notes                              |
+| ------------------- |:----:|:----:| ---------------------------------- |
+| [rnnt](exp/rnnt-v1) | 4.25 | 4.47 | best result, rescored with word lm |
+| [ctc](exp/ctc-v1)   | 4.25 | 4.72 | ctc rescored with word lm          |
 
 ### Ablation study
 
@@ -66,16 +66,16 @@ The acoustic model is based on Chinese characters. The char-based lm is integrat
 | Setting                             | dev  | test |
 | ----------------------------------- |:----:|:----:|
 | no lm                               | 4.65 | 5.21 |
-| 5-gram char lm [LINK](exp/lm/lm-v5) | 4.49 | 4.95 |
-| 3-gram word lm [LINK](exp/lm/lm-v6) | 4.25 | 4.75 |
+| 5-gram char lm [LINK](exp/lm/lm-v1-char-5gram) | 4.49 | 4.95 |
+| 3-gram word lm [LINK](exp/lm/lm-v2-word-3gram) | 4.25 | 4.72 |
 
 RNN-T model: [LINK](exp/rnnt/rnnt-v1)
 
 | Setting                             | dev  | test |
 | ----------------------------------- |:----:|:----:|
 | no lm                               | 4.43 | 4.76 |
-| 5-gram char lm [LINK](exp/lm/lm-v5) | 4.35 | 4.69 |
-| 3-gram word lm [LINK](exp/lm/lm-v6) | 4.25 | 4.47 | 
+| 5-gram char lm [LINK](exp/lm/lm-v1-char-5gram) | 4.35 | 4.69 |
+| 3-gram word lm [LINK](exp/lm/lm-v2-word-3gram) | 4.25 | 4.47 | 
 
 
 **Feature extraction backends and CMVN**

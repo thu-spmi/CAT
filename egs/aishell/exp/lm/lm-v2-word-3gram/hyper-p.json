@@ -9,8 +9,7 @@
     },
     "tokenizer": {
         "type": "JiebaTokenizer",
-        "location": "exp/lm/lm-v6/tokenizer.tknz"
+        "option-init": {}
     },
-    "inference": {},
-    "commit": "d4ab739c81c0c99399138b63b8a436d5649d639d"
+    "inference": {}
 }

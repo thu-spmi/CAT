@@ -382,6 +382,11 @@ def train_nn(working_dir: str, prompt: str = '{}\n'):
     # after the training is done. plot tb to image.
     tfevents = glob.glob(os.path.join(
         f"{working_dir}/{D_LOG}/**/", "events.out.tfevents.*"))
+    if len(tfevents) == 0:
+        sys.stderr.write(prompt.format(
+            sfmt.error(f"No log data found in {working_dir}/{D_LOG}", train_nn)
+        ))
+        sys.exit(1)
 
     subprocess.run(
         f"{sys.executable} utils/plot_tb.py "

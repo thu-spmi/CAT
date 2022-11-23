@@ -16,6 +16,9 @@
             "model_prefix": "sentencepiece/yesno_word/spm"
         }
     },
+    "env": {
+        "CUDA_VISIBLE_DEVICES": "0"
+    },
     "train": {
         "bin": "cat.ctc.train",
         "option": {
@@ -36,8 +39,6 @@
                 "nj": 2
             }
         },
-        "er": {
-            "oracle": false
-        }
+        "er": {}
     }
 }

@@ -14,9 +14,7 @@
             "unk_id": 1,
             "vocab_size": 8,
             "model_prefix": "sentencepiece/yesno_char/spm"
-        },
-        "|V|": 8,
-        "file": "exp/asr-rnnt-cuside/tokenizer.tknz"
+        }
     },
     "env": {
         "CUDA_VISIBLE_DEVICES": "0"
@@ -40,8 +38,6 @@
                 "nj": 8
             }
         },
-        "er": {
-            "cer": false
-        }
+        "er": {}
     }
 }

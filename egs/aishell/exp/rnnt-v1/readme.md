@@ -6,7 +6,13 @@
 * GPU info \[10\]
   * \[10\] NVIDIA GeForce RTX 3090
 
-### Appendix
+### Notes
+
+* data prepare
+
+```bash
+bash local/data.sh /path/to/data -sp 1.1 0.9
+```
 
 * ported from rnnt-v15
 * use torchaudio for feature extraction w/o CMVN
@@ -27,11 +33,11 @@ beamwidth=16
 dev     %SER 33.79 | %CER 4.43 [ 9104 / 205341, 154 ins, 250 del, 8700 sub ]
 test    %SER 35.14 | %CER 4.76 [ 4989 / 104765, 68 ins, 195 del, 4726 sub ]
 
-fusion lm-v5  (5-gram char) a=0.15 b=0.5 beamwidth=16
+fusion lm-v1-char-5gram  (5-gram char) a=0.15 b=0.5 beamwidth=16
 thaudio-dev     %SER 32.93 | %CER 4.35 [ 8930 / 205341, 147 ins, 325 del, 8458 sub ]
 thaudio-test    %SER 34.43 | %CER 4.69 [ 4912 / 104765, 63 ins, 229 del, 4620 sub ]
 
-rescore lm-v6 (3-gram word) a=0.28 b=-0.5 beamwidth=16
+rescore lm-v2-word-3gram (3-gram word) a=0.28 b=-0.5 beamwidth=16
 dev     %SER 31.75 | %CER 4.25 [ 8729 / 205341, 123 ins, 635 del, 7971 sub ]
 test    %SER 32.78 | %CER 4.47 [ 4688 / 104765, 45 ins, 404 del, 4239 sub ]
 ```
