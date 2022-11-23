@@ -1,13 +1,13 @@
 <div align="center"><img src="./assets/logo.png" width=200></div>
 
-# CAT: Crf-based Asr Toolkit
+# CAT: CRF-based ASR Toolkit
 **CAT provides a complete workflow for CRF-based data-efficient end-to-end speech recognition.**
 
 - [Overview](#overview)
 - [Features](#features)
 - [Getting started](#getting-started)
+- [ASR results](#asr-results)
 - [Further reading](#further-reading)
-- [Publications](#publications)
 
 ## Overview
 
@@ -49,13 +49,6 @@ CAT aims at combining the advantages of both the hybrid and the E2E ASR systems 
 
 To get started with this project, please refer to [TEMPLATE](egs/TEMPLATE/README.md) for tutorial.
 
-## Further reading
-
-- [Guideline for configuring settings](docs/configure_guide.md)
-- [Tutorial for CUSIDE](docs/cuside_ch.md) \[Chinese|中文\]: learn to run experiment with [CUSIDE](https://arxiv.org/abs/2203.16758)
-- [Some tips about the usage of third party tools](docs/guide_for_third_party_tools.md)
-- [Guide to train models on more than 1500 hours of speech data](docs/how_to_prepare_large_dataset_ch.md) \[Chinese|中文\]
-- [Changelog](docs/changelog.md)
 
 ## ASR results
 
@@ -71,6 +64,30 @@ Some of the results are obtained on CAT v2.
 | [Wenetspeech](https://github.com/thu-spmi/CAT/tree/v3-dev/egs/wenetspeech#result)                                          | test-net / test-meeting | 9.32 / 14.66 |
 | [WSJ](https://github.com/thu-spmi/CAT/blob/master/egs/wsj/RESULT.md)                                                       | eval92 / dev93          | 2.77 / 5.68  |
 
+## Further reading
 
-## Publications
+- [What's New](docs/whatsnew.md)
+- [Guideline for configuring settings](docs/configure_guide.md)
+- [Tutorial for CUSIDE](docs/cuside_ch.md) \[Chinese|中文\]: learn to run experiment with [CUSIDE](https://arxiv.org/abs/2203.16758)
+- [Some tips about the usage of third party tools](docs/guide_for_third_party_tools.md)
+- [Guide to train models on more than 1500 hours of speech data](docs/how_to_prepare_large_dataset_ch.md) \[Chinese|中文\]
 
+## Citation
+
+```
+@inproceedings{xiang2019crf,
+  title={CRF-based single-stage acoustic modeling with CTC topology},
+  author={Xiang, Hongyu and Ou, Zhijian},
+  booktitle={ICASSP 2019-2019 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)},
+  pages={5676--5680},
+  year={2019},
+  organization={IEEE}
+}
+
+@article{an2020cat,
+  title={CAT: A CTC-CRF based ASR toolkit bridging the hybrid and the end-to-end approaches towards data efficiency and low latency},
+  author={An, Keyu and Xiang, Hongyu and Ou, Zhijian},
+  journal={arXiv preprint arXiv:2005.13326},
+  year={2020}
+}
+```
