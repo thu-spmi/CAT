@@ -28,6 +28,8 @@ Performance is evaluated on WER (%).
 
 180 hours **Russian** speech data
 
+SentencePieceTokenizer: `"add_dummy_prefix": false,` is a error,but little effect on the result.
+
 | model                         | Unit   | dev   | test  |
 | ----------------------------- | -----  | ----- | ----  |
 | [rnnt](exp/asr-rnnt-russian/) | bpe-2k | 6.44  | 8.55  |
