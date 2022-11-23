@@ -14,7 +14,6 @@
         "type": "SentencePieceTokenizer",
         "option-train": {
             "model_type": "bpe",
-            "add_dummy_prefix": false,
             "model_prefix": "sentencepiece/commonvoice_ru/spm",
             "vocab_size": 2000
         },
@@ -45,7 +44,7 @@
             }
         },
         "er": {
-            "orcale": true
+            "oracle": false
         }
     },
     "commit": "86e5f129e86921b01f3974a7bf93793e3337d01d"
