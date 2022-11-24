@@ -4,25 +4,25 @@ Streaming speech recognition refers to recognition while the speaker is speaking
 
 However, the neural network structures commonly used in the industry at present, such as the **transformer** and **conformer** based on the self-attention mechanism, all rely on the entire sentence as input, so they are not suitable for low-latency speech recognition.
 
-In order to solve this problem, many systems adopt a chunk model. Specifically, a sentence will be divided into multiple blocks, and then sent to the neural network for recognition block by block, thus reducing the delay to the length of one block.
+In order to solve this problem, many systems adopt a `chunk model`. Specifically, a sentence will be divided into multiple blocks, and then sent to the neural network for recognition block by block, thus reducing the delay to the length of one block.
 
-## Context aware block
+## Context Sensitive Chunk
 
 In block-based low-latency speech recognition models, a common practice is to attach certain historical frames and future frames to each block to provide context information and form a context sensitive chunk.
 
 Existing work has shown that context information is crucial to accurate acoustic modeling, and the lack of context information will cause more than **10%** loss of recognition accuracy.
 
-However, in order to obtain future information, the model has to wait until a certain number of future frames arrive before starting recognition, which significantly increases the recognition latency.
+However, in order to get future information, the model has to wait until a certain number of future frames arrive before starting recognition, which significantly increases the recognition latency.
 
-To solve this problem, we propose a low-latency speech recognition framework based on **Chunking, Simulating future context and Decoding** (CUSIDE).
+To solve this problem, we propose a new framework - **Chunking, Simulating Future Context and Decoding** (CUSIDE) for streaming speech recognition.
 
 ## CUSIDE
 
-In the CUSIDE model, the model uses simulated future frames instead of real future frames for recognition,and reduce reliance on future information and reduce recognition delays.
+In the CUSIDE model, the model using simulated future frames instead of real future frames for recognition,and reduce reliance on future information and reduce recognition delays.
 
 The simulation frame is generated in a streaming manner using a generator, which consists of a generator encoder and a generator predictor, which can be trained in an unsupervised manner (because the corresponding prediction target can be obtained by moving the input frame forward, here We are inspired by the unsupervised representation learning method APC), which does not require additional annotation information.
 
-Except, we have also reduced the performance gap between the streaming model and the non-streaming model through methods such as streaming and non-streaming model sharing parameters and joint training (unified streaming/non-streaming model), in the **aishell1** data set Achieved industry-leading results.
+Except,streaming and non-streaming model weight sharing and joint training (unified streaming/non-streaming model)to reduce performance between streaming and non-streaming models, we obtain new state-of-the-art streaming ASR results on the AISHELL-1 dataset industry-leading results.
 
 ## Parameters Description
 
