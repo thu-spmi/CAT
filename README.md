@@ -84,10 +84,11 @@ Some of the results are obtained on CAT v2.
   organization={IEEE}
 }
 
-@article{an2020cat,
+@inproceedings{an2020cat,
   title={CAT: A CTC-CRF based ASR toolkit bridging the hybrid and the end-to-end approaches towards data efficiency and low latency},
   author={An, Keyu and Xiang, Hongyu and Ou, Zhijian},
-  journal={arXiv preprint arXiv:2005.13326},
+  booktitle={INTERSPEECH},
+  pages={566--570},
   year={2020}
 }
 ```
