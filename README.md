@@ -12,7 +12,7 @@
 
 ## Overview
 
-CAT aims at combining the advantages of both the hybrid and the E2E ASR approches to achieve data-efficiency, by judiciously examine the pros and cons of modularity versus unified neural network, separate optimization versus joint optimization. CAT advocates global normalization modeling and discriminative training in the framework of [Conditional Random Field](https://en.wikipedia.org/wiki/Conditional_random_field) (CRF), currently with [Connectionist Temporal Classification](https://mediatum.ub.tum.de/doc/1292048/file.pdf) (CTC) inspired state topology.
+CAT aims at combining the advantages of both the hybrid and the E2E ASR approches to achieve data-efficiency, by judiciously examining the pros and cons of modularity versus unified neural network, separate optimization versus joint optimization. CAT advocates global normalization modeling and discriminative training in the framework of [Conditional Random Field](https://en.wikipedia.org/wiki/Conditional_random_field) (CRF), currently with [Connectionist Temporal Classification](https://mediatum.ub.tum.de/doc/1292048/file.pdf) (CTC) inspired state topology.
 
 
 ## Features
