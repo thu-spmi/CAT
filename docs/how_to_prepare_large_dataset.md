@@ -105,7 +105,7 @@ In contrast, we use a simpler and more direct manner. When a process finish trav
 
 **NOTE:**
 
-The above example is just for easy understanding. In practice, webdataset will repeatedly use some `ark` files to make the `ark` files evenly distributed over cards. However, because the number of utterances in a dataset may not be exactly divided by 2000, there will be fewer sentences in one (or more) `tar` files than others. So fewer than 2000 sentences may be discarded each time.
+The above example is just for easy understanding. In practice, webdataset will repeatedly use some `ark` files to make the `ark` files evenly distributed over cards. However, because the number of utterances in a dataset may not be exactly divided by 2000 and the number of tar files may not be exactly divided by \#cards, there may have fewer sentences in one (or more) `tar` files than others. So fewer than 2000 sentences may be discarded each time.
 
 ## References
 

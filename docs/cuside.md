@@ -24,9 +24,9 @@ The **simulation frames** are generated in a streaming manner using a **simulato
 
 In addition, we unify streaming and non-streaming model by weight sharing and joint training (called unified streaming/non-streaming model) to reduce performance gap between streaming and non-streaming models. We obtain new state-of-the-art streaming ASR results on the AISHELL-1 dataset (4.79% CER).
 
-## Hyper-parameters
+## Model hyper-parameters
 
-The main code is at `cat/rnnt/train_unified.py` with the following hyper-parameters configured in `trainer` in `config.json`.
+The main code is in `cat/rnnt/train_unified.py` with the following hyper-parameters configured in `trainer` in `config.json`.
 
 - `downsampling_ratio`: the downsampling rate before and after the encoder, default **8**.
 - `chunk_size`: chunk_size (frames),default **40**.
@@ -55,7 +55,7 @@ The main code is at `cat/rnnt/train_unified.py` with the following hyper-paramet
 
 - In training, streaming model and non-streaming model have shared parameters and are jointly trained. For each training utterance, the streaming and non-streaming losses are calculated respectively and summed together as show in Algorithm 1 in the CUSIDE paper.
 - `chunk_forward()` is the function, performing forward calculation in the streaming manner **in training**; `chunk_infer()` is the function, performing forward calculation in the streaming manner **in testing**. The difference between the two functions is as follow:
-   - `chunk_forward()` is used **in training**, which uses chunk size jitter and stochastic future context. **Stochastic future context** means that the future context is randomly chosen from three settings, a) using simulated future frames; b) no future frames; c) using real future frames. 
+   - `chunk_forward()` is used **in training**, which uses **chunk size jitter** and **stochastic future context**. Stochastic future context means that the future context is randomly chosen from three settings, a) using simulated future frames; b) no future frames; c) using real future frames. 
    - `chunk_infer()`  is used **in testing**, which uses a fixed chunk size and, in experiments, employs a fixed setting for future context, from one of the three settings introduced above.
 - The key operations in both `chunk_forward()` and `chunk_infer()`  are dividing chunks and splicing context frames to each chunk. 
    - Dividing chunks is realized  by reshaping of the tensors.
@@ -66,7 +66,7 @@ The main code is at `cat/rnnt/train_unified.py` with the following hyper-paramet
 
 ## Decoding
 
-- For decoding configuration, `unified` is required to be true. `streaming`  determines whether streaming or non-streaming decoding is taken.
+- For decoding setting configured by `infer` in `hyper-p.json`, `unified` is required to be true. `streaming`  determines whether streaming or non-streaming decoding is taken.
 
 ```python
 "infer": {
