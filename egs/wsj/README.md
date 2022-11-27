@@ -26,7 +26,7 @@ bash local/data_kaldi.sh /path/to/wsj0 /path/to/wsj1 -use-3way-sp
 | [ctc-crf](exp/asr-ctc-crf-phone) | phone  | 2.87   | 5.53  | 13.5         | WFST decode        |
 | [rnn-t](exp/asr-rnnt-bpe)        | bpe-2k | 9.87   | 12.63 | 21.6         | Beam search decode | 
 
-## Results from CAT-V2
+## Results from CAT-v2
 
 - Performance is evaluated on WER (%).
 - SP: 3way speed perturbation.
