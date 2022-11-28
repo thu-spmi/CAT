@@ -9,6 +9,7 @@
 ### Notes
 
 * use torchaudio for feature extraction w/o CMVN
+* please note that `add_dummy_prefix = false` in tokenizer training setting of SentencePiece tokenizer is erroneous, but would probably only introduce minor differences to results.
 
 ### Result
 ```

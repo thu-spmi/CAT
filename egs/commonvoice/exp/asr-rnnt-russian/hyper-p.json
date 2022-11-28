@@ -15,11 +15,9 @@
         "option-train": {
             "model_type": "bpe",
             "add_dummy_prefix": false,
-            "model_prefix": "sentencepiece/commonvoice_ru/spm",
+            "model_prefix": "sentencepiece/cv_ru/spm",
             "vocab_size": 2000
-        },
-        "|V|": 2000,
-        "file": "exp/asr-rnnt-russian/tokenizer.tknz"
+        }
     },
     "train": {
         "bin": "cat.rnnt.train",
@@ -40,8 +38,7 @@
             "option": {
                 "beam_size": 16,
                 "cpu": true,
-                "nj": 48,
-                "resume": "exp/asr-rnnt-russian/check/best-10.pt"
+                "nj": 48
             }
         },
         "er": {}

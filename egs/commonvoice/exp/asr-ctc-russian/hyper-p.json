@@ -16,13 +16,8 @@
             "vocab_size": 2000,
             "model_type": "bpe",
             "add_dummy_prefix": false,
-            "model_prefix": "sentencepiece/commonvoice/spm"
-        },
-        "|V|": 2000,
-        "file": "exp/asr-ctc-russian/tokenizer.tknz"
-    },
-    "env": {
-        "CUDA_VISIBLE_DEVICES": "0,1,2,3,4,5,6,7,8,9"
+            "model_prefix": "sentencepiece/cv_ru/spm"
+        }
     },
     "train": {
         "bin": "cat.ctc.train",
@@ -42,8 +37,7 @@
             "bin": "cat.ctc.decode",
             "option": {
                 "beam_size": 32,
-                "nj": 48,
-                "resume": "exp/asr-ctc-russian/check/best-10.pt"
+                "nj": 48
             }
         },
         "er": {}
