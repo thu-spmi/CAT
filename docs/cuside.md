@@ -26,9 +26,11 @@ The **simulation frames** are generated in a streaming manner using a **simulato
 
 In addition, we unify streaming and non-streaming model by weight sharing and joint training (called unified streaming/non-streaming model) to reduce performance gap between streaming and non-streaming models. We obtain new state-of-the-art streaming ASR results on the AISHELL-1 dataset (4.79% CER).
 
+The newly-added code to support CUSIDE can be found at: `cat/ctc/train_unified.py` for CTC/CTC-CRF, `cat/rnnt/train_unified.py` for RNNT, respectively.
+
 ## Model hyper-parameters
 
-The main code is in `cat/rnnt/train_unified.py` with the following hyper-parameters configured in `trainer` in `config.json`.
+Training hyper-parameters are configured in `trainer` in `config.json`.
 
 - `downsampling_ratio`: the downsampling rate before and after the encoder, default **8**.
 - `chunk_size`: chunk_size (frames),default **40**.
@@ -68,7 +70,7 @@ The main code is in `cat/rnnt/train_unified.py` with the following hyper-paramet
 
 ## Decoding
 
-- For decoding setting configured by `infer` in `hyper-p.json`, `unified` is required to be true. `streaming`  determines whether streaming or non-streaming decoding is taken.
+- Decoding setting is configured by `infer` in `hyper-p.json`, where `unified` is required to be true. `streaming`  determines whether streaming or non-streaming decoding is executed.
 
 ```python
 "infer": {
