@@ -31,7 +31,7 @@
             "dim_model": 512,
             "peak_factor": 5.0,
             "warmup_step": 10000,
-            "stop_step": 30000
+            "stop_step": 40000
         },
         "optimizer": {
             "type": "Adam",

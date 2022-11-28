@@ -1,37 +1,31 @@
 {
     "data": {
-        "train": [
-            "train",
-            "train-sp0.9",
-            "train-sp1.1"
+        "train": "excluded_train",
+        "dev": [
+            "dev"
         ],
-        "dev": "dev",
         "test": [
-            "thaudio-dev",
-            "thaudio-test"
+            "dev",
+            "test"
         ],
-        "filter": ":2000",
-        "lang": "zh-cn"
+        "filter": "10:1000"
     },
     "tokenizer": {
         "type": "SentencePieceTokenizer",
         "option-train": {
-            "model_type": "char",
-            "vocab_size": 4232,
+            "model_type": "bpe",
             "add_dummy_prefix": false,
-            "use_all_vocab": true,
-            "model_prefix": "sentencepiece/aishell_char/spm"
+            "model_prefix": "sentencepiece/cv_ru/spm",
+            "vocab_size": 2000
         }
     },
     "train": {
         "bin": "cat.rnnt.train",
         "option": {
             "amp": true,
-            "batch_size": 512,
-            "check_freq": 1000,
-            "dynamic_batch_mode": 0,
-            "dynamic_bucket_size": 230400,
-            "grad-norm": 2.0
+            "batch_size": 256,
+            "grad-accum-fold": 2,
+            "dynamic_batch_mode": 1
         }
     },
     "inference": {
@@ -47,8 +41,6 @@
                 "nj": 48
             }
         },
-        "er": {
-            "cer": true
-        }
+        "er": {}
     }
 }

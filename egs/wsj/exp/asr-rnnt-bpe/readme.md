@@ -20,8 +20,8 @@ python utils/pipeline/asr.py exp/asr-rnnt-bpe
 
 ### Result
 ```
-eval92  %SER 78.08 | %WER 13.73 [ 775 / 5643, 27 ins, 207 del, 541 sub ]
-dev93   %SER 83.30 | %WER 16.30 [ 1342 / 8234, 101 ins, 332 del, 909 sub ]
+eval92  %SER 66.37 | %WER 9.87 [ 557 / 5643, 35 ins, 74 del, 448 sub ]
+dev93   %SER 72.76 | %WER 12.63 [ 1040 / 8234, 103 ins, 174 del, 763 sub ]
 ```
 
 |     training process    |

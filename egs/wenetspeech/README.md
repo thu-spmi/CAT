@@ -31,6 +31,8 @@ Performance is evaluated on CER (%).
 
 **10000-hour train-l**
 
+For how to prepare and train model on large dataset, please refer to [this](../../docs/how_to_prepare_large_dataset.md).
+
 | model                          |   dev    | test-net | test-meeting | aishell-1 test |
 | ------------------------------ |:--------:|:--------:|:------------:|:--------------:|
 | Kaldi                          |   9.07   |  12.83   |    24.72     |      5.41      |

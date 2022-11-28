@@ -1,0 +1,21 @@
+{
+    "data": {
+        "train": "train",
+        "dev": "dev",
+        "test": [
+            "dev",
+            "test"
+        ]
+    },
+    "tokenizer": {
+        "type": "SentencePieceTokenizer",
+        "option-train": {
+            "model_type": "char",
+            "vocab_size": 4232,
+            "add_dummy_prefix": false,
+            "use_all_vocab": true,
+            "model_prefix": "sentencepiece/aishell_char/spm"
+        }
+    },
+    "inference": {}
+}

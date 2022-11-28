@@ -17,7 +17,6 @@ Use one of the options:
    bash local/data.sh -h
    ```
 
-
 Source data info will be automatically stored at `data/metainfo.json`. You can run
 
 ```bash
@@ -32,8 +31,8 @@ Summarize experiments here.
 
 Evaluated by WER (%)
 
-| EXPID                                                                    | dev-clean | dev-other | test-clean | test-other |
-| ------------------------------------------------------------------------ | --------- | --------- | ---------- | ---------- |
-| [rnnt](exp/rnnt-v1) + transformer [lm](exp/lm/lm-v1-transformer) | 1.81      | 4.03      | 1.94       | 4.39       |
-| [ctc-crf](exp/crf-v1) + transformer [lm](exp/lm/lm-v1-transformer)                  | 2.06      | 4.52      | 2.35       | 4.84       |
+| EXPID                                                              | dev-clean | dev-other | test-clean | test-other |
+| ------------------------------------------------------------------ | --------- | --------- | ---------- | ---------- |
+| [rnnt](exp/rnnt-v1) + transformer [lm](exp/lm/lm-v1-transformer)   | 1.81      | 4.03      | 1.94       | 4.39       |
+| [ctc-crf](exp/crf-v1) + transformer [lm](exp/lm/lm-v1-transformer) | 2.05      | 4.54      | 2.25       | 4.73       |
 

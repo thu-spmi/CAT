@@ -6,24 +6,15 @@
 * GPU info \[10\]
   * \[10\] NVIDIA GeForce RTX 3090
 
-### Appendix
+### Notes
 
-* Transformer LM for libri corpus
-* 20 more epochs continued to `lm-v10`
+- Transformer LM for libri corpus.
+- The training might take over 100 hours.
 
 ### Result
 ```
-# Evaluate # evaluate testset: exp/lm-v13-v10-continue/lmbin/test-dev_clean.pkl
-Perplexity over dataset is 12.49
-
-# Evaluate # evaluate testset: exp/lm-v13-v10-continue/lmbin/test-dev_other.pkl
-Perplexity over dataset is 13.34
-
-# Evaluate # evaluate testset: exp/lm-v13-v10-continue/lmbin/test-test_other.pkl
-Perplexity over dataset is 13.50
-
-# Evaluate # evaluate testset: exp/lm-v13-v10-continue/lmbin/test-test_clean.pkl
-Perplexity over dataset is 12.49
+dev_clean | dev_other | test_other | test_clean
+   12.49  |   13.34   |    13.50   |   12.49
 ```
 
 ### Monitor figure

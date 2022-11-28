@@ -10,7 +10,6 @@
 
 - train around 100k steps with large batch size
 - to accelarate training, utterances with frames more than 1000 are filtered, which reduces the training set by \~40k utterances (\~146,000k in total)
-- for how to prepare and train large dataset, please refer to [how_to_prepare_large_dataset](../../docs/how_to_prepare_large_dataset_ch.md).
 
 ### Result
 

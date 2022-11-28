@@ -1,0 +1,44 @@
+{
+    "data": {
+        "dtrain": "train_l",
+        "dev": [
+            "dev"
+        ],
+        "dtest": [
+            "dev",
+            "test_net",
+            "test_meeting",
+            "aishell-test"
+        ],
+        "filter": "10:1000"
+    },
+    "tokenizer": {
+        "type": "JiebaComposeLexiconTokenizer",
+        "option-init": {
+            "lexicon": "",
+            "userdict": ""
+        }
+    },
+    "train": {
+        "bin": "cat.ctc.train",
+        "option": {
+            "amp": true,
+            "batch_size": 864,
+            "grad-norm": 2.0,
+            "grad-accum-fold": 3,
+            "check-freq": 500
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "best",
+            "num": 10
+        },
+        "infer": {
+            "bin": "cat.ctc.cal_logit",
+            "option": {
+                "nj": 48
+            }
+        }
+    }
+}

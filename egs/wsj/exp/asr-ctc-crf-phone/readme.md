@@ -8,12 +8,13 @@
 
 ### Notes
 
-* CTC-CRF training 23 epochs
+* CTC-CRF training for around 23 epochs
 
 ### Result
 ```
-eval92  %SER 28.53 | %WER 2.68 [ 151 / 5643, 17 ins, 15 del, 119 sub ] 
-dev93  %SER 47.71 | %WER 5.57 [ 459 / 8234, 41 ins, 66 del, 352 sub ]  
+eval92  %SER 29.73 | %WER 2.87 [ 162 / 5643, 14 ins, 14 del, 134 sub ]
+dev93  %SER 46.32 | %WER 5.53 [ 455 / 8234, 49 ins, 52 del, 354 sub ]  
+
 ```
 
 |     training process    |
