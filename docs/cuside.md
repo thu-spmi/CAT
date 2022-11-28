@@ -1,3 +1,5 @@
+[English](./cuside.md) | [中文](./cuside_ch.md)
+
 ## Streaming Speech Recognition
 
 Streaming speech recognition refers to perform recognition simultaneously when the speaker is speaking, rather than waiting for the speaker to complete a sentence before starting recognition.

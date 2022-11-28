@@ -1,3 +1,5 @@
+[English](./how_to_prepare_large_dataset.md) | [中文](./how_to_prepare_large_dataset_ch.md)
+
 # Processing, preparation and training with large datasets
 
 ## Background
@@ -5,7 +7,7 @@
 On small data sets, the ordinary **audio data processing** consists of two stages:
 
 1. _Preprocessing (feature extraction)_: we use kaldi/torchaudio to generate `.ark/.scp` files, in which the `.ark` file is the binary file that stores the feature, the `.scp` file is the index of the `.ark` file, and there is also a text file as the corresponding transcription for the audio;
-2. _Data preparation_: We pack the data into a format that is easy for python to read (refer to [code](https://github.com/maxwellzh/Transducer-dev/blob/e192070011b8e3ffa9ed818981e9321f12fe8117/cat/utils/pipeline/asr.py#L198) for specifics), which includes the following three operations. First, save the feature sequence lengths for subsequent dynamic batching; Second, pad the label sequences (encoded into numbers by tokenizer) so that they can be saved in `numpy.ndarray` format; Third, save the index corresponding to the features (similar to the `.scp` files). The final saved file is the package of the above several files.
+2. _Data preparation_: We pack the data into a format that is easy for python to read (refer to [code](../cat/utils/pipeline/asr.py#L20) for specifics), which includes the following three operations. First, save the feature sequence lengths for subsequent dynamic batching; Second, pad the label sequences (encoded into numbers by tokenizer) so that they can be saved in `numpy.ndarray` format; Third, save the index corresponding to the features (similar to the `.scp` files). The final saved file is the package of the above several files.
 
 In the process outlined above, the major time cost is the data preprocessing (Stage 1), while the time cost of Stage 2 is very small. The Stage 2 for 1000-hour data only takes a few minutes (limited to hard disk IO).
 
@@ -45,7 +47,7 @@ In future, we may consider separate processing of audio features and text labels
 ## Interface design
 
 ### Data preparation
-The code to implement Stage 2 using `webdataset` can be found in [code](https://github.com/maxwellzh/Transducer-dev/blob/main/egs/wenetspeech/local/prep_wds.py#L16). The function interface is:
+The code to implement Stage 2 using `webdataset` can be found in [code](../egs/wenetspeech/local/prep_wds.py#L16). The function interface is:
 
 ```python
 # Number of sentences saved in each file, no need to modify without special needs
@@ -81,7 +83,7 @@ trset='./data/{10_1000,1000_2000}/data-*.tar'
 trset='./data/10_1000/data-0000{0..9}.tar'
 ```
 
-The underlying `webdataset` interface call is implemented in [code](https://github.com/maxwellzh/Transducer-dev/blob/main/cat/shared/manager.py#L82).
+The underlying `webdataset` interface call is implemented in [code](../cat/shared/manager.py#L79).
 
 **NOTE:**  The development data can be configured as  `shuffle = False`. Since the amount of development data is generally small, the development data can still be loaded in the ordinary way.
 
@@ -105,7 +107,7 @@ In contrast, we use a simpler and more direct manner. When a process finish trav
 
 **NOTE:**
 
-The above example is just for easy understanding. In practice, webdataset will repeatedly use some `ark` files to make the `ark` files evenly distributed over cards. However, because the number of utterances in a dataset may not be exactly divided by 2000 and the number of tar files may not be exactly divided by \#cards, there may have fewer sentences in one (or more) `tar` files than others. So fewer than 2000 sentences may be discarded each time.
+The above example is just for ease of understanding. In practice, webdataset will re-use some of the `.tar` files to ensure the number of the tar files being evenlt distributed over cards. However, because the number of utterances in a dataset may not be exactly divided by 2000, there may have fewer sentences in one (or multiple) `tar` files than others. In the worst situation, `2000*(N-1)` utterances are discarded each epoch (N denotes \#GPUs).
 
 ## References
 

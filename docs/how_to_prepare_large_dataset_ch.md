@@ -1,3 +1,4 @@
+[English](./how_to_prepare_large_dataset.md) | [中文](./how_to_prepare_large_dataset_ch.md)
 
 # 大数据集数据的处理、准备和训练
 
@@ -7,7 +8,7 @@
 
 1. 使用kaldi/torchaudio进行数据预处理，生成`.ark/.scp`文件，其中`.ark`文件存放特征的二进制文件，`.scp`文件为`.ark`文件的**索引**，此外还有一个`text`文件作为音频对应的标注；
 
-2. 将数据打包为便于python读取的格式，具体代码可以参考 [code](https://github.com/maxwellzh/Transducer-dev/blob/e192070011b8e3ffa9ed818981e9321f12fe8117/cat/utils/pipeline/asr.py#L198)。这一过程中，我们会保存特征帧长信息便于后续做动态batching；还会对label序列（通过tokenizer编码为数字）做padding，使其能够保存为`numpy.ndarray`格式；保存特征对应的索引（类似`.scp`文件）。最终保存的文件是上述几个文件的整合
+2. 将数据打包为便于python读取的格式，具体代码可以参考 [code](../cat/utils/pipeline/asr.py#L20)。这一过程中，我们会保存特征帧长信息便于后续做动态batching；还会对label序列（通过tokenizer编码为数字）做padding，使其能够保存为`numpy.ndarray`格式；保存特征对应的索引（类似`.scp`文件）。最终保存的文件是上述几个文件的整合
 
 这一过程中主要时间开销是在1中的特征处理阶段，2的时间开销非常小，处理1000小时的数据仅仅需要几分钟（受限于硬盘IO）。
 
@@ -27,7 +28,7 @@
 
 [webdataset](https://github.com/webdataset/webdataset)提供的解决方案是：
 
-减少数据加载的随机性，前面提到，完全顺序读取会对性能有一定的影响，但我们可以在二者之间取一个trade-off：将整个数据集划分为多个小文件（划分称为sharding，将小文件一起称为ark list），每个文件中包含若干个句子（例如2000），在ark list层级进行一次shuffle，在每个ark文件内再做一次shuffle，既保留一定的随机性，又能减少random access的情况，可以显著提高IO性能。
+减少数据加载的随机性，前面提到，完全顺序读取会对识别准确率会有一定的影响，但我们可以在二者之间取一个trade-off：将整个数据集划分为多个小文件（划分称为sharding，每个小文件即一个`.tar`文件），每个`.tar`文件中包含若干个句子（例如2000），在tar文件层级进行一次shuffle，在每个tar文件内再做一次 utterance级别shuffle，既保留一定的随机性，又能减少对硬盘的random access，可以显著提高IO性能。
 
 基于`webdataset`，在处理大数据集（取决于内存大小，一般大于1500小时）时，我们将数据准备流程改造为：
 
@@ -50,7 +51,7 @@
 ## 接口设计
 
 ### 数据准备
-使用`webdataset`完成步骤2的代码可参考[code](https://github.com/maxwellzh/Transducer-dev/blob/main/egs/wenetspeech/local/prep_wds.py#L16)。函数接口具体是
+使用`webdataset`完成步骤2的代码可参考[code](../egs/wenetspeech/local/prep_wds.py#L16)。函数接口具体是
 
 ```python
 # 每个文件保存的句子数，无特殊需要不用修改
@@ -86,7 +87,7 @@ trset='./data/{10_1000,1000_2000}/data-*.tar'
 trset='./data/10_1000/data-0000{0..9}.tar'
 ```
 
-底层的`webdataset`接口调用在[code](https://github.com/maxwellzh/Transducer-dev/blob/main/cat/shared/manager.py#L82)
+底层的`webdataset`接口调用在[code](../cat/shared/manager.py#L79)
 
 **NOTE:** 由于开发集数据本身`shuffle=False`，且数据量一般较小，因此开发集数据仍然使用传统方式加载。
 
@@ -97,19 +98,19 @@ trset='./data/10_1000/data-0000{0..9}.tar'
 ```
 trset="data-0{0..2}.tar"    # 包含3个tar文件，共3x2000句子
 # 假设此时有两个进程（两块GPU）使用DDP训练
-# 在ark_list层级做shuffle，把ark文件shuffle后分配到两个进程
+# 在tar文件层级做shuffle，把tar文件shuffle后分配到两个进程
 gpu0: data-00.tar
 gpu1: data-02.tar, data-01.tar
 ```
 
 随之而来的问题是，两个进程上数据量不同，而DDP是同步式梯度更新训练，直接训练的话，gpu1会一直在等待gpu0同步，而gpu0已经完成所有数据遍历退出了。对这个问题，[wenet-e2e](https://github.com/wenet-e2e/wenet/blob/main/docs/UIO.md#qa)提出的解决方案是使用`model.join()`。
 
-我们使用更简单直接的方式，当一个进程遍历所有的数据后，直接强制所有进程结束当前迭代轮次（epoch），这样做使得1 epoch内训练的数据量减少了，但由于我们会迭代比较多轮次，并且每次会重新shuffle ark_list，这一部分带来的影响是比较小的
+我们使用更简单直接的方式：当一个进程遍历所有的数据后，直接强制所有进程结束当前迭代轮次（epoch），这样做使得1 epoch内训练的数据量减少了，但由于我们会迭代比较多轮次，并且每次会重新shuffle，这一部分带来的影响是比较小的。
 
-> wenetspeech-L（～10000 hour）中包含约15 million句子，处理后得到约7500个.tar文件，使用8 GPU训练，7500 % 8 = 4，即每轮有4x2000句子被抛弃
+> wenetspeech-L（～10000 hour）中包含约15 million句子，处理后得到约7500个`.tar`文件，使用8 GPU训练，7500 % 8 = 4，即每轮有4x2000句子被抛弃
 
 **NOTE:**
-上述例子只是为了便于理解，实际中webdataset会对ark文件做一些重复，使得ark文件层级能够被均分；但由于数据集句子无法被2000整除，会有一个（或多个）tar 文件的句子相对其他较少，导致每次抛弃的句子数<2000
+上述例子只是为了便于理解，实际中webdataset会对tar文件做一些重复，使得tar文件层级能够被均分；但由于数据集句子无法被2000整除，会有一个（使用长度分组、多个数据集时会有多个）tar文件的句子相对其他较少，在最糟糕的情况下，会丢弃 `2000*(N-1)` 个句子，N 为总GPU数。
 
 ## 参考
 
