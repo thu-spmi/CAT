@@ -52,7 +52,7 @@
                                         "type": "number",
                                         "default": -1
                                     },
-                                    "n_hid": {
+                                    "dim_last_hid": {
                                         "type": "number",
                                         "default": -1
                                     }
@@ -124,6 +124,10 @@
                                     "bidirectional": {
                                         "type": "boolean",
                                         "default": false
+                                    },
+                                    "proj_size": {
+                                        "type": "number",
+                                        "default": 0
                                     }
                                 }
                             }
@@ -238,11 +242,15 @@
                                     "hdim": {
                                         "type": "number"
                                     },
-                                    "n_layers": {
+                                    "num_layers": {
                                         "type": "number"
                                     },
                                     "dropout": {
                                         "type": "number"
+                                    },
+                                    "proj_size": {
+                                        "type": "number",
+                                        "default": 0
                                     },
                                     "num_classes": {
                                         "type": "number",
@@ -1015,6 +1023,10 @@
                                     "compact": {
                                         "type": "boolean",
                                         "default": false
+                                    },
+                                    "pre_project": {
+                                        "type": "boolean",
+                                        "default": true
                                     }
                                 }
                             }

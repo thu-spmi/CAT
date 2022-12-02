@@ -1342,6 +1342,10 @@
                                                 "type": "string",
                                                 "description": "Tokenizer model file. See cat/shared/tokenizer.py for details."
                                             },
+                                            "gpu": {
+                                                "description": "Use GPU to do inference. Default: False.",
+                                                "default": false
+                                            },
                                             "nj": {
                                                 "type": "number",
                                                 "default": -1
