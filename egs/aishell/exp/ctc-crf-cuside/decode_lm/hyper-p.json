@@ -1,0 +1,13 @@
+{
+    "data": {
+        "train": "train"
+    },
+    "tokenizer": {
+        "type": "SimpleTokenizer",
+        "option-init": {
+            "dmap": "exp/ctc-crf-cuside/prepare_lexicon/lexicon.txt",
+            "read_index_from_file": false
+        }
+    },
+    "inference": {}
+}
