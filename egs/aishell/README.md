@@ -55,6 +55,13 @@ Evaluated by CER (%)
 | [rnnt](exp/rnnt-v1) | 4.25 | 4.47 | best result, rescored with word lm |
 | [ctc](exp/ctc-v1)   | 4.25 | 4.72 | ctc rescored with word lm          |
 
+**CUSIDE results**
+
+| EXP ID                               | test/streaming  | test/non-streaming | notes                      |
+| ------------------------------------ |:---------------:|:------------------:| ---------------------------|
+| [rnnt-cuside](exp/rnnt-cuside/)      | 6.02            | 5.12               | -                          |
+| [ctc-crf-cuside](exp/ctc-crf-cuside/)| 5.57            | 4.99               | WFST decode with 3-gram lm |
+
 ### Ablation study
 
 **LM modeling unit**

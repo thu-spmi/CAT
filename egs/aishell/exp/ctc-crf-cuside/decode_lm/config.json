@@ -1,0 +1,10 @@
+{
+    "decoder": {
+        "tyep": "NGram",
+        "kwargs": {
+            "f_binlm": "exp/ctc-crf-cuside/decode_lm/3gram.arpa",
+            "gram_order": 3,
+            "num_classes": 137076
+        }
+    }
+}
