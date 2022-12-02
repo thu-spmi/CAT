@@ -1,0 +1,57 @@
+{
+    "data": {
+        "train": [
+            "train",
+            "train-sp0.9",
+            "train-sp1.1"
+        ],
+        "dev": [
+            "dev"
+        ],
+        "test": [
+            "test"
+        ],
+        "filter": ":2000"
+    },
+    "tokenizer": {
+        "type": "SentencePieceTokenizer",
+        "option-train": {
+            "model_type": "char",
+            "vocab_size": 4232,
+            "add_dummy_prefix": false,
+            "use_all_vocab": true,
+            "model_prefix": "sentencepiece/aishell_char/spm"
+        }
+    },
+    "train": {
+        "bin": "cat.rnnt.train_unified",
+        "option": {
+            "amp": true,
+            "dynamic_batch_mode": 1,
+            "batch_size": 128,
+            "check-freq": 1000,
+            "grad-norm": 5.0,
+            "grad-accum-fold": 2,
+            "verbose": true
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "best",
+            "num": 10
+        },
+        "infer": {
+            "bin": "cat.rnnt.decode",
+            "option": {
+                "unified": true,
+                "streaming": true,
+                "beam_size": 16,
+                "cpu": true,
+                "nj": 40
+            }
+        },
+        "er": {
+            "cer": true
+        }
+    }
+}
