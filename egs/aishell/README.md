@@ -50,10 +50,10 @@ NOTE: some of the experiments are conduct on previous code base, therefore, the 
 
 Evaluated by CER (%)
 
-| EXP ID              | dev  | test | notes                              |
-| ------------------- |:----:|:----:| ---------------------------------- |
-| [rnnt](exp/rnnt-v1) | 4.25 | 4.47 | best result, rescored with word lm |
-| [ctc](exp/ctc-v1)   | 4.25 | 4.72 | ctc rescored with word lm          |
+| EXP ID              | dev  | test | notes                       |
+| ------------------- |:----:|:----:| --------------------------- |
+| [rnnt](exp/rnnt-v1) | 3.93 | 4.22 | best result, word lm + LODR |
+| [ctc](exp/ctc-v1)   | 4.25 | 4.72 | ctc rescored with word lm   |
 
 **CUSIDE results**
 

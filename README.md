@@ -53,15 +53,15 @@ To get started with this project, please refer to [TEMPLATE](egs/TEMPLATE/README
 
 ## ASR results
 
-| dataset                                                                                                                    | evaluation sets         | performance  |
-| -------------------------------------------------------------------------------------------------------------------------- | ----------------------- | ------------ |
-| [AISHELL-1](egs/aishell#result)                                                                                            | dev / test              | 4.25 / 4.47  |
-| [Commonvoice German](https://github.com/thu-spmi/CAT/blob/master/egs/commonvoice/RESULT.md#conformertransformer-rescoring) | test                    | 9.8          |
-| [Librispeech](egs/libri#result)                                                                                            | test-clean / test-other | 1.94 / 4.39  |
-| [Switchboard](https://github.com/thu-spmi/CAT/blob/master/egs/swbd/RESULT.md#conformertransformer-rescoring)               | switchboard / callhome  | 6.9 / 14.5   |
-| [THCHS30](https://github.com/thu-spmi/CAT/blob/master/egs/thchs30/RESULT.md#vgg-blstm)                                     | test                    | 6.01         |
-| [Wenetspeech](egs/wenetspeech#result)                                                                                      | test-net / test-meeting | 9.32 / 14.66 |
-| [WSJ](egs/wsj/RESULT.md)                                                                                                   | eval92 / dev93          | 2.77 / 5.68  |
+| dataset                                                                                                                | evaluation sets         | performance  |
+| ---------------------------------------------------------------------------------------------------------------------- | ----------------------- | ------------ |
+| [AISHELL-1](egs/aishell#result)                                                                                        | dev / test              | 3.93 / 4.22  |
+| [Commonvoice German](https://github.com/thu-spmi/CAT/blob/v2/egs/commonvoice/RESULT.md#conformertransformer-rescoring) | test                    | 9.8          |
+| [Librispeech](egs/libri#result)                                                                                        | test-clean / test-other | 1.94 / 4.39  |
+| [Switchboard](https://github.com/thu-spmi/CAT/blob/v2/egs/swbd/RESULT.md#conformertransformer-rescoring)               | switchboard / callhome  | 6.9 / 14.5   |
+| [THCHS30](https://github.com/thu-spmi/CAT/blob/v2/egs/thchs30/RESULT.md#vgg-blstm)                                     | test                    | 6.01         |
+| [Wenetspeech](egs/wenetspeech#result)                                                                                  | test-net / test-meeting | 9.32 / 14.66 |
+| [WSJ](egs/wsj/RESULT.md)                                                                                               | eval92 / dev93          | 2.77 / 5.68  |
 
 ## Further reading
 
