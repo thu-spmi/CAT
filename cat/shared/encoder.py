@@ -29,12 +29,12 @@ def get_vgg2l_odim(idim, in_channel=1, out_channel=128):
 
 
 class AbsEncoder(nn.Module):
-    def __init__(self, with_head: bool = True, num_classes: int = -1, n_hid: int = -1) -> None:
+    def __init__(self, with_head: bool = True, num_classes: int = -1, dim_last_hid: int = -1) -> None:
         super().__init__()
         if with_head:
             assert num_classes > 0, f"Vocab size should be > 0, instead {num_classes}"
-            assert n_hid > 0, f"Hidden size should be > 0, instead {n_hid}"
-            self.classifier = nn.Linear(n_hid, num_classes)
+            assert dim_last_hid > 0, f"Hidden size should be > 0, instead {dim_last_hid}"
+            self.classifier = nn.Linear(dim_last_hid, num_classes)
         else:
             self.classifier = nn.Identity()
 
@@ -55,16 +55,17 @@ class LSTM(AbsEncoder):
     def __init__(self,
                  idim: int,
                  hdim: int,
-                 n_layers: int,
+                 num_layers: int,
                  dropout: float,
+                 proj_size: int = 0,
                  num_classes: int = -1,
                  with_head: bool = True,
                  bidirectional: bool = False):
         super().__init__(with_head=with_head, num_classes=num_classes,
-                         n_hid=(2*hdim if bidirectional else hdim))
+                         dim_last_hid=(2*hdim if bidirectional else hdim))
 
         self.lstm = c_layers._LSTM(
-            idim, hdim, n_layers, dropout, bidirectional=bidirectional)
+            idim, hdim, num_layers, dropout, bidirectional, proj_size)
 
     def impl_forward(self, x: torch.Tensor, ilens: torch.Tensor, hidden=None):
         return self.lstm(x, ilens, hidden)
@@ -98,7 +99,7 @@ class LSTMrowCONV(AbsEncoder):
                  dropout: float,
                  with_head: bool = True,
                  num_classes: int = -1) -> None:
-        super().__init__(with_head=with_head, num_classes=num_classes, n_hid=hdim)
+        super().__init__(with_head=with_head, num_classes=num_classes, dim_last_hid=hdim)
 
         self.lstm = c_layers._LSTM(idim, hdim, n_layers, dropout)
         self.lookahead = c_layers.Lookahead(hdim, context=5)
@@ -116,7 +117,7 @@ class TDNN_NAS(AbsEncoder):
                  dropout: float = 0.5,
                  num_classes: int = -1,
                  with_head: bool = True) -> None:
-        super().__init__(with_head=with_head, num_classes=num_classes, n_hid=hdim)
+        super().__init__(with_head=with_head, num_classes=num_classes, dim_last_hid=hdim)
 
         self.dropout = nn.Dropout(dropout)
         self.tdnns = nn.ModuleDict(OrderedDict([
@@ -145,7 +146,7 @@ class TDNN_LSTM(AbsEncoder):
                  dropout: float,
                  num_classes: int = -1,
                  with_head: bool = True) -> None:
-        super().__init__(with_head=with_head, num_classes=num_classes, n_hid=hdim)
+        super().__init__(with_head=with_head, num_classes=num_classes, dim_last_hid=hdim)
 
         self.tdnn_init = c_layers.TDNN(idim, hdim)
         assert n_layers > 0
@@ -179,7 +180,7 @@ class BLSTMN(AbsEncoder):
                  dropout: float,
                  num_classes: int = -1,
                  with_head: bool = True) -> None:
-        super().__init__(with_head=with_head, num_classes=num_classes, n_hid=hdim)
+        super().__init__(with_head=with_head, num_classes=num_classes, dim_last_hid=hdim)
 
         assert n_layers > 0
         self.cells = nn.ModuleDict()
@@ -245,7 +246,7 @@ class ConformerNet(AbsEncoder):
             subsample_norm: str = 'none',
             time_reduction_factor: int = 1,
             time_reduction_pos: int = -1):
-        super().__init__(with_head=with_head, num_classes=num_classes, n_hid=hdim)
+        super().__init__(with_head=with_head, num_classes=num_classes, dim_last_hid=hdim)
         assert isinstance(time_reduction_factor, int)
         assert time_reduction_factor >= 1
 
@@ -310,17 +311,21 @@ class ConformerLSTM(ConformerNet):
                  num_lstm_layers: int,
                  dropout_lstm: float,
                  bidirectional: bool = False,
+                 proj_size: int = 0,
                  **kwargs):
         super().__init__(**kwargs)
 
         self.lstm = c_layers._LSTM(
             idim=self.linear_drop.linear.out_features,
             hdim=hdim_lstm,
-            n_layers=num_lstm_layers,
+            num_layers=num_lstm_layers,
             dropout=dropout_lstm,
-            bidirectional=bidirectional
+            bidirectional=bidirectional,
+            proj_size=proj_size
         )
-        if bidirectional:
+        if proj_size > 0:
+            hdim_lstm = proj_size
+        elif bidirectional:
             hdim_lstm *= 2
         self.classifier = nn.Linear(hdim_lstm, kwargs['num_classes'])
 

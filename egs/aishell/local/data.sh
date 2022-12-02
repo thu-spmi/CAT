@@ -30,7 +30,6 @@ python local/extract_meta.py $src/wav \
 python utils/data/resolvedata.py
 
 # remove spaces
-# remove spaces
 python -c "
 import sys,os,shutil
 sys.path.append('.')

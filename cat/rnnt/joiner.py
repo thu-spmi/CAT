@@ -1,4 +1,4 @@
-# Copyright 2022 Tsinghua University
+# Copyright 2021 Tsinghua University
 # Apache 2.0.
 # Author: Huahuan Zheng (maxwellzh@outlook.com)
 
@@ -55,8 +55,27 @@ class JointNet(AbsJointNet):
             hdim: int = -1,
             join_mode: Literal['add', 'cat'] = 'add',
             act: Literal['tanh', 'relu'] = 'tanh',
-            compact: bool = False):
+            compact: bool = False,
+            pre_project: bool = True):
         super().__init__()
+
+        if join_mode == 'add':
+            if hdim == -1:
+                hdim = max(odim_pred, odim_enc)
+
+            if pre_project:
+                self.fc_enc = nn.Linear(odim_enc, hdim)
+                self.fc_dec = nn.Linear(odim_pred, hdim)
+            else:
+                assert odim_enc == odim_pred
+                self.fc_enc = nn.Identity()
+                self.fc_dec = nn.Identity()
+        elif join_mode == 'cat':
+            self.fc_enc = None
+            self.fc_dec = None
+            hdim = odim_enc+odim_pred
+        else:
+            raise RuntimeError(f"Unknown mode for joint net: {join_mode}")
 
         if act == 'tanh':
             act_layer = nn.Tanh()
@@ -64,26 +83,10 @@ class JointNet(AbsJointNet):
             act_layer = nn.ReLU()
         else:
             raise NotImplementedError(f"Unknown activation layer type: {act}")
-
-        if join_mode == 'add':
-            if hdim == -1:
-                hdim = max(odim_pred, odim_enc)
-            self.fc_enc = nn.Linear(odim_enc, hdim)
-            self.fc_dec = nn.Linear(odim_pred, hdim)
-            self.fc = nn.Sequential(
-                act_layer,
-                nn.Linear(hdim, num_classes)
-            )
-        elif join_mode == 'cat':
-            self.fc_enc = None
-            self.fc_dec = None
-            self.fc = nn.Sequential(
-                act_layer,
-                nn.Linear(odim_enc + odim_pred, num_classes)
-            )
-        else:
-            raise RuntimeError(f"Unknown mode for joint net: {join_mode}")
-
+        self.fc = nn.Sequential(
+            act_layer,
+            nn.Linear(hdim, num_classes)
+        )
         self._mode = join_mode
         self.iscompact = compact
 
@@ -208,7 +211,7 @@ class LogAdd(AbsJointNet):
         assert dim_f == 1 or dim_f == 3, f"only support input dimension is 1 or 3, instead {dim_f}"
 
         # the preditor doesn't straightly involve in blank prob computation.
-        g[..., 0] = 0.
+        # g[..., 0] = 0.
         if dim_f == 3 and self.iscompact and lf is not None and lg is not None:
             return torch.cat([
                 (f[i:i+1, :lf[i]].unsqueeze(2) +

@@ -1,7 +1,6 @@
 """CTC decode module
 
 NOTE (Huahuan):
-    I deprecate the batch decoding function for bs=1 gives best RTF.
     Currently, bs=1 is hard-coded.
 Derived from
 https://github.com/parlance/ctcdecode
@@ -38,10 +37,15 @@ def main(args: argparse.Namespace = None):
         raise FileNotFoundError(
             "Invalid tokenizer model file: {}".format(args.tokenizer))
 
-    if args.nj == -1:
-        world_size = os.cpu_count()
+    if args.gpu:
+        world_size = torch.cuda.device_count()
+        if args.nj != -1 and args.nj < world_size:
+            world_size = args.nj
     else:
-        world_size = args.nj
+        if args.nj == -1:
+            world_size = max(os.cpu_count()//2, 1)
+        else:
+            world_size = args.nj
     assert world_size > 0
     args.world_size = world_size
 
@@ -58,8 +62,11 @@ def main(args: argparse.Namespace = None):
     consumer = mp.Process(target=datawriter, args=(args, q_out))
     consumer.start()
 
-    model = build_model(args)
-    model.share_memory()
+    if args.gpu:
+        model = None
+    else:
+        model = build_model(args)
+        model.share_memory()
     mp.spawn(worker, nprocs=world_size, args=(args, q_data, q_out, model))
 
     producer.join()
@@ -73,7 +80,7 @@ def dataserver(args, q: mp.Queue):
     n_frames = sum(testset.get_seq_len())
     testloader = DataLoader(
         testset, batch_size=1, shuffle=False,
-        num_workers=args.world_size//8,
+        num_workers=(args.world_size if args.gpu else args.world_size//8),
         collate_fn=sortedScpPadCollate())
 
     t_beg = time.time()
@@ -119,6 +126,13 @@ def datawriter(args, q: mp.Queue):
 
 def worker(pid: int, args: argparse.Namespace, q_data: mp.Queue, q_out: mp.Queue, model: AbsEncoder):
     torch.set_num_threads(args.thread_per_woker)
+    if args.gpu:
+        device = pid
+        torch.cuda.set_device(device)
+        model = build_model(args).cuda(device)
+    else:
+        assert model is not None
+        device = 'cpu'
 
     tokenizer = tknz.load(args.tokenizer)
     if args.lm_path is None:
@@ -146,6 +160,7 @@ def worker(pid: int, args: argparse.Namespace, q_data: mp.Queue, q_out: mp.Queue
             if batch is None:
                 break
             key, x, x_len = batch
+            x = x.to(device)
             key = key[0]
             if args.streaming:
                 logits, olens = model.chunk_infer(x, x_len)
@@ -159,7 +174,7 @@ def worker(pid: int, args: argparse.Namespace, q_data: mp.Queue, q_out: mp.Queue
                 logits = torch.log_softmax(logits, dim=-1)
 
             beam_results, beam_scores, _, out_lens = searcher.decode(
-                logits, olens)
+                logits.cpu(), olens)
             # make it in descending order
             # -log(p) -> log(p)
             beam_scores = -beam_scores
@@ -206,6 +221,8 @@ def _parser():
                         default=False, help="Do the log-softmax normalization before beam search.")
     parser.add_argument("--tokenizer", type=str,
                         help="Tokenizer model file. See cat/shared/tokenizer.py for details.")
+    parser.add_argument("--gpu", action="store_true", default=False,
+                        help="Use GPU to do inference. Default: False.")
     parser.add_argument("--nj", type=int, default=-1)
     parser.add_argument("--thread-per-woker", type=int, default=1)
     parser.add_argument("--built-model-by", type=str, default="cat.ctc.train",

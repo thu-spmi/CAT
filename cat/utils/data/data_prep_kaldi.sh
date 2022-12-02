@@ -1,5 +1,5 @@
 # prepare spec feats by kaldi tool
-# author: Huahuan Zheng
+# author: Huahuan Zheng (maxwellzh@outlook.com)
 set -e
 <<"PARSER"
 ("data_dir", type=str, nargs='+',
@@ -57,6 +57,7 @@ cd $KALDI_ROOT/egs/wsj/s5 && . ./path.sh
 mkdir -p $feat_dir
 for dir in $data_dir; do
     if [ ! -f $dir/.feats.done ]; then
+        utils/fix_data_dir.sh $dir
         steps/make_fbank.sh --cmd run.pl --nj $nj \
             --fbank-config $fbank_conf \
             $dir \
@@ -69,22 +70,39 @@ for dir in $data_dir; do
         echo "... remove the '$dir/.feats.done' then re-run this script."
     fi
 
-    utils/fix_data_dir.sh $dir
-    [ $not_apply_cmvn == "False" ] && {
-        steps/compute_cmvn_stats.sh \
-            $dir \
-            $feat_dir/log-cmvn \
-            $feat_dir/cmvn ||
-            exit 1
+    if [ $not_apply_cmvn == "False" ]; then
+        if [ -f $dir/feats_cmvn.scp ]; then
+            [ -f $dir/feats.scp ] && {
+                if [ -f $dir/feats_orin.scp ]; then
+                    rm -f $dir/feats.scp
+                else
+                    mv $dir/feats.scp $dir/feats_orin.scp
+                fi
+            }
+            ln -snf feats_cmvn.scp $dir/feats.scp
+        else
+            [ ! -f $dir/feats_orin.scp ] &&
+                mv $dir/feats.scp $dir/feats_orin.scp
+            ln -snf feats_orin.scp $dir/feats.scp
 
-        copy-feats --compress=true \
-            "ark,s,cs:apply-cmvn --norm-vars=true --utt2spk=ark:$dir/utt2spk \
-                scp:$dir/cmvn.scp scp:$dir/feats.scp ark:- |" \
-            "ark,scp:$dir/applied_cmvn.ark,$dir/feats_cmvn.scp"
+            steps/compute_cmvn_stats.sh \
+                $dir \
+                $feat_dir/log-cmvn \
+                $feat_dir/cmvn ||
+                exit 1
 
-        mv $dir/feats.scp $dir/feats_orin.scp
-        mv $dir/feats_cmvn.scp $dir/feats.scp
-    }
+            copy-feats --compress=true \
+                "ark,s,cs:apply-cmvn --norm-vars=true --utt2spk=ark:$dir/utt2spk \
+                scp:$dir/cmvn.scp scp:$dir/feats_orin.scp ark:- |" \
+                "ark,scp:$dir/applied_cmvn.ark,$dir/feats_cmvn.scp"
+
+            ln -snf feats_cmvn.scp $dir/feats.scp
+        fi
+    else
+        [ ! -f $dir/feats_orin.scp ] &&
+            mv $dir/feats.scp $dir/feats_orin.scp
+        ln -snf feats_orin.scp $dir/feats.scp
+    fi
 
 done
 rm -rf $fbank_conf

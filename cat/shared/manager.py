@@ -55,7 +55,6 @@ class Manager(object):
             func_build_model: Callable[[dict, argparse.Namespace], Union[nn.Module, nn.parallel.DistributedDataParallel]],
             func_train: Optional[Callable] = None,
             func_eval: Optional[Callable] = None,
-            extra_tracks: Union[str, List[str], None] = None,
             _wds_hook: Callable[[wds.WebDataset], wds.WebDataset] = None):
         """Initialize the manager for training.
 

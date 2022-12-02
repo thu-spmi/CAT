@@ -1,6 +1,20 @@
 #!/bin/bash
 #
 # install the requirement packages
+
+# environment check
+## python
+[ ! $(command -v python) ] && {
+    echo "No python interpreter in your PATH"
+    exit 1
+}
+
+## python>3
+[ "$(python -V 2>&1 | awk '{print $2}' | cut -d '.' -f 1)" -ne 3 ] && {
+    echo "Require python3+, instead $(python -V 2>&1)"
+    exit 1
+}
+
 set -e
 <<"PARSER"
 ("package", type=str, default='cat', nargs='*',
@@ -181,19 +195,6 @@ for p in $package; do
         break
     fi
 done
-
-# environment check
-## python
-[ ! $(command -v python) ] && {
-    echo "No python interpreter in your PATH"
-    exit 1
-}
-
-## python>3
-[ "$(python -V 2>&1 | awk '{print $2}' | cut -d '.' -f 1)" -ne 3 ] && {
-    echo "Require python3+, instead $(python --version)"
-    exit 1
-}
 
 if [ $remove == "False" ]; then
     # install packages

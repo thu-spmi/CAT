@@ -466,6 +466,11 @@ class DynamicBatchDistSampler(DistributedSampler):
         dist.barrier()
 
         if mode == 'bucket':
+            if max_bucket_size == -1:
+                linfo = dataset.get_seq_len()
+                avglen = sum(linfo)/len(linfo)
+                max_bucket_size = int(avglen*global_batch_size)
+
             assert max_bucket_size > 0 and max_bucket_size >= self.num_replicas, max_bucket_size
 
             self.index_dispatcher = BucketGrouper(

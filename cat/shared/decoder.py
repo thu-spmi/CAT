@@ -573,6 +573,11 @@ class ILM(AbsDecoder):
 
 
 class MultiDecoder(AbsDecoder):
+    """A wrapper for combining multiple LMs.
+    
+    NOTE: all sub-decoders should share the same encoder!
+    """
+
     def __init__(self, weights: List[float], f_configs: List[str], f_checks: Optional[List[Union[str, None]]] = None) -> None:
         super().__init__()
 
@@ -601,6 +606,12 @@ class MultiDecoder(AbsDecoder):
         for i in zeroweight[::-1]:
             self._weights.pop(i)
         self._num_decs -= len(zeroweight)
+
+    def score(self, *args, **kwargs):
+        out = 0.
+        for i in range(self._num_decs):
+            out += self._weights[i] * self._decs[i].score(*args, **kwargs)
+        return out
 
     def forward(self, *args, **kwargs):
         raise NotImplementedError

@@ -90,7 +90,7 @@ def dataserver(args, q: mp.Queue):
     del len_match, testset_ls
     testloader = DataLoader(
         testset,
-        batch_size=min(8, len(testset)//args.world_size),
+        batch_size=max(1, min(8, len(testset)//args.world_size)),
         shuffle=False,
         num_workers=1,
         collate_fn=sortedScpPadCollate())

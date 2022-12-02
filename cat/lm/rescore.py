@@ -1,4 +1,4 @@
-# Copyright 2022 Tsinghua University
+# Copyright 2021 Tsinghua University
 # Apache 2.0.
 # Author: Huahuan Zheng (maxwellzh@outlook.com)
 
@@ -25,6 +25,7 @@ from ..shared.data import (
 )
 
 import os
+import sys
 import time
 import pickle
 import argparse
@@ -92,11 +93,9 @@ def dataserver(args, q: mp.Queue):
     testset = NbestListDataset(args.nbestlist)
     tokenizer = tknz.load(args.tokenizer)
     testloader = DataLoader(
-        testset, batch_size=4,
+        testset, batch_size=1,
         shuffle=False,
-        # FIXME (huahuan): num_workers cannot be set >= 1,
-        # possibly pytorch-related bug, see https://github.com/pytorch/pytorch/issues/72782
-        num_workers=0,  # (args.world_size // 8),
+        num_workers=1,
         collate_fn=NbestListCollate(tokenizer))
 
     t_beg = time.time()
@@ -204,7 +203,10 @@ def build_lm(f_config: str, f_check: str, device='cuda') -> AbsDecoder:
         device = f'cuda:{device}'
 
     model = lm_builder(coreutils.readjson(f_config), dist=False)
-    if not isinstance(model.lm, NGram):
+    if f_check is None:
+        sys.stderr.write(
+            "WARNING: checkpoint is not configured. This MIGHT be OK if the LM is N-gram liked.\n")
+    else:
         model = coreutils.load_checkpoint(model.to(device), f_check)
     model = model.lm
     model.eval()

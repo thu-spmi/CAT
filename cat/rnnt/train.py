@@ -1,4 +1,4 @@
-# Copyright 2022 Tsinghua University
+# Copyright 2021 Tsinghua University
 # Apache 2.0.
 # Author: Huahuan Zheng (maxwellzh@outlook.com)
 
@@ -35,7 +35,7 @@ import torch.distributed as dist
 from torch.cuda.amp import autocast
 
 
-def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
+def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace, **mkwargs):
     coreutils.set_random_seed(args.seed)
     args.gpu = gpu
     args.rank = args.rank * ngpus_per_node + gpu
@@ -45,12 +45,17 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
         backend=args.dist_backend, init_method=args.dist_url,
         world_size=args.world_size, rank=args.rank)
 
-    manager = Manager(
-        KaldiSpeechDataset,
-        sortedPadCollateASR(),
-        args,
-        build_model
-    )
+    if 'Dataset' not in mkwargs:
+        mkwargs['Dataset'] = KaldiSpeechDataset
+
+    if 'collate_fn' not in mkwargs:
+        mkwargs['collate_fn'] = sortedPadCollateASR()
+
+    if 'func_build_model' not in mkwargs:
+        mkwargs['func_build_model'] = build_model
+
+    mkwargs['args'] = args
+    manager = Manager(**mkwargs)
 
     # training
     manager.run(args)

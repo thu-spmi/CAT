@@ -622,12 +622,18 @@ class TDNN(nn.Module):
         output = self.ln(output)
         return output, ilens
 
-
 class _LSTM(nn.Module):
-    def __init__(self, idim, hdim, n_layers, dropout=0.0, bidirectional=False):
+    def __init__(self, idim: int, hdim: int, num_layers: int = 1, dropout: float = 0.0, bidirectional: bool = False, proj_size: int = 0):
         super().__init__()
-        self.lstm = nn.LSTM(idim, hdim, num_layers=n_layers,
-                            bidirectional=bidirectional, batch_first=True, dropout=dropout)
+        self.lstm = nn.LSTM(
+            input_size=idim,
+            hidden_size=hdim,
+            num_layers=num_layers,
+            bidirectional=bidirectional,
+            batch_first=True,
+            dropout=dropout,
+            proj_size=proj_size
+        )
 
     def forward(self, x: torch.Tensor, ilens: torch.Tensor, hidden=None):
         self.lstm.flatten_parameters()
