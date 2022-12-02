@@ -10,9 +10,8 @@
 
 * ctc-crf-cuside training
 * use torchaudio for feature extraction w/o CMVN
-* The exp directories contain the results from later, possibly crude, experiments, which may differ from the [CUSIDE paper](https://arxiv.org/abs/2203.16758).
-  - Prepare lexicon with `bash exp/ctc-crf-cuside/run_lexion.sh`
-  - Please follow `bash exp/ctc-crf-cuside/run.sh` to do ctc-crf-training and decoding.
+* This experiment is conducted on the `v3` released code base, and it may slightly differ from the results in [CUSIDE paper](https://arxiv.org/abs/2203.16758).
+
 ### Result
 ```
 test    %SER 41.60 | %CER 5.57 [ 5840 / 104765, 137 ins, 105 del, 5598 sub ]/streaming
