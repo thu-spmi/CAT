@@ -24,7 +24,7 @@ compared with open sourced toolkit
 | ours+LM | 7.82 |    9.32   |     14.66     |    5.12   |        -       |
 
 
-Our detailed results:
+Our detailed results (`trans lm` denotes the [5-gram lm](../../lm/lm-trans-l) trained on transcript):
 ```
 average 5 best
 dev             %SER 66.00 | %CER 9.64 [ 31874 / 330498, 1489 ins, 16684 del, 13701 sub ]
