@@ -2,10 +2,10 @@
     "specaug": {
         "freq_mask_width_range": 0.34,
         "num_freq_mask": 2,
-        "num_time_mask": 5,
-        "time_mask_width_range": 0.1,
-        "time_warp_window": 0.2
-    },
+        "num_time_mask": 10,
+        "time_mask_width_range": 0.05,
+        "apply_time_warp": false
+   },
     "encoder": {
         "type": "ConformerNet",
         "kwargs": {

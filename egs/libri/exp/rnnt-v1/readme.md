@@ -8,6 +8,7 @@
 
 ### Notes
 
+- data prep: kaldi + cmvn by spk
 - The model is basically implemented following Google's Conformer-L config.
 - We apply a rather larger batch size and accordingly less iterations.
 

@@ -24,7 +24,7 @@ Performance is evaluated on CER (%).
 | model                         | dev   | test-net | test-meeting | aishell-1 test |
 | ----------------------------- | ----- | -------- | ------------ | -------------- |
 | [rnnt](exp/train_m/rnnt-v1)   | 11.14 | 12.75    | 20.88        | 7.22           |
-| [ctc](exp/train_m/ctc-v1)     | 12.24 | 15.44    | 24.04        | 8.78           |
+| [ctc](exp/train_m/ctc-v1)     | 11.80 | 14.28    | 22.23        | 9.05           |
 | [ctc-crf](exp/train_m/crf-v1) | 11.15 | 13.38    | 20.52        | 6.83           |
 
 *The `rnnt` & `ctc` decode without LM.

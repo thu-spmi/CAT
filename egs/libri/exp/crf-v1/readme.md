@@ -8,6 +8,7 @@
 
 ### Notes
 
+- data prep: kaldi + cmvn by spk
 - Same encoder as `rnnt-v1`, trained with CTC-CRF phone-based
 - This experiment is originally conducted on old code base, so it's not guaranteed to precisely reproduce the results.
 
