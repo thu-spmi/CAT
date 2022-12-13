@@ -2,6 +2,24 @@
 
 Results on [Mozilla Common Voice](https://commonvoice.mozilla.org/zh-CN) dataset.
 
+## Linguistic Resources
+
+| resources | mul             | de                 | es               | fr              | it           |
+| --------- | --------------- | ------------------ | ---------------- | --------------- | ------------ |
+| lexicon   | [Mul_lexion](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/liziwei/JoinAP/mul_lexicon/lexicon_mul.txt) | [German_lexion](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/liziwei/JoinAP/mul_lexicon/lexicon_de.txt) | [Spanish_lexion](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/liziwei/JoinAP/mul_lexicon/lexicon_es.txt) | [French_lexion](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/liziwei/JoinAP/mul_lexicon/lexicon_fr.txt) | [Italian_lexion](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/liziwei/JoinAP/mul_lexicon/lexicon_it.txt) | 
+| pv        | [Mul_pv](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/liziwei/JoinAP/mul.npy) | [German_pv](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/liziwei/JoinAP/de.npy) | [Spanish_pv](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/liziwei/JoinAP/es.npy) | [French_pv](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/liziwei/JoinAP/fr.npy) | [Italian_pv](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/liziwei/JoinAP/it.npy) |
+| xlsx      | [Mul_xlsx](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/liziwei/JoinAP/mul(de%2Cfr%2Ces%2Cit).xlsx) | [German_xlsx](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/liziwei/JoinAP/de.xlsx) | [Spanish_xlsx](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/liziwei/JoinAP/es.xlsx) | [French_xlsx](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/liziwei/JoinAP/fr.xlsx) | [Italian_xlsx](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/liziwei/JoinAP/it.xlsx) |
+
+## Pretrained Models
+
+| Type                                                          | Checkpoint Model                                                                                             |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| [Flat-phone](exp/mc_flatphone/)                               | [VGGBLSTM](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/liziwei/JoinAP/mul/Flat-phone/bestckpt.pt)           |
+| [JoinAP-Linear](exp/mc_linear/)                               | [VGGBLSTM](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/liziwei/JoinAP/mul/JoinAP-Linear/bestckpt.pt)        |
+| [JoinAP-Nonlinear](exp/mc_nonlinear/)                         | [VGGBLSTM](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/liziwei/JoinAP/mul/JoinAP-Nonlinear/bestckpt.pt)     |
+| [JoinAP-Linear_Conformer](exp/mc_linear_conformer/)           | [Conformer](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/liziwei/JoinAP/mul/Conformer_linear/bestckpt.pt)    |
+| [JoinAP-Nonlinear_Conformer](exp/mc_nonlinear_conformer/)     | [Conformer](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/liziwei/JoinAP/mul/Coformer_nonlinear/bestckpt.pt)  |
+
 ## German Mono-lingual
 
 ### Conformer+Transformer rescoring
