@@ -249,8 +249,9 @@ if __name__ == "__main__":
                               'inference', 'infer', 'option')
             )
             if infr_option.get('output', None) is None:
-                suffix = os.path.basename(
-                    infr_option['nbestlist']).removesuffix('.nbest')
+                suffix = os.path.basename(infr_option['nbestlist'])
+                if suffix.endswith('.nbest'):
+                    suffix = suffix[:-6]
                 a = infr_option.get('alpha', 0)
                 b = infr_option.get('beta', 0)
                 if a != 0 or b != 0:

@@ -12,7 +12,7 @@
             "dropout": 0.2,
             "hdim": 512,
             "idim": 80,
-            "n_layers": 2,
+            "num_layers": 2,
             "num_classes": 4,
             "with_head": true
         }

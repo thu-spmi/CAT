@@ -26,7 +26,7 @@
             "hdim": 256,
             "idim": 80,
             "dropout": 0.0,
-            "n_layers": 2,
+            "num_layers": 2,
             "num_classes": 8,
             "with_head": false
         }

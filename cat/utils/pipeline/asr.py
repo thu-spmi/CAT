@@ -393,8 +393,10 @@ if __name__ == "__main__":
                     if checkpoint is None:
                         suffix_model = 'none'
                     else:
-                        suffix_model = os.path.basename(
-                            checkpoint).removesuffix('.pt')
+                        # NOTE: for python <3.9, str.removesuffix is not available
+                        suffix_model = os.path.basename(checkpoint)
+                        if suffix_model.endswith('.pt'):
+                            suffix_model = suffix_model[:-3]
                     prefix = f"{topo}_bs{infr_option.get('beam_size', 'dft')}_{suffix_model}"
                     if 'unified' in infr_option and infr_option['unified']:
                         prefix += f"_streaming_{infr_option.get('streaming', 'false')}"

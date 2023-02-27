@@ -36,7 +36,7 @@
                 "nj": 8,
                 "alpha": 0.25,
                 "beta": -0.5,
-                "lm_path": "exp/asr-ctc-crf/decode-lm/3gram.klm"
+                "lm_path": "exp/asr-ctc-crf/decode-lm/3gram.bin"
             }
         },
         "er": {

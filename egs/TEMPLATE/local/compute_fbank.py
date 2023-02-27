@@ -36,8 +36,10 @@ if __name__ == "__main__":
     num_mel_bins = 80
     for idx, file in enumerate(audios):
         uttid = fmtuid.format(idx)
-        trans[uttid] = os.path.basename(
-            file).removesuffix('.wav').split('_')
+        fname = os.path.basename(file)
+        if fname.endswith('.wav'):
+            fname = fname[:-4]
+        trans[uttid] = fname.split('_')
 
         specs[uttid] = torchaudio.compliance.kaldi.fbank(
             torchaudio.load(file)[0],

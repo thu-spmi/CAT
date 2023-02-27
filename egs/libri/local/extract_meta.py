@@ -64,7 +64,9 @@ if __name__ == "__main__":
 
         audios[_set] = []
         for _raw_wav in _audios:
-            uid = os.path.basename(_raw_wav).removesuffix('.flac')
+            uid = os.path.basename(_raw_wav)
+            if uid.endswith('.flac'):
+                uid = uid[:-4]
             audios[_set].append((uid, _raw_wav))
 
         assert len(audios[_set]) == len(trans[_set]), \

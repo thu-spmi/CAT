@@ -101,7 +101,7 @@ sfmt = StringFormatter()
 
 def initial_datainfo():
     if not os.path.isfile(F_DATAINFO):
-        from data import resolvedata
+        from utils.data import resolvedata
         resolvedata.main()
 
 

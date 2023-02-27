@@ -6,10 +6,6 @@
 -e git+https://github.com/webdataset/webdataset.git@d7334016f44a03c4a385971aa835c4f460d3f30a#egg=webdataset
 # kenlm
 # -e git+https://github.com/kpu/kenlm.git#egg=kenlm
-# cuda edit distance
--e git+https://github.com/maxwellzh/pytorch-edit-distance.git#egg=torch_edit_distance
-# cuda ctc align
--e git+https://github.com/maxwellzh/ctc-align-cuda.git#egg=ctc_align
 
 # module dependencies
 torch>=1.9.0
