@@ -1,13 +1,7 @@
 #!/bin/bash
 set -e -u 
-<<"PARSER"
-("dir",type=str,nargs='?',default=$(dirname $0),
-    help="Input file.")
-("-o","--output",type=str,default="${input}_out",
-    help="Output file.Default:<input>_out")
-PARSER
-eval $(python utils/parseopt.py $0 $*)
 
+dir=$(dirname $0)
 KALDI_ROOT="/opt/kaldi"
 export KALDI_ROOT=$KALDI_ROOT
 function get_tokenizer() {
@@ -18,7 +12,7 @@ function get_tokenizer() {
 }
 
 # prepare lexion and userdict
-bash exp/ctc-crf-cuside/run_lexicon.sh
+bash $dir/run_lexicon.sh
 
 # prepare the tokenizer with stage 1
 python utils/pipeline/asr.py $dir --sto 1

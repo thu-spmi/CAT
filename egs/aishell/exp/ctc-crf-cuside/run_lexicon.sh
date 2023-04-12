@@ -19,4 +19,4 @@ cd $dir/prepare_lexicon
             awk {'print $1, 99'} >dict.txt
     )
 }
-echo "finsh lexicon and dict"
+echo "finished: lexicon and dict"
