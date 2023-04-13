@@ -53,8 +53,8 @@ python utils/pipeline/asr.py $dir --sta 2
 
 # TLG decoding
 bash ../TEMPLATE/local/eval_fst_decode.sh \
-    $dir/graph \
-    --data test \
+    $dir/{,graph} \
+    --data dev test \
     --acwt 1.0 --lmwt 1.1 -f
 
 exit 0
