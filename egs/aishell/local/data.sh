@@ -14,7 +14,7 @@ set -e -u
         "Download from https://www.openslr.org/resources/33/data_aishell.tgz")
 ("-sp", type=float, nargs='*', default=None,
     help="Speed perturbation factor(s). Default: None.")
-("-subsets-fbank", type=str, nargs="+", choices=["train", "dev", "test"],
+("-subsets", type=str, nargs="+", choices=["train", "dev", "test"],
     default=["train", "dev", "test"], help="Subset(s) for extracting FBanks. Default: ['train', 'dev', 'test']")
 PARSER
 eval $(python utils/parseopt.py $0 $*)
@@ -23,9 +23,9 @@ opt_sp="1.0"
 [ "$sp" != "None" ] && export opt_sp=$sp
 
 # Extract 80-dim FBank features
-python local/extract_meta.py $src/wav \
+python local/extract_fbank.py $src/wav \
     $src/transcript/aishell_transcript_v0.8.txt \
-    --subset $subsets_fbank --speed-perturbation $opt_sp || exit 1
+    --subset $subsets --speed-perturbation $opt_sp || exit 1
 
 python utils/data/resolvedata.py
 

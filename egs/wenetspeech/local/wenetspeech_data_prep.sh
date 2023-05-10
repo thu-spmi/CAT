@@ -7,7 +7,7 @@
 set -e -u
 set -o pipefail
 
-train_subset=M
+train_subset="M"
 test_subsets="DEV TEST_NET TEST_MEETING"
 
 filter_by_id() {
