@@ -1,0 +1,34 @@
+{
+    "data": {
+        "dev": "yesno",
+        "test": "yesno"
+    },
+    "tokenizer": {
+        "type": "SentencePieceTokenizer",
+        "file": "exp/asr-ctc-large-corpora/tokenizer.tknz"
+    },
+    "env": {
+        "CUDA_VISIBLE_DEVICES": "0"
+    },
+    "train": {
+        "bin": "cat.ctc.train",
+        "option": {
+            "amp": false,
+            "batch_size": 1,
+            "eval_error_rate": true,
+            "ld": "data/wds/10_1000/*.tar",
+            "check_freq": 120
+        }
+    },
+    "inference": {
+        "infer": {
+            "bin": "cat.ctc.decode",
+            "option": {
+                "beam_size": 16,
+                "nj": 2
+            }
+        },
+        "er": {}
+    },
+    "commit": "9bb2af8441e590ebf522e24924284f8f994c54c7"
+}

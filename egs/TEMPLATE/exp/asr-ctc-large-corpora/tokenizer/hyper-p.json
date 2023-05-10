@@ -1,0 +1,15 @@
+{
+    "data": {
+        "train": "yesno"
+    },
+    "tokenizer": {
+        "type": "SentencePieceTokenizer",
+        "option-train": {
+            "model_type": "word",
+            "use_all_vocab": true,
+            "vocab_size": 4,
+            "model_prefix": "sentencepiece/yesno_word/spm"
+        },
+        "file": "exp/asr-ctc-large-corpora/tokenizer.tknz"
+    }
+}
