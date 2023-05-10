@@ -12,10 +12,9 @@
 
 ### Result
 ```
-# failed to train RNN-T on yesno
-yesno   %SER 100.00 | %WER 66.04 [ 317 / 480, 0 ins, 308 del, 9 sub ]
+yesno   %SER 98.33 | %WER 48.96 [ 235 / 480, 25 ins, 25 del, 185 sub ]
 ```
 
 |     training process    |
 |:-----------------------:|
-|![monitor](./monitor.png)|
+|![tb-plot](./monitor.png)|

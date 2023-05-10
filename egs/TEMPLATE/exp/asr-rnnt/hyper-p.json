@@ -10,8 +10,6 @@
         "option-train": {
             "model_type": "char",
             "use_all_vocab": true,
-            "bos_id": 0,
-            "unk_id": 1,
             "vocab_size": 8,
             "model_prefix": "sentencepiece/yesno_char/spm"
         }

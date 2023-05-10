@@ -4,7 +4,7 @@
         "kwargs": {
             "f_binlm": "exp/lm-ngram-word/3gram.bin",
             "gram_order": 3,
-            "num_classes": 10000
+            "num_classes": 45899
         }
     }
 }

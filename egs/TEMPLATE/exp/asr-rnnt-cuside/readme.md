@@ -18,4 +18,4 @@ yesno   %SER 100.00 | %WER 67.92 [ 326 / 480, 0 ins, 317 del, 9 sub ]
 
 |     training process    |
 |:-----------------------:|
-|![monitor](./monitor.png)|
+|![tb-plot](./monitor.png)|

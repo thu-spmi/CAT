@@ -1,7 +1,7 @@
 {
     "trainer": {
         "decoder": {
-            "beam_size": 16,
+            "beam_size": 4,
             "num_classes": 4
         }
     },
@@ -9,26 +9,24 @@
         "type": "LSTM",
         "kwargs": {
             "bidirectional": true,
-            "dropout": 0.2,
-            "hdim": 512,
+            "proj_size": 128,
+            "hdim": 256,
             "idim": 80,
-            "num_layers": 2,
-            "num_classes": 4,
-            "with_head": true
+            "num_layers": 3,
+            "num_classes": 4
         }
     },
     "scheduler": {
         "type": "SchedulerCosineAnnealing",
         "kwargs": {
-            "min_lr": 0.0001,
-            "stop_step": 200
+            "min_lr": 1e-05,
+            "stop_step": 300
         },
         "optimizer": {
             "type": "Adam",
             "kwargs": {
                 "lr": 0.001
-            },
-            "zeroredundancy": true
+            }
         }
     }
 }

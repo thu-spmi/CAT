@@ -8,6 +8,9 @@ Here are some toy examples you can finish in minutes. But before starting on lar
 
 Prepare `yesno` data:
 
+* yesno data is only for debugging.
+* it's hard to train a recognizer in such a small corpora based on CTC/RNN-T. Therefore, you will find higher error rates in results (compared to 0% in kaldi).
+
 ```bash
 bash local/data.sh
 ```
@@ -40,7 +43,7 @@ bash local/data.sh
 
 ### Language model
 
-Prepare `ptb` data:
+Prepare text data (a small subset from librispeech):
 
 ```bash
 bash local/lm_data.sh
@@ -123,4 +126,4 @@ Note that data prepare is not included in standard pipelines. It's your duty to 
 
 ## Training with large dataset
 
-Please refer to [how_to_prepare_large_dataset](../../docs/how_to_prepare_large_dataset_ch.md) (in Chinese).
+Please refer to the document: ([English](../../docs/how_to_prepare_large_dataset.md)|[中文](../../docs/how_to_prepare_large_dataset_ch.md)).

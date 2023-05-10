@@ -1,22 +1,22 @@
 {
     "data": {
-        "train": "data/local-lm/ptb.train.txt",
-        "dev": "data/local-lm/ptb.valid.txt",
+        "train": "data/local-lm/libri-part.train",
+        "dev": "data/local-lm/libri-part.dev",
         "test": [
-            "data/local-lm/ptb.test.txt",
-            "data/local-lm/ptb.valid.txt"
+            "data/local-lm/libri-part.dev"
         ],
         "packing-text-lm": {
-            "truncate": 32
+            "nj": 4,
+            "truncate": 64
         }
     },
     "tokenizer": {
         "type": "SentencePieceTokenizer",
         "option-train": {
             "model_type": "word",
-            "vocab_size": 10000,
+            "vocab_size": 45899,
             "use_all_vocab": true,
-            "model_prefix": "sentencepiece/ptb-word/spm"
+            "model_prefix": "sentencepiece/lm-word/spm"
         }
     },
     "env": {
@@ -26,7 +26,15 @@
         "bin": "cat.lm.train",
         "option": {
             "amp": true,
+            "batching_mode": "batch",
             "batch_size": 64,
+            "check-freq": 500,
+            "debug": true
+        },
+        "this-is-an-example-of-bucket-batching": {
+            "amp": true,
+            "batching_mode": "bucket",
+            "bucket_size": 4096,
             "check-freq": 500
         }
     },
