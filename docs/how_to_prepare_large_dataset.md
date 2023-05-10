@@ -33,81 +33,30 @@ Based on `webdataset`, when processing large datasets (depending on the memory s
 1. Perform data preprocessing as in the ordinary Stage 1.
 2. Pack the features and the labels (in text format) into `tar` files: every 2000 sentences into a `tar` file. This process does not involve calculation, but mainly involves a lot of IO operations.
 
-At present, in order to be compatible with the ordinary method, Stage 1 and 2 are separated. In future, Stage 1 and 2 can be combined to further improve the efficiency of feature processing.
+Step 1 & 2 can be executed respectively or simultaneously. Please check the example of usage for details.
 
 **NOTE:**
-A non-trivial difference between the new scheme and the ordinary method is that **the label will be saved in text format**. This is because we may change the tokenizer in practical experiments. If we save the IDs of the label, we need to run Stage 2 again, which is not worth doing it. After saving the text information of the label, the tokenizer can directly performs the on-the-fly encoding when loading the data. The additional overhead is negligible.
+A non-trivial difference between the new scheme and the ordinary method is that **the label will be saved in text format**. In model training, the tokenizer can directly performs the on-the-fly encoding when loading the data. The additional overhead is negligible.
 
 In particular, when using some tokenizers, you should take care to handle the spaces in the label appropriately, for example:
 
 For SentencePiece tokenizer using Chinese characters (tokenizer training without spaces), if the spaces in the label are not removed when the data is prepared, they will be mapped to `<unk>`, which will seriously affect the model performance. Therefore, for Chinese datasets, it is better to remove the spaces in the label before data sharding. For some tokenizers that are insensitive to spaces (such as Jieba word-segmentation tokenizer), spaces do not affect word segmentation, so removing spaces does not matter.
 
-In future, we may consider separate processing of audio features and text labels. The text processing is relatively easy, and one-time full loading into memory will not bring too much overhead.
+## Example of usage
 
-## Interface design
+Please refer to the experiment [yesno](../egs/TEMPLATE/exp/asr-ctc-large-corpora)
 
-### Data preparation
-The code to implement Stage 2 using `webdataset` can be found in [code](../egs/wenetspeech/local/prep_wds.py#L16). The function interface is:
-
-```python
-# Number of sentences saved in each file, no need to modify without special needs
-UTTS_PER_FILE = 2000
-
-def pack_data(
-        # scp index files in kaldi format. Multiple files can be input as a list
-        f_scps: Union[List[str], str],
-        # Text files. The first column is the sentence ID, which should match the ID in the scp file. Multiple files can be input as a list
-        f_labels: Union[List[str], str],
-        # output folder
-        d_out: str,
-        # format of output file
-        fmt: str = "data-%05d.tar",
-        # Configuration of length grouping. For example, "10:2000" means that only sentences with lengths of 10-2000 frames are reserved. Multiple groups can be used,
-        # like，["10:500", "500:800", "800:1000", "1000:1200"], files from different length groups will be saved in corresponding folders
-        filter_group: List[str] = None):
-    ...
-```
-
-### Model training
-
-In the `hyper-p.json` file, set `train:option:large_dataset = True`, and set `train:option:tokenizer=xxx` and `train:option:trset=xxx`. `trset` specifies the format of output file. For example:
-
-```
-# During data processing, if specifying d_out='./data', filter_group=['10:1000', '1000:2000']
-# Then trset can be specified as
-# 1. only use sentences of length 10-1000
-trset='./data/10_1000/data-*.tar'
-# 2. use sentences of length 10-2000
-trset='./data/{10_1000,1000_2000}/data-*.tar'
-# 3. code debug, only use 10x2000 sentences
-trset='./data/10_1000/data-0000{0..9}.tar'
-```
-
-The underlying `webdataset` interface call is implemented in [code](../cat/shared/manager.py#L79).
-
-**NOTE:**  The development data can be configured as  `shuffle = False`. Since the amount of development data is generally small, the development data can still be loaded in the ordinary way.
-
-## DDP (Distributed Data Parallel)
-
-All the above discussions are based on the case of single-machine and single-card. When DDP multi-card or multi-machine and multi-card training mechanism is involved, this problem will become a little bit tricky. For example:
-
-```
-trset="data-0{0..2}.tar"    # Contains three tar files, with a total of 3x2000 sentences
-# Suppose that there are two processes (two GPUs) using DDP training,
-# do shuffle at the tar level, and assign the ark file to the two processes after shuffle
-gpu0: data-00.tar
-gpu1: data-02.tar, data-01.tar
-```
-
-The consequent problem with the above code is that the amount of data on the two processes are different. Note that DDP is synchronous gradient update in training. In direct running of the above code, gpu1 will always wait for gpu0 to synchronize, but gpu0 has finished the transversal of all data and exited. The solution proposed by [wenet-e2e](https://github.com/wenet-e2e/wenet/blob/main/docs/UIO.md#qa) to address this problem is to use `model.join()`.
-
-In contrast, we use a simpler and more direct manner. When a process finish traversing all its data, it directly forces all the processes to stop the current round (epoch). In this way, the amount of data trained in one epoch is reduced. However, we iterate for a number of epochs and shuffle at the `tar` level, the impact of this manner is relatively small.
-
-> wenetspeech L (~10,000 hour) contains about 15 million sentences, which are processed to yield about 7500 tar files. Training with 8 GPU, 7500% 8=4, that is, 4x2000 sentences are discarded in each epoch.
 
 **NOTE:**
 
-The above example is just for ease of understanding. In practice, webdataset will re-use some of the `.tar` files to ensure the number of the tar files being evenlt distributed over cards. However, because the number of utterances in a dataset may not be exactly divided by 2000, there may have fewer sentences in one (or multiple) `tar` files than others. In the worst situation, `2000*(N-1)` utterances are discarded each epoch (N denotes \#GPUs).
+- Since the dev set is always configured as `shuffle=False`, and generally small to fit into memory, we keep the dataloading of dev set in the ordinary way.
+- The normal concept of **epoch** does not exist, for data is now coming as a stream. Therefore, in model training, the epoch id in output log will always be 1. Though we cannot obtain the number of training epochs in a strict manner, one can make a roughly estimate by:
+
+   ```
+   num_epochs = num_steps * batch_size / num_total_utts
+   ```
+
+- Continuing from a stopped training (`--resume`) is not a strict resuming, and would inevitably introduce biases to part of the data (this should be negligible to the overall training if not stop & resume frequently).
 
 ## References
 
