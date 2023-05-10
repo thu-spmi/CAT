@@ -2,18 +2,20 @@
 # Apache 2.0.
 # Author: Huahuan Zheng (maxwellzh@outlook.com)
 
-"""
-Transducer trainer.
+"""CUSIDE-Transducer trainer for streaming model.
 """
 
 __all__ = ["UnifiedTTrainer", "build_model", "_parser", "main"]
 
-from . import rnnt_builder
-from .train import TransducerTrainer, main_worker as basic_worker
+from .train import (
+    TransducerTrainer,
+    build_model as rnnt_builder,
+    main_worker as basic_worker,
+)
 from ..shared import coreutils
 from ..shared.simu_net import SimuNet
+from ..shared.data import sortedPadCollateASR
 from ..shared.manager import Manager, train as default_train_func
-from ..shared.data import KaldiSpeechDataset, sortedPadCollateASR
 
 import gather
 import math
@@ -21,18 +23,18 @@ import random
 import argparse
 import numpy as np
 from typing import *
-from warp_rnnt import rnnt_loss as RNNTLoss
+from warp_rnnt import rnnt_loss
 
 import torch
 import torch.nn as nn
-import torch.distributed as dist
 
 
 def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
-    basic_worker(
-        gpu=gpu,
-        ngpus_per_node=ngpus_per_node,
-        args=args,
+    return basic_worker(
+        gpu,
+        ngpus_per_node,
+        args,
+        collate_fn=sortedPadCollateASR(False),
         func_build_model=build_model,
         func_train=custom_train,
     )
@@ -52,9 +54,13 @@ class UnifiedTTrainer(TransducerTrainer):
         mel_dim: int = 80,
         simu: bool = False,
         simu_loss_weight: float = 1.0,
-        **kwargs
+        **kwargs,
     ) -> None:
         super().__init__(**kwargs)
+
+        assert (
+            not self.append_eos
+        ), f"{self.__class__.__name__}: please disable <eos> (-1)."
 
         self.simu = simu
         if self.simu:
@@ -74,66 +80,53 @@ class UnifiedTTrainer(TransducerTrainer):
         self,
         enc_out: torch.Tensor,
         pred_out: torch.Tensor,
-        targets: torch.Tensor,
-        enc_out_lens: torch.Tensor,
-        target_lens: torch.Tensor,
+        y: torch.Tensor,
+        lsub: torch.Tensor,
+        ly: torch.Tensor,
     ) -> torch.FloatTensor:
         device = enc_out.device
-        enc_out_lens = enc_out_lens.to(device=device, dtype=torch.int)
-        targets = targets.to(device=device, dtype=torch.int)
-        target_lens = target_lens.to(device=device, dtype=torch.int)
-
-        if self._pn_mask is not None:
-            pred_out = self._pn_mask(pred_out, target_lens + 1)[0]
+        lsub = lsub.to(device=device, dtype=torch.int)
+        y = y.to(device=device, dtype=torch.int)
+        ly = ly.to(device=device, dtype=torch.int)
 
         if self._compact:
             # squeeze targets to 1-dim
-            targets = targets.to(enc_out.device, non_blocking=True)
-            if targets.dim() == 2:
-                targets = gather.cat(targets, target_lens)
+            y = y.to(enc_out.device, non_blocking=True)
+            if y.dim() == 2:
+                y = gather.cat(y, ly)
 
-        if self._sampled_softmax:
-            logits = self.joiner.impl_forward(
-                enc_out, pred_out, enc_out_lens, target_lens + 1
-            )
-            joinout, targets = self.log_softmax(logits, targets)
-        else:
-            joinout = self.joiner(enc_out, pred_out, enc_out_lens, target_lens + 1)
+        joinout = self.joiner(enc_out, pred_out, lsub, ly + 1)
 
-        return joinout, targets, enc_out_lens, target_lens
+        return joinout, y, lsub, ly
 
     def chunk_infer(
-        self, inputs: torch.FloatTensor, in_lens: torch.LongTensor
+        self, x: torch.FloatTensor, lx: torch.LongTensor
     ) -> torch.FloatTensor:
         chunk_size = self.chunk_size
-        max_input_length = int(
-            chunk_size * (math.ceil(float(inputs.shape[1]) / chunk_size))
+        max_input_length = int(chunk_size * (math.ceil(float(x.shape[1]) / chunk_size)))
+        x = torch.stack(
+            list(map(lambda x: pad_to_len(x, max_input_length, 0), x)), dim=0
         )
-        inputs = map(lambda x: pad_to_len(x, max_input_length, 0), inputs)
-        inputs = list(inputs)
-        inputs = torch.stack(inputs, dim=0)
 
         left_context_size = self.context_size_left
         if self.simu:
-            simu_right_context = self.simu_net(inputs.clone(), chunk_size)
+            simu_right_context = self.simu_net(x.clone(), chunk_size)
 
-        N_chunks = inputs.size(1) // chunk_size
-        inputs = inputs.view(inputs.size(0) * N_chunks, chunk_size, inputs.size(2))
+        N_chunks = x.size(1) // chunk_size
+        x = x.view(x.size(0) * N_chunks, chunk_size, x.size(2))
 
-        left_context = torch.zeros(
-            inputs.size()[0], left_context_size, inputs.size()[2]
-        )
+        left_context = torch.zeros(x.size()[0], left_context_size, x.size()[2])
 
         if left_context_size > chunk_size:
             N = left_context_size // chunk_size
             for idx in range(N):
                 left_context[
                     N - idx :, idx * chunk_size : (idx + 1) * chunk_size, :
-                ] = inputs[: -N + idx, :, :]
+                ] = x[: -N + idx, :, :]
             for idx in range(N):
                 left_context[idx::N_chunks, : (N - idx) * chunk_size, :] = 0
         else:
-            left_context[1:, :, :] = inputs[:-1, -left_context_size:, :]
+            left_context[1:, :, :] = x[:-1, -left_context_size:, :]
             left_context[0::N_chunks, :, :] = 0
 
         if self.context_size_right > 0:
@@ -142,23 +135,21 @@ class UnifiedTTrainer(TransducerTrainer):
             else:
                 # right_context = torch.zeros(inputs.size()[0], self.right_context_size, inputs.size()[2]).to(inputs.get_device())
                 right_context = torch.zeros(
-                    inputs.size()[0], self.context_size_right, inputs.size()[2]
+                    x.size()[0], self.context_size_right, x.size()[2]
                 )
                 if self.context_size_right > chunk_size:
-                    right_context[:-1, :chunk_size, :] = inputs[1:, :, :]
-                    right_context[:-2, chunk_size:, :] = inputs[
+                    right_context[:-1, :chunk_size, :] = x[1:, :, :]
+                    right_context[:-2, chunk_size:, :] = x[
                         2:, : self.context_size_right - chunk_size, :
                     ]
                     right_context[N_chunks - 1 :: N_chunks, :, :] = 0
                     right_context[N_chunks - 2 :: N_chunks, chunk_size:, :] = 0
                 else:
-                    right_context[:-1, :, :] = inputs[1:, : self.context_size_right, :]
+                    right_context[:-1, :, :] = x[1:, : self.context_size_right, :]
                     right_context[N_chunks - 1 :: N_chunks, :, :] = 0
-            inputs_with_context = torch.cat(
-                (left_context, inputs, right_context), dim=1
-            )
+            inputs_with_context = torch.cat((left_context, x, right_context), dim=1)
         else:
-            inputs_with_context = torch.cat((left_context, inputs), dim=1)
+            inputs_with_context = torch.cat((left_context, x), dim=1)
         enc_out_with_context, _ = self.encoder(
             inputs_with_context,
             torch.full(
@@ -178,86 +169,82 @@ class UnifiedTTrainer(TransducerTrainer):
         )
 
         out_lens = torch.div(
-            chunk_size * torch.ceil(in_lens / chunk_size),
+            chunk_size * torch.ceil(lx / chunk_size),
             self.downsampling_ratio,
             rounding_mode="floor",
         )
         return enc_out, out_lens
 
     def chunk_forward(
-        self, inputs: torch.FloatTensor, in_lens: torch.LongTensor
+        self, x: torch.FloatTensor, lx: torch.LongTensor
     ) -> torch.FloatTensor:
         jitter = self.downsampling_ratio * random.randint(
             -self.jitter_range, self.jitter_range
         )
         chunk_size = self.chunk_size + jitter
 
-        max_input_length = int(
-            chunk_size * (math.ceil(float(inputs.shape[1]) / chunk_size))
-        )
-        inputs = pad_to_len(inputs, max_input_length, 1)
+        max_input_length = int(chunk_size * (math.ceil(float(x.shape[1]) / chunk_size)))
+        x = pad_to_len(x, max_input_length, 1)
 
         if self.simu:
             # FIXME: maybe .clone() is not required
-            simu_right_context = self.simu_net(inputs, chunk_size)
+            simu_right_context = self.simu_net(x, chunk_size)
 
-        num_chunks = inputs.size(1) // chunk_size
-        BC = inputs.size(0) * num_chunks
-        D = inputs.size(2)
-        inputs = inputs.view(BC, chunk_size, D)
+        num_chunks = x.size(1) // chunk_size
+        BC = x.size(0) * num_chunks
+        D = x.size(2)
+        x = x.view(BC, chunk_size, D)
 
         # setup left context
         left_context_size = self.context_size_left + jitter * (
             self.context_size_left // self.chunk_size
         )
-        left_context = torch.zeros(BC, left_context_size, D, device=inputs.device)
+        left_context = torch.zeros(BC, left_context_size, D, device=x.device)
         # fill first left chunk with zeros
         if left_context_size > chunk_size:
             N = left_context_size // chunk_size
             for idx in range(N):
                 left_context[
                     N - idx :, idx * chunk_size : (idx + 1) * chunk_size, :
-                ] = inputs[: -N + idx, :, :]
+                ] = x[: -N + idx, :, :]
             for idx in range(N):
                 left_context[idx::num_chunks, : (N - idx) * chunk_size, :] = 0
         else:
-            left_context[1:, :, :] = inputs[:-1, -left_context_size:, :]
+            left_context[1:, :, :] = x[:-1, -left_context_size:, :]
             left_context[0::num_chunks, :, :] = 0
 
         if self.context_size_right > 0:
-            right_context = torch.zeros(
-                BC, self.context_size_right, D, device=inputs.device
-            )
+            right_context = torch.zeros(BC, self.context_size_right, D, device=x.device)
             if self.context_size_right > chunk_size:
-                right_context[:-1, :chunk_size, :] = inputs[1:, :, :]
-                right_context[:-2, chunk_size:, :] = inputs[
+                right_context[:-1, :chunk_size, :] = x[1:, :, :]
+                right_context[:-2, chunk_size:, :] = x[
                     2:, : self.context_size_right - chunk_size, :
                 ]
                 right_context[num_chunks - 1 :: num_chunks, :, :] = 0
                 right_context[num_chunks - 2 :: num_chunks, chunk_size:, :] = 0
             else:
-                right_context[:-1, :, :] = inputs[1:, : self.context_size_right, :]
+                right_context[:-1, :, :] = x[1:, : self.context_size_right, :]
                 right_context[num_chunks - 1 :: num_chunks, :, :] = 0
 
             if self.simu:
                 simu_loss = self.simu_loss(simu_right_context, right_context.detach())
                 if self.training:
                     if np.random.rand() < 0.5:
-                        contexted_inputs = (left_context, inputs, simu_right_context)
+                        contexted_inputs = (left_context, x, simu_right_context)
                     elif np.random.rand() < 0.5:
-                        contexted_inputs = (left_context, inputs)
+                        contexted_inputs = (left_context, x)
                     else:
-                        contexted_inputs = (left_context, inputs, right_context)
+                        contexted_inputs = (left_context, x, right_context)
                 else:
-                    contexted_inputs = (left_context, inputs, simu_right_context)
+                    contexted_inputs = (left_context, x, simu_right_context)
             else:
                 if self.training and np.random.rand() < 0.5:
-                    contexted_inputs = (left_context, inputs)
+                    contexted_inputs = (left_context, x)
                 else:
-                    contexted_inputs = (left_context, inputs, right_context)
+                    contexted_inputs = (left_context, x, right_context)
             inputs_with_context = torch.cat(contexted_inputs, dim=1)
         else:
-            inputs_with_context = torch.cat((left_context, inputs), dim=1)
+            inputs_with_context = torch.cat((left_context, x), dim=1)
 
         enc_out_with_context, _ = self.encoder(
             inputs_with_context,
@@ -281,52 +268,44 @@ class UnifiedTTrainer(TransducerTrainer):
 
     def forward(
         self,
-        inputs: torch.FloatTensor,
-        targets: torch.LongTensor,
-        in_lens: torch.LongTensor,
-        target_lens: torch.LongTensor,
+        x: torch.FloatTensor,
+        lx: torch.LongTensor,
+        y: torch.LongTensor,
+        ly: torch.LongTensor,
     ) -> torch.FloatTensor:
+        enc_out, lsub = self.encoder(x, lx)
+        pred_out = self.predictor(self.seq_extractor(y, return_target=False))[0]
 
-        enc_out, enc_out_lens = self.encoder(inputs, in_lens)
-        pred_out = self.predictor(
-            torch.nn.functional.pad(targets, (1, 0), value=self.bos_id)
-        )[0]
+        if self._pn_mask is not None:
+            pred_out = self._pn_mask(pred_out, ly + 1)[0]
 
-        joinout, targets, enc_out_lens, target_lens = self.compute_join(
-            enc_out, pred_out, targets, enc_out_lens, target_lens
-        )
+        joinout, y, lsub, ly = self.compute_join(enc_out, pred_out, y, lsub, ly)
 
-        chunk_enc_out, loss_simu = self.chunk_forward(inputs, in_lens)
-        chunk_enc_out = chunk_enc_out[:, : enc_out_lens[0], :]
-        chunk_joinout, _, _, _ = self.compute_join(
-            chunk_enc_out, pred_out, targets, enc_out_lens, target_lens
-        )
+        chunk_enc_out, loss_simu = self.chunk_forward(x, lx)
+        chunk_enc_out = chunk_enc_out[:, : enc_out.size(1), :]
+        chunk_joinout = self.compute_join(chunk_enc_out, pred_out, y, lsub, ly)[0]
         loss_simu *= self.simu_loss_weight
 
-        loss_utt = RNNTLoss(
+        loss_utt = rnnt_loss(
             joinout,
-            targets,
-            enc_out_lens,
-            target_lens,
-            reduction="mean",
-            gather=True,
+            y,
+            lsub,
+            ly,
             compact=self._compact,
         )
-        loss_streaming = RNNTLoss(
+        loss_streaming = rnnt_loss(
             chunk_joinout,
-            targets,
-            enc_out_lens,
-            target_lens,
-            reduction="mean",
-            gather=True,
+            y,
+            lsub,
+            ly,
             compact=self._compact,
         )
 
-        return loss_streaming + loss_utt + loss_simu, (
-            loss_streaming.detach(),
-            loss_utt.detach(),
-            loss_simu.detach(),
-        )
+        return loss_streaming + loss_utt + loss_simu, [
+            ("loss/streaming", loss_streaming),
+            ("loss/full_utt", loss_utt),
+            ("loss/simulate", loss_simu),
+        ]
 
 
 def custom_hook(
@@ -336,18 +315,12 @@ def custom_hook(
     n_step: int,
     nnforward_args: tuple,
 ):
+    loss, metrics = model(*nnforward_args)
 
-    loss, (loss_streaming, loss_utt, loss_simu) = model(*nnforward_args)
-
-    if args.rank == 0:
+    if args.rank == 0 and n_step % args.grad_accum_fold == 0:
         # FIXME: not exact global accuracy
-        l_streaming = loss_streaming.item()
-        l_full_utt = loss_utt.item()
-        l_simu = loss_simu.item()
-        step_cur = manager.step_by_last_epoch + n_step
-        manager.writer.add_scalar("loss/streaming", l_streaming, step_cur)
-        manager.writer.add_scalar("loss/full_utt", l_full_utt, step_cur)
-        manager.writer.add_scalar("loss/simulate", l_simu, step_cur)
+        for _attr, _val in metrics:
+            manager.writer.add_scalar(_attr, float(_val), manager.step)
 
     return loss
 

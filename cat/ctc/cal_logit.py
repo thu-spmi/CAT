@@ -1,17 +1,15 @@
-"""
-Copyright 2022 Tsinghua University
-Apache 2.0.
-Author: Hongyu Xiang, Keyu An, Huahuan Zheng
+# Copyright 2022 Tsinghua University
+# Apache 2.0.
+# Author: Hongyu Xiang, Keyu An, Huahuan Zheng
+
+"""Compute encoded logits for acoustic features.
 """
 
 
 from .decode import build_model
 from ..shared import coreutils
 from ..shared.encoder import AbsEncoder
-from ..shared.data import (
-    ScpDataset,
-    sortedScpPadCollate
-)
+from ..shared.data import ScpDataset, sortedScpPadCollate
 
 
 import os
@@ -41,7 +39,7 @@ def main(args: argparse.Namespace = None):
     args.world_size = world_size
 
     try:
-        mp.set_start_method('spawn')
+        mp.set_start_method("spawn")
     except RuntimeError as re:
         print(re)
 
@@ -60,9 +58,12 @@ def dataserver(args, q: mp.Queue):
     testset = ScpDataset(args.input_scp)
     n_frames = sum(testset.get_seq_len())
     testloader = DataLoader(
-        testset, batch_size=1, shuffle=False,
-        num_workers=args.world_size//8,
-        collate_fn=sortedScpPadCollate())
+        testset,
+        batch_size=1,
+        shuffle=False,
+        num_workers=args.world_size // 8,
+        collate_fn=sortedScpPadCollate(),
+    )
 
     t_beg = time.time()
     for batch in tqdm(testloader, desc="Cal logit", total=len(testloader), leave=False):
@@ -71,16 +72,18 @@ def dataserver(args, q: mp.Queue):
                 k.share_memory_()
         q.put(batch, block=True)
 
-    for _ in range(args.world_size+1):
+    for _ in range(args.world_size + 1):
         q.put(None, block=True)
     t_dur = time.time() - t_beg
 
-    print("Time = {:.2f} s | RTF = {:.2f} ".format(
-        t_dur, t_dur*args.world_size / n_frames * 100))
+    print(
+        "Time = {:.2f} s | RTF = {:.2f} ".format(
+            t_dur, t_dur * args.world_size / n_frames * 100
+        )
+    )
 
 
 def worker(pid: int, args: argparse.Namespace, q: mp.Queue, model: AbsEncoder):
-
     torch.set_num_threads(1)
 
     results = {}
@@ -92,32 +95,32 @@ def worker(pid: int, args: argparse.Namespace, q: mp.Queue, model: AbsEncoder):
             key, x, x_lens = batch
             assert len(key) == 1, "Batch size > 1 is not currently support."
             if args.streaming:
-                logits = model.chunk_infer(x, x_lens)[0].data.numpy()
+                logits = model.chunk_infer(x, x_lens)[0]
             else:
-                logits = model.am(x, x_lens)[0].data.numpy()
-            logits[logits == -np.inf] = -1e16
-            results[key[0]] = logits[0]
+                logits = model.encoder(x, x_lens)[0]
+            results[key[0]] = logits[0].numpy()
             del batch
 
-    kaldiio.save_ark(os.path.join(
-        args.output_dir, f"decode.{pid+1}.ark"), results)
+    kaldiio.save_ark(os.path.join(args.output_dir, f"decode.{pid+1}.ark"), results)
 
 
 def _parser():
     parser = coreutils.basic_trainer_parser(
-        prog="CTC logit generator.",
-        training=False,
-        isddp=False
+        prog="CTC logit generator.", training=False, isddp=False
     )
 
     parser.add_argument("--input_scp", type=str, default=None)
     parser.add_argument("--output-dir", type=str, help="Ouput directory.")
     parser.add_argument("--nj", type=int, default=-1)
-    parser.add_argument("--built-model-by", type=str, default="cat.ctc.train",
-                        help="Tell where to import build_model() function. defautl: cat.ctc.train")
-    parser.add_argument("--streaming", action='store_true', default=False)
+    parser.add_argument(
+        "--built-model-by",
+        type=str,
+        default="cat.ctc.train",
+        help="Tell where to import build_model() function. defautl: cat.ctc.train",
+    )
+    parser.add_argument("--streaming", action="store_true", default=False)
     return parser
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

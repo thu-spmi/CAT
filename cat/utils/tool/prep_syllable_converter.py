@@ -1,7 +1,8 @@
-"""
-Prepare Chinese character index to syllable index mapping.
+# Copyright 2023 Tsinghua University
+# Apache 2.0.
+# Author: Huahuan Zheng (maxwellzh@outlook.com)
 
-Author: Huahuan Zheng
+"""Prepare Chinese character index to syllable index mapping.
 """
 import sys
 import pickle
@@ -27,15 +28,14 @@ if __name__ == "__main__":
 
     char2pinyin = {}
     for id, chr in tokenizer.dump_vocab().items():
-        if chr == '<s>' or chr == '<unk>':
+        if chr == "<s>" or chr == "<unk>":
             continue
         _pron = pinyin(chr, style=Style.TONE3)[0][0]
         char2pinyin[id] = _pron
 
     # keep 0 for <s>/<blk>, 1 for <unk>
     prons = {
-        phn: (idx+2)
-        for idx, phn in enumerate(sorted(set(char2pinyin.values())))
+        phn: (idx + 2) for idx, phn in enumerate(sorted(set(char2pinyin.values())))
     }
 
     char2pinyin = [(cid, prons[phn]) for cid, phn in char2pinyin.items()]
@@ -43,11 +43,14 @@ if __name__ == "__main__":
     char2pinyin = sorted(char2pinyin, key=lambda x: x[0])
     char2pinyin = list(zip(*char2pinyin))[1]
 
-    output = 'char2syllable.pkl'
-    with open(output, 'wb') as fob:
-        pickle.dump({
-            'converter': np.asarray(char2pinyin, dtype=np.int64),
-            'syllable': prons,
-            'num_syllables': len(prons)+2
-        }, fob)
+    output = "char2syllable.pkl"
+    with open(output, "wb") as fob:
+        pickle.dump(
+            {
+                "converter": np.asarray(char2pinyin, dtype=np.int64),
+                "syllable": prons,
+                "num_syllables": len(prons) + 2,
+            },
+            fob,
+        )
     print(f"Syllable converting matrix saved at: {output}")

@@ -1,6 +1,8 @@
 #!/bin/bash
-# Copyright Tsinghua University 2022
+# Copyright 2021 Tsinghua University
+# Apache 2.0.
 # Author: Huahuan Zheng (maxwellzh@outlook.com)
+# 
 # Script for training n-gram LM
 set -u
 set -e
@@ -68,7 +70,7 @@ print(F_NN_CONFIG, F_HYPER_CONFIG, F_TRAINING_INFO)")
     # you should probably duplicate your text corpus or add the option --discount_fallback
     # Error msg sample:
     # "ERROR: 3-gram discount out of range for adjusted count 3: -5.2525253."
-    train_cmd="$train_cmd || $train_cmd --discount_fallback"
+    train_cmd="$train_cmd 2>/dev/null || $train_cmd --discount_fallback"
     [ $arpa == "False" ] && train_cmd="($train_cmd) | build_binary $type /dev/stdin $output"
 
     if [ -f $output ]; then

@@ -1,4 +1,8 @@
-"""Convert text to pickle data
+# Copyright 2023 Tsinghua University
+# Apache 2.0.
+# Author: Huahuan Zheng (maxwellzh@outlook.com)
+
+"""Convert text to pickled data
 
 text could be in token index format or pure text (with tokenizer specified)
 
@@ -31,7 +35,7 @@ from multiprocessing import Pool
 from typing import Union, Tuple, List
 
 
-def chunk(X: List[int],  chunk_size: int, drop_res: bool = True, Y: List[int] = None):
+def chunk(X: List[int], chunk_size: int, drop_res: bool = True, Y: List[int] = None):
     lx = len(X)
     if drop_res:
         assert lx >= chunk_size
@@ -40,39 +44,59 @@ def chunk(X: List[int],  chunk_size: int, drop_res: bool = True, Y: List[int] = 
         res_size = 0
 
     if Y is None:
-        for bound in range(0, lx-res_size, chunk_size):
-            yield X[bound:bound+chunk_size]
+        for bound in range(0, lx - res_size, chunk_size):
+            yield X[bound : bound + chunk_size]
     else:
-        for bound in range(0, lx-res_size, chunk_size):
-            yield X[bound:bound+chunk_size], Y[bound:bound+chunk_size]
+        for bound in range(0, lx - res_size, chunk_size):
+            yield X[bound : bound + chunk_size], Y[bound : bound + chunk_size]
 
 
 def text2bin(arguments: Tuple[argparse.Namespace, str, int, int]):
     args, binfile, idx_beg, idx_end = arguments
     if idx_end == -1:
-        idx_end = float('inf')
+        idx_end = float("inf")
 
-    processor = tknz.load(args.tokenizer).encode
-    bos = [args.bos_id]
-    eos = [args.eos_id]
+    tokenizer = tknz.load(args.tokenizer)
+    processor = tokenizer.encode
+    if args.bos_id == -1:
+        bos = tokenizer.get_index("<s>", skip_error=True)
+    else:
+        bos = args.bos_id
+
+    if args.eos_id == -1:
+        eos = tokenizer.get_index("</s>", skip_error=True)
+    else:
+        eos = args.eos_id
+
+    if eos == -1:
+        eos = bos
+
+    bos, eos = [bos], [eos]
+
+    if args.concat > 1 and (eos != bos):
+        raise RuntimeError(
+            f"--concat > 1 requires <bos> = <eos>, instead {bos} != {eos}"
+        )
 
     def file_reader():
-        with open(args.intext, 'r') as fi:
-            for i, line in (enumerate(fi)):
+        with open(args.intext, "r") as fi:
+            for i, line in enumerate(fi):
                 if i < idx_beg:
                     continue
                 if i >= idx_end:
                     break
-                yield bos + processor(line.strip())+eos
+                yield bos + processor(line.strip()) + eos
         return
 
-    with open(binfile, 'wb') as fo:
+    with open(binfile, "wb") as fo:
         # mode = 0
         if args.truncate != -1:
             # mode = 1
             chunksize = args.truncate
             for indices in file_reader():
-                for x, y in chunk(indices[:-1], chunksize, drop_res=False, Y=indices[1:]):
+                for x, y in chunk(
+                    indices[:-1], chunksize, drop_res=False, Y=indices[1:]
+                ):
                     pickle.dump((x, y), fo)
         elif args.concat != -1:
             chunksize = args.concat
@@ -89,8 +113,9 @@ def text2bin(arguments: Tuple[argparse.Namespace, str, int, int]):
 
 
 def main(args: argparse.Namespace):
-    assert args.truncate == -1 or args.concat == - \
-        1, "--concat is conflict with --truncate"
+    assert (
+        args.truncate == -1 or args.concat == -1
+    ), "--concat is conflict with --truncate"
 
     num_threads = args.nj
     if num_threads < 1:
@@ -99,25 +124,20 @@ def main(args: argparse.Namespace):
     if not os.path.isfile(args.intext):
         raise FileNotFoundError(f"{args.intext} does not exist!")
 
-    if args.eos_id == -1:
-        args.eos_id = args.bos_id
-
-    if args.concat > 1 and (args.eos_id != args.bos_id):
-        raise RuntimeError(
-            f"--concat > 1 requires <bos> = <eos>, instead {args.bos_id} != {args.eos_id}")
-
-    fmt = os.path.join('/tmp', str(uuid.uuid4())+'.{}.tmp')
+    fmt = os.path.join("/tmp", str(uuid.uuid4()) + ".{}.tmp")
     if num_threads == 1:
         pool_args = [(args, fmt.format(0), 0, -1)]
     else:
-        num_lines = sum(1 for _ in open(args.intext, 'r'))
+        num_lines = sum(1 for _ in open(args.intext, "r"))
         interval = num_lines // num_threads
-        indices = [interval * i for i in range(num_threads+1)]
+        indices = [interval * i for i in range(num_threads + 1)]
         if indices[-1] != num_lines:
             indices[-1] = num_lines
 
-        pool_args = [(args, fmt.format(i), indices[i], indices[i+1])
-                     for i in range(num_threads)]
+        pool_args = [
+            (args, fmt.format(i), indices[i], indices[i + 1])
+            for i in range(num_threads)
+        ]
 
     with Pool(processes=num_threads) as pool:
         pool.map(text2bin, pool_args)
@@ -125,17 +145,17 @@ def main(args: argparse.Namespace):
     if not args.quiet:
         print("> Sub-process done. Begin merging...")
 
-    f_data = '{}.bin'.format(args.output)
+    f_data = "{}.bin".format(args.output)
     _seeks = []
-    with open(f_data, 'wb') as fo:
+    with open(f_data, "wb") as fo:
         for i in range(num_threads):
-            with open(fmt.format(i), 'rb') as fi:
+            with open(fmt.format(i), "rb") as fi:
                 while (data := pickle.load(fi)) != None:
                     _seeks.append(fo.tell())
                     pickle.dump(data, fo)
             os.remove(fmt.format(i))
 
-    with open(args.output, 'wb') as fo:
+    with open(args.output, "wb") as fo:
         # save the file name of binary file
         pickle.dump(os.path.basename(f_data), fo)
         # save the location information
@@ -147,24 +167,44 @@ def main(args: argparse.Namespace):
 
 def _parser():
     parser = argparse.ArgumentParser(
-        'Convert pure text into pickle data with multi-processing')
-    parser.add_argument("intext", type=str,
-                        help="Input text files.")
+        "Convert pure text into pickle data with multi-processing"
+    )
+    parser.add_argument("intext", type=str, help="Input text files.")
     parser.add_argument("output", type=str, help="Ouput file.")
-    parser.add_argument("--tokenizer", type=str,
-                        help="Tokenizer model file. See cat/shared/tokenizer.py for details.")
-    parser.add_argument("--nj", type=int, default=1,
-                        help="Number of threads. Default: 1")
-    parser.add_argument("--concat", type=int, default=-1,
-                        help="Use concat mode instead valid mode with given length. Default: -1 (disable)")
-    parser.add_argument("--truncate", type=int, default=-1, metavar="trunc",
-                        help="Truncate the seq longer than trunc and take res of it as new seq. Default: -1 (disable)")
-    parser.add_argument("--bos_id", type=int, default=0,
-                        help="Begin of sequence index, used when concat > 1. Default: 0")
-    parser.add_argument("--eos_id", type=int, default=-1,
-                        help="End of sequence index, used when concat > 1. Default: -1 (same as --bos_id)")
-    parser.add_argument("--quiet", action="store_true",
-                        help="Supress hint messages")
+    parser.add_argument(
+        "--tokenizer",
+        type=str,
+        help="Tokenizer model file. See cat/shared/tokenizer.py for details.",
+    )
+    parser.add_argument(
+        "--nj", type=int, default=8, help="Number of threads. Default: 8"
+    )
+    parser.add_argument(
+        "--concat",
+        type=int,
+        default=-1,
+        help="Use concat mode instead valid mode with given length. Default: -1 (disable)",
+    )
+    parser.add_argument(
+        "--truncate",
+        type=int,
+        default=-1,
+        metavar="trunc",
+        help="Truncate the seq longer than trunc and take res of it as new seq. Default: -1 (disable)",
+    )
+    parser.add_argument(
+        "--bos_id",
+        type=int,
+        default=-1,
+        help="Begin of sequence index, used when concat > 1. Default: -1 (get from tokenizer)",
+    )
+    parser.add_argument(
+        "--eos_id",
+        type=int,
+        default=-1,
+        help="End of sequence index, used when concat > 1. Default: -1 (see --bos_id)",
+    )
+    parser.add_argument("--quiet", action="store_true", help="Supress hint messages")
     return parser
 
 

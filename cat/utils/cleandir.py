@@ -49,75 +49,59 @@ if __name__ == "__main__":
 
     path = sys.argv[1]
     if not os.path.isdir(path):
-        print(
-            f"Folder: '{path}' is empty / not a directory."
-        )
+        print(f"Folder: '{path}' is empty / not a directory.")
         sys.exit(0)
 
     join = JoinPath(path)
 
-    res = []        # type: List[Tuple[str, str]]
+    res = []  # type: List[Tuple[str, str]]
     # checkdir
     if os.path.isdir(d := join(D_CHECKPOINT)):
-        res.append(
-            (d, "checkpoint folder")
-        )
+        res.append((d, "checkpoint folder"))
 
     # decode dir
     if os.path.isdir(d := join(D_INFER)):
-        res.append(
-            (d, "inference folder")
-        )
+        res.append((d, "inference folder"))
 
     # log dir
     if os.path.isdir(d := join(D_LOG)):
-        res.append(
-            (d, "log folder")
-        )
+        res.append((d, "log folder"))
 
     # data foler
-    if os.path.isdir(d := join('pkl')):
-        res.append(
-            (d, "data folder")
-        )
+    if os.path.isdir(d := join("pkl")):
+        res.append((d, "data folder"))
 
     # temp folder
     if os.path.isdir(d := join(D_TMP)):
-        res.append(
-            (d, "temp folder")
-        )
+        res.append((d, "temp folder"))
 
     # monitor fig
     if os.path.isfile(f := join(F_MONITOR_FIG)):
-        res.append(
-            (f, "monitor fig")
-        )
+        res.append((f, "monitor fig"))
 
     # readme
     if os.path.isfile(f := join(F_TRAINING_INFO)):
-        res.append(
-            (f, "readme")
-        )
+        res.append((f, "readme"))
 
     # tokenizer
     if os.path.isfile(f := join(F_TOKENIZER)):
-        res.append(
-            (f, "tokenizer")
-        )
+        res.append((f, "tokenizer"))
 
     try:
         if len(res) > 0:
-            ali = max(len(s) for _, s in res)+1
+            ali = max(len(s) for _, s in res) + 1
             print(
-                f"Items found in {path}:\n" +
-                '\n'.join([
-                    f"  [{i+1}] {s+' '*(ali-len(s))}: {p}"
-                    for i, (p, s) in enumerate(res)
-                ])
+                f"Items found in {path}:\n"
+                + "\n".join(
+                    [
+                        f"  [{i+1}] {s+' '*(ali-len(s))}: {p}"
+                        for i, (p, s) in enumerate(res)
+                    ]
+                )
             )
             s_indices = input("index to be removed > ")
-            s_indices = re.sub(r'\s+', ' ', s_indices)
-            if s_indices == 'all':
+            s_indices = re.sub(r"\s+", " ", s_indices)
+            if s_indices == "all":
                 cf_str = f"confirm {path}"
                 response = input(f"Ensure by typing > {cf_str} <: ")
                 if response == cf_str:
@@ -138,10 +122,10 @@ if __name__ == "__main__":
                 if indices == []:
                     print("no valid index.")
                     sys.exit(0)
-                response = input(f"valid indices: {indices}. Confirm [y/N]: ")
-                if response.lower() == 'y':
+                response = input(f"valid indices: {indices}. Confirm [Y/n]: ")
+                if response == "" or response.lower() == "y":
                     for idx in indices:
-                        rm(res[idx-1][0])
+                        rm(res[idx - 1][0])
                     print("Done.")
                 else:
                     print("Not remove.")

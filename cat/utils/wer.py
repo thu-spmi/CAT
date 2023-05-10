@@ -1,7 +1,9 @@
-'''
-Author: Huahuan Zheng
-This script used to compute WER of setences.
-'''
+# Copyright 2023 Tsinghua University
+# Apache 2.0.
+# Author: Huahuan Zheng (maxwellzh@outlook.com)
+
+"""Compute WER/CER of setences.
+"""
 
 import jiwer
 import argparse
@@ -13,7 +15,7 @@ from multiprocessing import Pool
 from typing import *
 
 
-class Processor():
+class Processor:
     def __init__(self) -> None:
         self._process = []
 
@@ -22,7 +24,6 @@ class Processor():
         pass
 
     def __call__(self, seqs: Union[List[str], str]) -> Union[List[str], str]:
-
         if isinstance(seqs, str):
             for processing in self._process:
                 seqs = processing(seqs)
@@ -36,11 +37,11 @@ class Processor():
 
 def WER(l_gt: List[str], l_hy: List[str]) -> Tuple[int, int, int, int, int]:
     """Compute WER and SER from given list of sentences
-    
+
     Args:
         l_gt (list(str)): list of ground truth sentences
         l_hy (list(str)): list of hypothesis sentences
-    
+
     Returns:
         (sub, del, ins, hit, n_se)
         sub (int): sum of of substitutions
@@ -54,10 +55,18 @@ def WER(l_gt: List[str], l_hy: List[str]) -> Tuple[int, int, int, int, int]:
 
     cnt_err_utt = sum(1 for gt, hy in zip(l_gt, l_hy) if gt != hy)
 
-    return measures['substitutions'], measures['deletions'], measures['insertions'], measures['hits'], cnt_err_utt
+    return (
+        measures["substitutions"],
+        measures["deletions"],
+        measures["insertions"],
+        measures["hits"],
+        cnt_err_utt,
+    )
 
 
-def oracleWER(l_gt: List[Tuple[str, str]], l_hy: List[Tuple[str, List[str]]]) -> Tuple[int, int, int, int, int]:
+def oracleWER(
+    l_gt: List[Tuple[str, str]], l_hy: List[Tuple[str, List[str]]]
+) -> Tuple[int, int, int, int, int]:
     """Computer oracle WER.
 
     Take first col of l_gt as key
@@ -69,7 +78,7 @@ def oracleWER(l_gt: List[Tuple[str, str]], l_hy: List[Tuple[str, List[str]]]) ->
     _sub, _del, _ins, _hit, _se = 0, 0, 0, 0, 0
     for key, g_s in l_gt:
         candidates = l_hy[key]
-        best_wer = float('inf')
+        best_wer = float("inf")
         best_measure = {}
 
         mismatch = 1
@@ -77,14 +86,14 @@ def oracleWER(l_gt: List[Tuple[str, str]], l_hy: List[Tuple[str, List[str]]]) ->
             if can_seq == g_s:
                 mismatch = 0
             part_ith_measure = jiwer.compute_measures(g_s, can_seq)
-            if part_ith_measure['wer'] < best_wer:
-                best_wer = part_ith_measure['wer']
+            if part_ith_measure["wer"] < best_wer:
+                best_wer = part_ith_measure["wer"]
                 best_measure = part_ith_measure
 
-        _sub += best_measure['substitutions']
-        _del += best_measure['deletions']
-        _ins += best_measure['insertions']
-        _hit += best_measure['hits']
+        _sub += best_measure["substitutions"]
+        _del += best_measure["deletions"]
+        _ins += best_measure["insertions"]
+        _hit += best_measure["hits"]
         _se += mismatch
 
     return _sub, _del, _ins, _hit, _se
@@ -108,47 +117,49 @@ def main(args: argparse.Namespace = None):
     assert os.path.isfile(ground_truth), ground_truth
     assert os.path.isfile(hypothesis), hypothesis
 
-    with open(ground_truth, 'r') as f_gt:
+    with open(ground_truth, "r") as f_gt:
         l_gt = f_gt.readlines()
 
     if args.oracle:
-        with open(hypothesis, 'rb') as f_hy:
+        with open(hypothesis, "rb") as f_hy:
             # type: Dict[str, Dict[int, Tuple[float, str]]]
             l_hy = pickle.load(f_hy)
         l_hy = [(key, list(nbest.values())) for key, nbest in l_hy.items()]
     else:
         try:
-            with open(hypothesis, 'r') as f_hy:
+            with open(hypothesis, "r") as f_hy:
                 l_hy = f_hy.readlines()
         except UnicodeDecodeError:
             print(
                 "Error:\n"
                 f"seems the given hypothesis: '{hypothesis}' is not a text file.\n"
-                f"... add --oracle if you want to compute oracle error rate.")
+                f"... add --oracle if you want to compute oracle error rate."
+            )
             sys.exit(1)
 
     num_lines = len(l_gt)
     assert num_lines == len(
-        l_hy), f"# lines mismatch in ground truth and hypothesis files: {num_lines} != {len(l_hy)}"
+        l_hy
+    ), f"# lines mismatch in ground truth and hypothesis files: {num_lines} != {len(l_hy)}"
 
     # Pre-processing
     processor = Processor()
 
     # replace '\t' to space
-    processor.append(lambda s: s.replace('\t', ' '))
+    processor.append(lambda s: s.replace("\t", " "))
 
     # rm consecutive spaces
-    pattern = re.compile(r' {2,}')
-    processor.append(lambda s: pattern.sub(' ', s))
+    pattern = re.compile(r" {2,}")
+    processor.append(lambda s: pattern.sub(" ", s))
 
     # rm the '\n' and the last space
-    processor.append(lambda s: s.strip('\n '))
+    processor.append(lambda s: s.strip("\n "))
 
     if args.cer:
         # rm space then split by char
-        pattern = re.compile(r'\s+')
-        processor.append(lambda s: pattern.sub('', s))
-        processor.append(lambda s: ' '.join(list(s)))
+        pattern = re.compile(r"\s+")
+        processor.append(lambda s: pattern.sub("", s))
+        processor.append(lambda s: " ".join(list(s)))
 
     if args.force_cased:
         processor.append(lambda s: s.lower())
@@ -179,7 +190,7 @@ def main(args: argparse.Namespace = None):
             except ValueError:
                 # sentence is empty
                 key = s.strip()
-                g_s = ''
+                g_s = ""
             l_hy[i] = (key, processor(g_s))
 
         l_hy = sorted(l_hy, key=lambda item: item[0])
@@ -188,14 +199,16 @@ def main(args: argparse.Namespace = None):
         l_gt = [seq for _, seq in l_gt]
 
     # multi-processing compute
-    num_threads = max(min(num_lines//10000, int(os.cpu_count())), 1)
+    num_threads = max(min(num_lines // 10000, int(os.cpu_count())), 1)
 
     interval = num_lines // num_threads
-    indices = [interval * i for i in range(num_threads+1)]
+    indices = [interval * i for i in range(num_threads + 1)]
     if indices[-1] != num_lines:
         indices[-1] = num_lines
-    pool_args = [(l_gt[indices[i]:indices[i+1]], l_hy[indices[i]:indices[i+1]])
-                 for i in range(num_threads)]
+    pool_args = [
+        (l_gt[indices[i] : indices[i + 1]], l_hy[indices[i] : indices[i + 1]])
+        for i in range(num_threads)
+    ]
 
     with Pool(processes=num_threads) as pool:
         if args.oracle:
@@ -218,32 +231,42 @@ def main(args: argparse.Namespace = None):
     _ser = _se / num_lines
 
     # format: %SER 13.60 | %WER 4.50 [ 2367 / 52576, 308 ins, 157 del, 1902 sub ]
-    prefix = 'WER' if not args.cer else 'CER'
-    pretty_str = \
-        f"%SER {_ser*100:.2f} | %{prefix} {_wer*100:.2f} [ {_err} / {_sum}, {_ins} ins, {_del} del, {_sub} sub ]"
+    prefix = "WER" if not args.cer else "CER"
+    pretty_str = f"%SER {_ser*100:.2f} | %{prefix} {_wer*100:.2f} [ {_err} / {_sum}, {_ins} ins, {_del} del, {_sub} sub ]"
 
-    sys.stdout.write(pretty_str+'\n')
+    sys.stdout.write(pretty_str + "\n")
     return {
-        'ser': _ser,
-        'wer': _wer,
-        'ins': _ins,
-        'del': _del,
-        'sub': _sub,
-        'string': pretty_str}
+        "ser": _ser,
+        "wer": _wer,
+        "ins": _ins,
+        "del": _del,
+        "sub": _sub,
+        "string": pretty_str,
+    }
 
 
 def _parser():
-    parser = argparse.ArgumentParser('Compute WER/CER')
+    parser = argparse.ArgumentParser("Compute WER/CER")
     parser.add_argument("gt", type=str, help="Ground truth sequences.")
     parser.add_argument("hy", type=str, help="Hypothesis of sequences.")
-    parser.add_argument("--noid", action="store_true", default=False,
-                        help="Process the text as raw without utterance id. When --oracle, this will be ignored.")
-    parser.add_argument("--cer", action="store_true", default=False,
-                        help="Compute CER. Default: False")
-    parser.add_argument("--force-cased", action="store_true",
-                        help="Force text to be the same cased.")
-    parser.add_argument("--oracle", action="store_true", default=False,
-                        help="Compute Oracle WER/CER. This requires the `hy` to be N-best list instead of text. Default: False")
+    parser.add_argument(
+        "--noid",
+        action="store_true",
+        default=False,
+        help="Process the text as raw without utterance id. When --oracle, this will be ignored.",
+    )
+    parser.add_argument(
+        "--cer", action="store_true", default=False, help="Compute CER. Default: False"
+    )
+    parser.add_argument(
+        "--force-cased", action="store_true", help="Force text to be the same cased."
+    )
+    parser.add_argument(
+        "--oracle",
+        action="store_true",
+        default=False,
+        help="Compute Oracle WER/CER. This requires the `hy` to be N-best list instead of text. Default: False",
+    )
     return parser
 
 

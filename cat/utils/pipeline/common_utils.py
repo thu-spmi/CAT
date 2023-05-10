@@ -1,7 +1,10 @@
-"""
-Implementation of some common functions.
+# Copyright 2023 Tsinghua University
+# Apache 2.0.
+# Author: Huahuan Zheng (maxwellzh@outlook.com)
 
-In this script, it is designed to avoid importing the module cat
+"""Implementation of some common functions.
+
+In this script, it is designed to avoid importing the module `cat`
 """
 
 from multiprocessing import Process
@@ -11,6 +14,7 @@ import json
 import os
 import sys
 import glob
+import uuid
 import subprocess
 
 # fmt:off
@@ -25,29 +29,29 @@ from utils.pipeline._constants import *
 class StringFormatter:
     if sys.stdout.isatty():
         """
-        NOTE: 
+        NOTE:
             the escape sequences do not support nested using
             which means COLOR1 + (COLOR2 + ENDC) + ENDC is not allowed.
         """
-        HEADER = '\033[95m'
-        OKBLUE = '\033[94m'
-        OKCYAN = '\033[96m'
-        OKGREEN = '\033[92m'
-        WARNING = '\033[93m'
-        FAIL = '\033[91m'
-        ENDC = '\033[0m'
-        BOLD = '\033[1m'
-        UNDERLINE = '\033[4m'
+        HEADER = "\033[95m"
+        OKBLUE = "\033[94m"
+        OKCYAN = "\033[96m"
+        OKGREEN = "\033[92m"
+        WARNING = "\033[93m"
+        FAIL = "\033[91m"
+        ENDC = "\033[0m"
+        BOLD = "\033[1m"
+        UNDERLINE = "\033[4m"
     else:
-        HEADER = ''
-        OKBLUE = ''
-        OKCYAN = ''
-        OKGREEN = ''
-        WARNING = ''
-        FAIL = ''
-        ENDC = ''
-        BOLD = ''
-        UNDERLINE = ''
+        HEADER = ""
+        OKBLUE = ""
+        OKCYAN = ""
+        OKGREEN = ""
+        WARNING = ""
+        FAIL = ""
+        ENDC = ""
+        BOLD = ""
+        UNDERLINE = ""
 
     @staticmethod
     def __call__(s: str, ct: Literal):
@@ -73,10 +77,14 @@ class StringFormatter:
 
     @staticmethod
     def header(prompt: str):
-        return "{0} {1} {0}".format('='*20, sfmt(prompt, sfmt.BOLD))
+        return "{0} {1} {0}".format("=" * 20, sfmt(prompt, sfmt.BOLD))
 
     @staticmethod
-    def missing(property_name: str, field: Optional[Union[str, Iterable[str]]] = None, raiseerror: bool = True):
+    def missing(
+        property_name: str,
+        field: Optional[Union[str, Iterable[str]]] = None,
+        raiseerror: bool = True,
+    ):
         if raiseerror:
             formatter = sfmt.error
         else:
@@ -87,7 +95,9 @@ class StringFormatter:
         if field is None:
             return formatter(f"missing '{property_name}'")
         else:
-            return formatter(f"missing '{property_name}' in {sfmt.udl(':'.join(field))}")
+            return formatter(
+                f"missing '{property_name}' in {sfmt.udl(':'.join(field))}"
+            )
 
     @staticmethod
     def set(property_name: str, value: str, isPath: bool = True):
@@ -102,13 +112,14 @@ sfmt = StringFormatter()
 def initial_datainfo():
     if not os.path.isfile(F_DATAINFO):
         from utils.data import resolvedata
+
         resolvedata.main()
 
 
 def spawn(target: Callable, args: Union[tuple, argparse.Namespace]):
     """Spawn a new process to execute the target function with given args."""
     if isinstance(args, argparse.Namespace):
-        args = (args, )
+        args = (args,)
     worker = Process(target=target, args=args)
 
     worker.start()
@@ -119,40 +130,39 @@ def spawn(target: Callable, args: Union[tuple, argparse.Namespace]):
 
 
 def readjson(file: str) -> dict:
-    checkExist('f', file)
-    with open(file, 'r') as fi:
+    checkExist("f", file)
+    with open(file, "r") as fi:
         data = json.load(fi)
     return data
 
 
 def dumpjson(obj: dict, target: str):
-    assert os.access(os.path.dirname(target),
-                     os.W_OK), f"{target} is not writable."
-    with open(target, 'w') as fo:
+    assert os.access(os.path.dirname(target), os.W_OK), f"{target} is not writable."
+    with open(target, "w") as fo:
         json.dump(obj, fo, indent=4)
 
 
-def checkExist(f_type: Literal['d', 'f'], f_list: Union[str, List[str]]):
-    """Check whether directory/file exist and raise error if it doesn't.
-    """
-    if f_type == 'd':
+def checkExist(f_type: Literal["d", "f"], f_list: Union[str, List[str]]):
+    """Check whether directory/file exist and raise error if it doesn't."""
+    if f_type == "d":
         check = os.path.isdir
-    elif f_type == 'f':
+    elif f_type == "f":
         check = os.path.isfile
     else:
-        raise RuntimeError(sfmt.error(
-            f"unknown f_type: {f_type}, expected one of ['d', 'f']",
-            checkExist
-        ))
+        raise RuntimeError(
+            sfmt.error(
+                f"unknown f_type: {f_type}, expected one of ['d', 'f']", checkExist
+            )
+        )
 
     if isinstance(f_list, str):
         f_list = [f_list]
     assert len(f_list) > 0, sfmt.error(
         f"expect the file/dir list to have at least one element, but found empty.",
-        checkExist
+        checkExist,
     )
 
-    hints = {'d': 'Directory', 'f': 'File'}
+    hints = {"d": "Directory", "f": "File"}
     not_founds = []
 
     for item in f_list:
@@ -169,53 +179,49 @@ def checkExist(f_type: Literal['d', 'f'], f_list: Union[str, List[str]]):
 
 
 class TextUtterances:
+    """Read files with uid. Only support sequential reading."""
+
+    def __init__(self, files: Union[str, List[str]]) -> None:
+        if isinstance(files, str):
+            files = [files]
+
+        checkExist("f", files)
+        self._files = files
+        self._length = sum(sum(1 for _ in open(f)) for f in files)
+
+    def __len__(self) -> int:
+        return self._length
+
+    def __iter__(self) -> Iterator:
+        for f in self._files:
+            with open(f, "r") as fi:
+                for line in fi:
+                    cont = line[:-1].split(maxsplit=1)
+                    if len(cont) == 1:
+                        yield (cont[0], "")
+                    else:
+                        yield tuple(cont)
+        return
+
+
+class TextUtterancesOrdered(TextUtterances):
     """Read files with uid and sort the utterances in order by uid."""
 
     def __init__(self, files: Union[str, List[str]]) -> None:
         if isinstance(files, str):
             files = [files]
 
-        checkExist('f', files)
-        # [(uid, seek, file_id), ...]
-        self._seeks = []    # type: List[Tuple[str, int, int]]
-        self._files = files
+        checkExist("f", files)
 
-        for idf, f in enumerate(files):
-            with open(f, 'r') as fi:
-                while True:
-                    loc = fi.tell()
-                    line = fi.readline()
-                    if line == '':
-                        break
-                    uid = line.split(maxsplit=1)[0]
-                    self._seeks.append(
-                        (uid, loc, idf)
-                    )
-        self._seeks = sorted(self._seeks, key=lambda x: x[0])
+        assert os.access("/tmp", os.W_OK)
+        cache = os.path.join("/tmp", str(uuid.uuid4()))
+        os.system(f"cat {' '.join(files)} | sort -k 1,1 > {cache}")
+        super().__init__(cache)
+        self._cache = cache
 
-    def __len__(self) -> int:
-        return len(self._seeks)
-
-    def __getitem__(self, index: int):
-        return self._seeks[index]
-
-    def __iter__(self):
-        opened = {}
-        for uid, loc, idf in self._seeks:
-            if idf not in opened:
-                opened[idf] = open(self._files[idf], 'r')
-
-            opened[idf].seek(loc)
-            cont = opened[idf].readline()[:-1].split(maxsplit=1)
-
-            if len(cont) == 1:
-                yield (uid, '')
-            else:
-                yield (uid, cont[1])
-
-        for f in opened.values():
-            f.close()
-        return
+    def __del__(self):
+        if hasattr(self, "_cache") and os.path.isfile(self._cache):
+            os.remove(self._cache)
 
 
 def recursive_rpl(src_dict: dict, target_key: str, rpl_val: Any):
@@ -225,7 +231,7 @@ def recursive_rpl(src_dict: dict, target_key: str, rpl_val: Any):
         src_dict (dict) : a dict-like obj, could be a nested one.
         target_key (str) : the key that is to be updated.
         rpl_val : value to be put in.
-    
+
     Return:
         src_dict
 
@@ -254,7 +260,11 @@ def recursive_rpl(src_dict: dict, target_key: str, rpl_val: Any):
     return src_dict
 
 
-def parse_args_from_var(parser: argparse.ArgumentParser, options: Dict[str, Any] = {}, positionals: List = []):
+def parse_args_from_var(
+    parser: argparse.ArgumentParser,
+    options: Dict[str, Any] = {},
+    positionals: List = [],
+):
     """Similar to parser.parse_args(), but parse args from variables.
 
     args: A B -c -d E
@@ -264,25 +274,26 @@ def parse_args_from_var(parser: argparse.ArgumentParser, options: Dict[str, Any]
     -> `args = parse_args_from_var(parser, {'c': True, 'd': E}, [A, B])`
     """
     args = argparse.Namespace()
-    args.__dict__.update((k.replace('-', '_'), v) for k, v in options.items())
+    args.__dict__.update((k.replace("-", "_"), v) for k, v in options.items())
     return parser.parse_args(args=positionals, namespace=args)
 
 
 def set_visible_gpus(N: int) -> str:
     assert N >= 0
-    if 'CUDA_VISIBLE_DEVICES' not in os.environ:
-        os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(str(i) for i in range(N))
+    if "CUDA_VISIBLE_DEVICES" not in os.environ:
+        os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(str(i) for i in range(N))
     else:
-        seen_gpus = os.environ['CUDA_VISIBLE_DEVICES'].split(',')
-        os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(seen_gpus[:N])
-    return os.environ['CUDA_VISIBLE_DEVICES']
+        seen_gpus = os.environ["CUDA_VISIBLE_DEVICES"].split(",")
+        os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(seen_gpus[:N])
+    return os.environ["CUDA_VISIBLE_DEVICES"]
 
 
 def get_free_port():
     """Return a free available port on local machine."""
     import socket
+
     s = socket.socket()
-    s.bind(('', 0))            # Bind to a free port provided by the host.
+    s.bind(("", 0))  # Bind to a free port provided by the host.
     return s.getsockname()[1]
 
 
@@ -309,10 +320,10 @@ def find_text(dataset: Union[str, List[str]]) -> Tuple[List[str], List[str]]:
     datainfo = readjson(F_DATAINFO)
 
     items_datainfo = []  # find in src data, assume uid before each utterance
-    items_rf_path = []   # find in local path, assume NO uid before each utterance
+    items_rf_path = []  # find in local path, assume NO uid before each utterance
     for _set in dataset:
         if _set in datainfo:
-            items_datainfo.append(datainfo[_set]['trans'])
+            items_datainfo.append(datainfo[_set]["trans"])
         elif os.path.isfile(_set):
             items_rf_path.append(_set)
         else:
@@ -320,98 +331,108 @@ def find_text(dataset: Union[str, List[str]]) -> Tuple[List[str], List[str]]:
     return items_datainfo, items_rf_path
 
 
-def train_nn(working_dir: str, prompt: str = '{}\n'):
-
+def train_nn(working_dir: str, prompt: str = "{}\n"):
     f_hyper_p = os.path.join(working_dir, F_HYPER_CONFIG)
     f_nnconfig = os.path.join(working_dir, F_NN_CONFIG)
-    checkExist('f', [f_hyper_p, f_nnconfig])
+    checkExist("f", [f_hyper_p, f_nnconfig])
 
     settings = readjson(f_hyper_p)
-    assert 'train' in settings, sfmt.missing(
-        'train', sfmt.udl(f_hyper_p)
-    )
-    for item in ['bin', 'option']:
-        assert item in settings['train'], sfmt.missing(
-            item, (sfmt.udl(f_hyper_p), 'train')
+    assert "train" in settings, sfmt.missing("train", sfmt.udl(f_hyper_p))
+    for item in ["bin", "option"]:
+        assert item in settings["train"], sfmt.missing(
+            item, (sfmt.udl(f_hyper_p), "train")
         )
 
-    if 'tokenizer' not in settings:
+    if "tokenizer" not in settings:
         sys.stderr.write(
-            sfmt.missing('tokenizer', raiseerror=False) + '\n' +
-            sfmt.warn(
+            sfmt.missing("tokenizer", raiseerror=False)
+            + "\n"
+            + sfmt.warn(
                 f"you have to ensure the 'num_classes' in {sfmt.udl(f_nnconfig)} is correct.\n",
-                train_nn
+                train_nn,
             )
         )
     else:
-        if '|V|' in settings['tokenizer']:
-            vocab_size = settings['tokenizer']['|V|']
+        if "|V|" in settings["tokenizer"]:
+            vocab_size = settings["tokenizer"]["|V|"]
         else:
             import cat.shared.tokenizer as tknz
-            checkExist('f', settings['tokenizer']['file'])
-            vocab_size = tknz.load(settings['tokenizer']['file']).vocab_size
+
+            checkExist("f", settings["tokenizer"]["file"])
+            vocab_size = tknz.load(settings["tokenizer"]["file"]).vocab_size
 
         nnconfig = readjson(f_nnconfig)
         # recursively search for 'num_classes'
-        recursive_rpl(nnconfig, 'num_classes', vocab_size)
+        recursive_rpl(nnconfig, "num_classes", vocab_size)
         dumpjson(nnconfig, f_nnconfig)
 
-    train_options = settings['train']['option']
+    train_options = settings["train"]["option"]
     fmt_data = os.path.join(working_dir, "pkl/{}.pkl")
-    for option, val in [('trset', 'train'), ('devset', 'dev')]:
+    for option, val in [("trset", "train"), ("devset", "dev")]:
         if option not in train_options:
             f_data = fmt_data.format(val)
-            checkExist('f', f_data)
             train_options[option] = f_data
             sys.stdout.write(prompt.format(sfmt.set(option, f_data)))
-            del f_data
 
-    if 'dir' not in train_options:
-        train_options['dir'] = working_dir
-        sys.stdout.write(prompt.format(sfmt.set('dir', working_dir)))
-    if 'dist-url' not in train_options:
-        train_options['dist-url'] = f"tcp://localhost:{get_free_port()}"
-        sys.stdout.write(prompt.format(sfmt.set(
-            'dist-url', train_options['dist-url'], False)))
+    if "dir" not in train_options:
+        train_options["dir"] = working_dir
+        sys.stdout.write(prompt.format(sfmt.set("dir", working_dir)))
+    if "dist_url" not in train_options:
+        train_options["dist_url"] = f"tcp://localhost:{get_free_port()}"
+        sys.stdout.write(
+            prompt.format(sfmt.set("dist_url", train_options["dist_url"], False))
+        )
+    if train_options.get("ld", None) is not None and "tokenizer" not in train_options:
+        assert "tokenizer" in settings, sfmt.missing("tokenizer", "train:option")
+        train_options["tokenizer"] = settings["tokenizer"]["file"]
+        sys.stdout.write(
+            prompt.format(sfmt.set("tokenizer", train_options["tokenizer"]))
+        )
 
     import importlib
-    interface = importlib.import_module(settings['train']['bin'])
-    spawn(interface.main, parse_args_from_var(
-        interface._parser(), train_options))
+
+    interface = importlib.import_module(settings["train"]["bin"])
+    spawn(interface.main, parse_args_from_var(interface._parser(), train_options))
 
     # after the training is done. plot tb to image.
-    tfevents = glob.glob(os.path.join(
-        f"{working_dir}/{D_LOG}/**/", "events.out.tfevents.*"))
+    tfevents = glob.glob(
+        os.path.join(f"{working_dir}/{D_LOG}/**/", "events.out.tfevents.*")
+    )
     if len(tfevents) == 0:
-        sys.stderr.write(prompt.format(
-            sfmt.error(f"No log data found in {working_dir}/{D_LOG}", train_nn)
-        ))
+        sys.stderr.write(
+            prompt.format(
+                sfmt.error(f"No log data found in {working_dir}/{D_LOG}", train_nn)
+            )
+        )
         sys.exit(1)
 
     subprocess.run(
         f"{sys.executable} utils/plot_tb.py "
         f"{' '.join(tfevents)} "
         f"-o {os.path.join(working_dir, F_MONITOR_FIG)}",
-        shell=True, check=True, stdout=subprocess.PIPE
+        shell=True,
+        check=True,
+        stdout=subprocess.PIPE,
     )
 
 
 def get_corpus(
-        f_hyper: str = None,
-        std_data: Literal['train', 'dev', 'test', 'all', 'none'] = 'none',
-        merge: bool = False,
-        _iter: bool = False,
-        adding_data: Iterable[str] = [],
-        ops: List[Literal['rm-id']] = [],
-        append_op: Callable[[str], str] = None,
-        skipid: bool = False):
+    f_hyper: str = None,
+    std_data: Literal["train", "dev", "test", "all", "none"] = "none",
+    merge: bool = False,
+    _iter: bool = False,
+    adding_data: Iterable[str] = [],
+    ops: List[Literal["rm-id"]] = [],
+    append_op: Callable[[str], str] = None,
+    skipid: bool = False,
+):
     """
     A common interface for reading text corpus, with normalization operations (if needed).
 
     Args:
         f_hyper (str): path to F_HYPER_CONFIG, could be None if std_data = 'none'
         std_data (str): one of `['train', 'dev', 'test', 'all', 'none']`, if `'train'/'dev'/'test'`,
-                get data from `F_HYPER_CONFIG['data']['train'/'dev'/'test']`; if `'all'`, 
+                get data from `F_HYPER_CONFIG['data']['train'/'dev'/'test']`; if `'all'`,
                 use all of them; if `'none'`, use none of them.
         merge (bool): if there're multiple files, return them as one.
         _iter (bool): if True, return iteratively; if False, save output(s) to D_CACHE.
@@ -425,7 +446,7 @@ def get_corpus(
         append_op (function): any customized callable function to do further text normalization.
         skipid (bool): treat first column as the id, normalizatino op would skip it.
             Once this is True, `rm-id` op won't take effect.
-    
+
     Return
         if `return_as_iterator=True`:
             return a generator, whose __iter__() return str representing a line
@@ -433,10 +454,12 @@ def get_corpus(
             return a list of paths to output cached files
     """
 
-    assert std_data in ['train', 'dev', 'test', 'all', 'none'], \
-        sfmt.error(f"std_data got an unexpected value: {std_data}", get_corpus)
-    assert std_data != 'none' or len(adding_data) > 0, \
-        sfmt.error("std_data='none' and adding_data is empty", get_corpus)
+    assert std_data in ["train", "dev", "test", "all", "none"], sfmt.error(
+        f"std_data got an unexpected value: {std_data}", get_corpus
+    )
+    assert std_data != "none" or len(adding_data) > 0, sfmt.error(
+        "std_data='none' and adding_data is empty", get_corpus
+    )
 
     def rm_id(s: str) -> str:
         if skipid:
@@ -444,7 +467,7 @@ def get_corpus(
         else:
             s = s.split(maxsplit=1)
             if len(s) < 2:
-                return ''
+                return ""
             else:
                 return s[1]
 
@@ -455,21 +478,23 @@ def get_corpus(
         return s.upper()
 
     def add_bos(s: str) -> str:
-        return '<s> ' + s
+        return "<s> " + s
 
     def add_eos(s: str) -> str:
-        return s + '</s>'
+        return s + "</s>"
 
     def rm_space(s: str) -> str:
         # rm all spaces
-        return s.replace(' ', '')
+        return s.replace(" ", "")
 
     def _sep(s: str):
         i = 0
-        prev = ('\u4e00' <= s[0] <= '\u9fa5') or ('\u3400' <= s[0] <= '\u4db5')
+        prev = ("\u4e00" <= s[0] <= "\u9fa5") or ("\u3400" <= s[0] <= "\u4db5")
         for j in range(1, len(s)):
-            if prev ^ (prev := ('\u4e00' <= s[j] <= '\u9fa5') or ('\u3400' <= s[j] <= '\u4db5')):
-                if s[j] != ' ' and s[j-1] != ' ':
+            if prev ^ (
+                prev := ("\u4e00" <= s[j] <= "\u9fa5") or ("\u3400" <= s[j] <= "\u4db5")
+            ):
+                if s[j] != " " and s[j - 1] != " ":
                     yield s[i:(i := j)]
         yield s[i:] if i > 0 else s
 
@@ -478,21 +503,21 @@ def get_corpus(
         if len(s) < 2:
             return s
 
-        return ' '.join(_sep(s))
+        return " ".join(_sep(s))
 
     corpus_trans, corpus_raw = [], []
-    if std_data != 'none':
-        assert f_hyper is not None, sfmt.error(
-            "f_hyper is not set.", get_corpus)
+    if std_data != "none":
+        assert f_hyper is not None, sfmt.error("f_hyper is not set.", get_corpus)
         if os.path.isdir(f_hyper):
             f_hyper = os.path.join(f_hyper, F_HYPER_CONFIG)
         assert os.path.isfile(f_hyper), sfmt.error(f"{f_hyper} is not a file.")
         hyper_config = readjson(f_hyper)
-        if std_data == 'all':
-            f_list = sum((hyper_config['data'][item]
-                         for item in ['train', 'dev', 'test']), [])
+        if std_data == "all":
+            f_list = sum(
+                (hyper_config["data"][item] for item in ["train", "dev", "test"]), []
+            )
         else:
-            f_list = hyper_config['data'][std_data]
+            f_list = hyper_config["data"][std_data]
         corpus_trans, corpus_raw = find_text(f_list)
 
     corpus_raw += list(adding_data)
@@ -503,28 +528,29 @@ def get_corpus(
     processor = []
     noop = True
     if len(ops) > 0:
-
         noop = False
 
     has_rmop = False
     for i, p in enumerate(ops):
-        p = p.replace('-', '_')
-        if p == 'rm_id':
+        p = p.replace("-", "_")
+        if p == "rm_id":
             assert i == 0, sfmt.error(
-                f"'rm-id' op MUST be placed at the first place, instead of {i}", get_corpus)
+                f"'rm-id' op MUST be placed at the first place, instead of {i}",
+                get_corpus,
+            )
             has_rmop = True
             continue
-        elif p == 'lower':
+        elif p == "lower":
             f = lower
-        elif p == 'upper':
+        elif p == "upper":
             f = upper
-        elif p == 'add_bos':
+        elif p == "add_bos":
             f = add_bos
-        elif p == 'add_eos':
+        elif p == "add_eos":
             f = add_eos
-        elif p == 'rm_space':
+        elif p == "rm_space":
             f = rm_space
-        elif p == 'seg_cn_other':
+        elif p == "seg_cn_other":
             f = seg_cn_other
         else:
             raise ValueError(f"op={p} not found.")
@@ -537,9 +563,9 @@ def get_corpus(
         if skipid:
             isrmid = False
 
-        with open(f, 'r') as fi:
+        with open(f, "r") as fi:
             for line in fi:
-                line = line.strip('\n')
+                line = line.strip("\n")
                 if skipid:
                     uid, line = line.split(maxsplit=1)
                 elif isrmid:
@@ -548,11 +574,12 @@ def get_corpus(
                 for p in processor:
                     line = p(line)
                 if skipid:
-                    yield uid + '\t' + line + '\n'
+                    yield uid + "\t" + line + "\n"
                 else:
-                    yield line + '\n'
+                    yield line + "\n"
 
     import uuid
+
     cachedir = os.path.join(os.getcwd(), D_CACHE)
     if not _iter:
         os.makedirs(cachedir, exist_ok=True)
@@ -567,7 +594,7 @@ def get_corpus(
         return
     elif merge:
         f_out = os.path.join(cachedir, str(uuid.uuid4()))
-        with open(f_out, 'w') as fo:
+        with open(f_out, "w") as fo:
             for i in range(len(corpus)):
                 for s in file_reader(corpus[i], ((i < n_trans) or has_rmop)):
                     fo.write(s)
@@ -576,7 +603,7 @@ def get_corpus(
     else:
         for i in range(len(corpus)):
             f_out = os.path.join(cachedir, str(uuid.uuid4()))
-            with open(f_out, 'w') as fo:
+            with open(f_out, "w") as fo:
                 for s in file_reader(corpus[i], ((i < n_trans) or has_rmop)):
                     fo.write(s)
             yield f_out
@@ -587,26 +614,24 @@ def train_tokenizer(f_hyper: str):
     def update_conf(_tok, path):
         # store some info about the tokenizer to the file
         cfg_hyper = readjson(f_hyper)
-        cfg_hyper['tokenizer']['|V|'] = _tok.vocab_size
-        cfg_hyper['tokenizer']['file'] = path
+        cfg_hyper["tokenizer"]["|V|"] = _tok.vocab_size
+        cfg_hyper["tokenizer"]["file"] = path
         dumpjson(cfg_hyper, f_hyper)
 
-    checkExist('f', f_hyper)
+    checkExist("f", f_hyper)
     cfg_hyper = readjson(f_hyper)
 
     import cat.shared.tokenizer as tknz
 
-    assert 'tokenizer' in cfg_hyper, sfmt.missing(
-        'tokenizer', sfmt.udl(f_hyper))
+    assert "tokenizer" in cfg_hyper, sfmt.missing("tokenizer", sfmt.udl(f_hyper))
 
-    if 'file' not in cfg_hyper['tokenizer']:
-        f_tokenizer = os.path.join(
-            os.path.dirname(f_hyper), F_TOKENIZER)
+    if "file" not in cfg_hyper["tokenizer"]:
+        f_tokenizer = os.path.join(os.path.dirname(f_hyper), F_TOKENIZER)
         sys.stdout.write(
-            "train_tokenizer(): " +
-            sfmt.set('tokenizer:file', f_tokenizer)+'\n')
+            "train_tokenizer(): " + sfmt.set("tokenizer:file", f_tokenizer) + "\n"
+        )
     else:
-        f_tokenizer = cfg_hyper['tokenizer']['file']
+        f_tokenizer = cfg_hyper["tokenizer"]["file"]
         if os.path.isfile(f_tokenizer):
             update_conf(tknz.load(f_tokenizer), f_tokenizer)
             sys.stderr.write(
@@ -615,26 +640,28 @@ def train_tokenizer(f_hyper: str):
                     "... skip tokenizer training. If you want to do tokenizer training anyway,\n"
                     "... remove the ['tokenizer']['file'] in setting\n"
                     f"... or remove the file:{sfmt.udl(f_tokenizer)} then re-run the script.\n",
-                    train_tokenizer
+                    train_tokenizer,
                 )
             )
             return
 
-    assert 'data' in cfg_hyper, sfmt.missing('data', sfmt.udl(f_hyper))
-    assert 'train' in cfg_hyper['data'], sfmt.missing(
-        'train', (sfmt.udl(f_hyper), 'data'))
+    assert "data" in cfg_hyper, sfmt.missing("data", sfmt.udl(f_hyper))
+    assert "train" in cfg_hyper["data"], sfmt.missing(
+        "train", (sfmt.udl(f_hyper), "data")
+    )
 
-    assert os.access(os.path.dirname(f_tokenizer), os.W_OK), \
-        f"tokenizer:file is not writable: '{sfmt.udl(cfg_hyper['tokenizer']['file'])}'"
+    assert os.access(
+        os.path.dirname(f_tokenizer), os.W_OK
+    ), f"tokenizer:file is not writable: '{sfmt.udl(cfg_hyper['tokenizer']['file'])}'"
 
     f_text = None
     # combine the transcripts and remove the ids if needed.
-    if 'option-train' in cfg_hyper['tokenizer']:
-        if 'f_text' not in cfg_hyper['tokenizer']['option-train']:
-            f_text = list(get_corpus(f_hyper, 'train', merge=True))[0]
-            cfg_hyper['tokenizer']['option-train']['f_text'] = f_text
+    if "option-train" in cfg_hyper["tokenizer"]:
+        if "f_text" not in cfg_hyper["tokenizer"]["option-train"]:
+            f_text = list(get_corpus(f_hyper, "train", merge=True))[0]
+            cfg_hyper["tokenizer"]["option-train"]["f_text"] = f_text
 
-    tokenizer = tknz.initialize(cfg_hyper['tokenizer'])
+    tokenizer = tknz.initialize(cfg_hyper["tokenizer"])
     tknz.save(tokenizer, f_tokenizer)
     if f_text is not None:
         os.remove(f_text)
@@ -643,58 +670,72 @@ def train_tokenizer(f_hyper: str):
 
 
 def model_average(
-        setting: dict,
-        checkdir: str,
-        returnifexist: bool = False) -> Tuple[str, str]:
+    setting: dict, checkdir: str, returnifexist: bool = False
+) -> Tuple[str, str]:
     """Do model averaging according to given setting, return the averaged model path."""
 
-    assert 'mode' in setting, sfmt.error(
-        "'mode' not specified.", model_average)
-    assert 'num' in setting, sfmt.error(
-        "'num' not specified.", model_average)
-    avg_mode, avg_num = setting['mode'], setting['num']
+    assert "mode" in setting, sfmt.error("'mode' not specified.", model_average)
+    assert "num" in setting, sfmt.error("'num' not specified.", model_average)
+    avg_mode, avg_num = setting["mode"], setting["num"]
 
     import torch
     from utils.avgmodel import select_checkpoint, average_checkpoints
 
     suffix_avgmodel = f"{avg_mode}-{avg_num}"
-    checkpoint = os.path.join(checkdir, suffix_avgmodel)
-    tmp_check = checkpoint + ".pt"
-    if os.path.isfile(tmp_check) and returnifexist:
-        return tmp_check, suffix_avgmodel
-    i = 1
-    while os.path.isfile(tmp_check):
-        tmp_check = checkpoint + f".{i}.pt"
-        i += 1
-    checkpoint = tmp_check
+    avg_check_name = os.path.join(checkdir, suffix_avgmodel)
+    checkpoint = avg_check_name + ".pt"
+    if os.path.isfile(checkpoint) and returnifexist:
+        checkpoints = select_checkpoint(checkdir, avg_num, avg_mode)
+        mtime = os.path.getmtime(checkpoint)
+        for c in checkpoints:
+            if not os.path.isfile(c):
+                continue
+            if mtime < os.path.getmtime(c):
+                sys.stderr.write(
+                    sfmt.warn(
+                        f"averaged checkpoint {sfmt.udl(checkpoint)} exist. "
+                        "But it seems that is outdated."
+                    )
+                    + "\n"
+                )
 
-    if avg_mode in ['best', 'last']:
-        params = average_checkpoints(
-            select_checkpoint(checkdir, avg_num, avg_mode))
+        return checkpoint, suffix_avgmodel
+    i = 1
+    while os.path.isfile(checkpoint):
+        checkpoint = avg_check_name + f".{i}.pt"
+        i += 1
+
+    if avg_mode in ["best", "last"]:
+        params = average_checkpoints(select_checkpoint(checkdir, avg_num, avg_mode))
     else:
         raise NotImplementedError(
-            f"Unknown model averaging mode: {avg_mode}, expected in ['best', 'last']")
+            f"Unknown model averaging mode: {avg_mode}, expected in ['best', 'last']"
+        )
 
     # delete the parameter of optimizer for saving disk.
     for k in list(params.keys()):
-        if k != 'model':
+        if k != "model":
             del params[k]
     torch.save(params, checkpoint)
     return checkpoint, suffix_avgmodel
 
 
 def log_commit(f_hyper: str):
-    if subprocess.run('command -v git', shell=True, capture_output=True).returncode != 0:
+    if (
+        subprocess.run("command -v git", shell=True, capture_output=True).returncode
+        != 0
+    ):
         sys.stderr.write(
-            sfmt.warn(
-                "git command not found, skip logging commit.\n",
-                log_commit
-            )
+            sfmt.warn("git command not found, skip logging commit.\n", log_commit)
         )
     else:
         process = subprocess.run(
-            "git log -n 1 --pretty=format:\"%H\"", shell=True, check=True, stdout=subprocess.PIPE)
+            'git log -n 1 --pretty=format:"%H"',
+            shell=True,
+            check=True,
+            stdout=subprocess.PIPE,
+        )
 
         orin_settings = readjson(f_hyper)
-        orin_settings['commit'] = process.stdout.decode('utf-8')
+        orin_settings["commit"] = process.stdout.decode("utf-8")
         dumpjson(orin_settings, f_hyper)

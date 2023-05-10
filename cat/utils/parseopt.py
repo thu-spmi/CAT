@@ -41,7 +41,8 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         sys.stderr.write(
             "This script is used to parse options for shell script.\n"
-            f"... read header of {sys.argv[0]} for the usage.\n")
+            f"... read header of {sys.argv[0]} for the usage.\n"
+        )
         sys.exit(1)
     script = sys.argv[1]
     argsin = sys.argv[2:]
@@ -49,10 +50,11 @@ if __name__ == "__main__":
     # match lines in '<<PARSER' in 'PARSER'
     parser_pattern = re.compile(
         r"^<<\s*(?:\"PARSER\"|'PARSER'|PARSER)\s*$((?:.|\n)*?)^\s*PARSER\s*$",
-        re.MULTILINE)
+        re.MULTILINE,
+    )
     # split lines via brackets
     argument_pattern = re.compile(r"^[(]((?:.|\n)*?)[)]$", re.MULTILINE)
-    with open(script, 'r') as fi:
+    with open(script, "r") as fi:
         s = fi.read()
     parserinfo = parser_pattern.findall(s)
     match = argument_pattern.findall(parserinfo[0])

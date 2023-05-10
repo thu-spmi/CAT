@@ -1,5 +1,8 @@
 """Declare all used global constants (like file names)"""
 
+# number of utterances per file for wds
+UTTS_PER_FILE = 2048
+
 # folder
 D_CHECKPOINT = "check"
 D_LOG = "log"

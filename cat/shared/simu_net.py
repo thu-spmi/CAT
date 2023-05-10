@@ -22,8 +22,11 @@ class Prenet(nn.Module):
         output_sizes = [hidden_size] * num_layers
 
         self.layers = nn.ModuleList(
-            [nn.Linear(in_features=in_size, out_features=out_size)
-             for (in_size, out_size) in zip(input_sizes, output_sizes)])
+            [
+                nn.Linear(in_features=in_size, out_features=out_size)
+                for (in_size, out_size) in zip(input_sizes, output_sizes)
+            ]
+        )
 
         self.relu = nn.ReLU()
         self.dropout = nn.Dropout(dropout)
@@ -45,8 +48,9 @@ class Postnet(nn.Module):
 
     def __init__(self, input_size, out_len, output_size=80):
         super(Postnet, self).__init__()
-        self.layer = nn.Linear(in_features=input_size,
-                               out_features=out_len*output_size)
+        self.layer = nn.Linear(
+            in_features=input_size, out_features=out_len * output_size
+        )
         self.out_len = out_len
         self.output_size = output_size
 
@@ -75,23 +79,33 @@ class SimuNet(nn.Module):
     your tasks.
     """
 
-    def __init__(self, mel_dim: int, out_len: int, hdim: int, rnn_num_layers: int, rnn_dropout: float = 0.1, rnn_residual: bool = True):
+    def __init__(
+        self,
+        mel_dim: int,
+        out_len: int,
+        hdim: int,
+        rnn_num_layers: int,
+        rnn_dropout: float = 0.1,
+        rnn_residual: bool = True,
+    ):
         super(SimuNet, self).__init__()
         self.mel_dim = mel_dim
         # Make sure the dimensionalities are correct
-        in_sizes = [mel_dim] + [hdim] * (rnn_num_layers-1)
+        in_sizes = [mel_dim] + [hdim] * (rnn_num_layers - 1)
         out_sizes = [hdim] * rnn_num_layers
         self.rnns = nn.ModuleList(
-            [nn.GRU(input_size=in_size, hidden_size=out_size, batch_first=True)
-             for (in_size, out_size) in zip(in_sizes, out_sizes)])
+            [
+                nn.GRU(input_size=in_size, hidden_size=out_size, batch_first=True)
+                for (in_size, out_size) in zip(in_sizes, out_sizes)
+            ]
+        )
 
         self.rnn_dropout = nn.Dropout(rnn_dropout)
         self.rnn_residual = rnn_residual
 
         self.postnet = Postnet(
-            input_size=hdim,
-            out_len=out_len,
-            output_size=self.mel_dim)
+            input_size=hdim, out_len=out_len, output_size=self.mel_dim
+        )
 
     def forward(self, inputs, chunk_size):
         """Forward function for both training and testing (feature extraction).
@@ -117,7 +131,7 @@ class SimuNet(nn.Module):
 
         B = rnn_outputs.size(0)
         L = rnn_outputs.size(1)
-        rnn_outputs = rnn_outputs.contiguous().view(B*L//chunk_size, chunk_size, -1)
+        rnn_outputs = rnn_outputs.contiguous().view(B * L // chunk_size, chunk_size, -1)
         rnn_outputs = rnn_outputs[:, -1, :]
         predicted_mel = self.postnet(rnn_outputs.squeeze(1))
         return predicted_mel

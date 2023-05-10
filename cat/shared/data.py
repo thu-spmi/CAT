@@ -7,7 +7,7 @@
 """Data loading module
 """
 
-from queue import Queue
+from queue import SimpleQueue
 from . import coreutils as coreutils
 from .tokenizer import AbsTokenizer
 
@@ -27,8 +27,7 @@ from torch.utils.data.distributed import DistributedSampler
 
 
 def get_sha256(file: str) -> str:
-    '''Get sha256 has of a file.
-    '''
+    """Get sha256 has of a file."""
     assert os.path.isfile(file), f"{file} not found."
     sha256_hash = hashlib.sha256()
     with open(file, "rb") as f:
@@ -57,59 +56,70 @@ class AbsDataset(Dataset):
         super().__init__()
         self.f_path = path
         assert os.path.isfile(
-            path), f"{self.__class__.__name__}: {path} is not a valid file."
+            path
+        ), f"{self.__class__.__name__}: {path} is not a valid file."
 
     def impl_get_len(self):
         raise NotImplementedError
 
     def get_seq_len(self) -> List[int]:
         # try to find length info otherwise read from features
-        f_linfo = self.f_path+'.linfo'
+        f_linfo = self.f_path + ".linfo"
         if os.path.isfile(f_linfo):
-            with open(f_linfo, 'rb') as fi:
-                return pickle.load(fi)
-        else:
-            ls = self.impl_get_len()
-            if not os.access(os.path.dirname(f_linfo), os.W_OK):
+            if os.path.getctime(self.f_path) > os.path.getctime(f_linfo):
                 print(
-                    f"No writing access to: '{f_linfo}'. "
-                    "Would reload it at the next time."
+                    f"linfo data at {f_linfo} seems outdated compared to data {self.f_path}. Fallback to update it."
                 )
             else:
-                with open(f_linfo, 'wb') as fo:
-                    pickle.dump(ls, fo)
-            return ls
+                with open(f_linfo, "rb") as fi:
+                    return pickle.load(fi)
+
+        ls = np.asarray(self.impl_get_len(), dtype=np.int32)
+        if not os.access(os.path.dirname(f_linfo), os.W_OK):
+            print(
+                f"No writing access to: '{f_linfo}'. "
+                "Would reload it at the next time."
+            )
+        else:
+            with open(f_linfo, "wb") as fo:
+                pickle.dump(ls, fo)
+        return ls
 
 
 class IndexMappingDataset(AbsDataset):
     def __init__(self, f_index: str) -> None:
         super().__init__(f_index)
         self.dataset = None
-        with open(f_index, 'rb') as fi:
-            self.f_data = os.path.join(os.path.dirname(
-                f_index), pickle.load(fi))  # type: str
+        with open(f_index, "rb") as fi:
+            self.f_data = os.path.join(
+                os.path.dirname(f_index), pickle.load(fi)
+            )  # type: str
             if not os.path.isfile(self.f_data):
                 raise FileNotFoundError(
                     f"\n{self.__class__.__name__}:\n"
                     f"From indexing file {f_index} mapping to {self.f_data}\n"
-                    f"... but {self.f_data} is not found.")
+                    f"... but {self.f_data} is not found."
+                )
             self.offsets = pickle.load(fi)
 
     def __del__(self):
-        if self.dataset is not None:
+        if hasattr(self, "dataset") and self.dataset is not None:
             self.dataset.close()
             self.dataset = None
 
     def impl_get_len(self):
         _ls = np.empty(len(self), dtype=np.int64)
         for i in range(len(self)):
-            ''' NOTE (huahuan): 
+            """NOTE (huahuan):
             suppose `__getitem__` method returns a tuple
             ... where the first item is the feature;
             ... if not the case, impl your custom `impl_get_len` method.
-            '''
+            """
             x = self[i][0]
             _ls[i] = x.size(0)
+
+        self.dataset.close()
+        self.dataset = None
         return _ls
 
     def __len__(self) -> int:
@@ -121,7 +131,7 @@ class IndexMappingDataset(AbsDataset):
 
     def __getitem__(self, index: int):
         if self.dataset is None:
-            self.dataset = open(self.f_data, 'rb')
+            self.dataset = open(self.f_data, "rb")
         self.dataset.seek(self.offsets[index], 0)
         # you should impl `_readbuffer` method of your derived class
         return self._readbuffer(self.dataset)
@@ -148,7 +158,7 @@ class ModifiedSpeechDataset(IndexMappingDataset):
 
 class KaldiSpeechDataset(AbsDataset):
     """Read in kaldi style with ark file.
-    
+
     Data format (store with pickle):
         {
             'label': np.ndarray,
@@ -160,44 +170,41 @@ class KaldiSpeechDataset(AbsDataset):
 
     def __init__(self, path: str) -> None:
         super().__init__(path)
-        with open(path, 'rb') as fib:
+        with open(path, "rb") as fib:
             self._meta_data = pickle.load(fib)
         self._feat_reader = FeatureReader()
 
     def filt_by_len(self, filt_func: Callable[[int, int], bool]):
         """filter the dataset according to the `filt_func`, call before loading data.
 
-        filt_func (function): invoked via filt_func(feat_len, label_len), 
+        filt_func (function): invoked via filt_func(feat_len, label_len),
             True for keeping the data, False for removed.
         """
         torm = []
-        linfo = self._meta_data['linfo']
-        labellen = self._meta_data['label'][:, -1]
+        linfo = self._meta_data["linfo"]
+        labellen = self._meta_data["label"][:, -1]
         for i in range(len(self)):
             if not filt_func(linfo[i], labellen[i]):
                 torm.append(i)
         del linfo
         del labellen
 
-        for metakey in ['label', 'linfo', 'arkname', 'key']:
-            self._meta_data[metakey] = np.delete(
-                self._meta_data[metakey],
-                torm, axis=0
-            )
+        for metakey in ["label", "linfo", "arkname", "key"]:
+            self._meta_data[metakey] = np.delete(self._meta_data[metakey], torm, axis=0)
         return
 
     def get_seq_len(self) -> List[int]:
-        return self._meta_data['linfo']
+        return self._meta_data["linfo"]
 
     def __len__(self) -> int:
-        return len(self._meta_data['linfo'])
+        return len(self._meta_data["linfo"])
 
     def __getitem__(self, index: int) -> Tuple[torch.FloatTensor, torch.LongTensor]:
-        mat = self._feat_reader(self._meta_data['arkname'][index])
+        mat = self._feat_reader(self._meta_data["arkname"][index])
         # remove padding in label
         # [*, *, *, *, -1, -1, rel_len(4)]
-        label = self._meta_data['label'][index]
-        label = label[:label[-1]]
+        label = self._meta_data["label"][index]
+        label = label[: label[-1]]
         return torch.tensor(mat), torch.tensor(label)
 
 
@@ -209,7 +216,7 @@ class CorpusDataset(IndexMappingDataset):
 
         self._mode = 0
         if len(self) > 0:
-            with open(self.f_data, 'rb') as fi:
+            with open(self.f_data, "rb") as fi:
                 fi.seek(self.offsets[0], 0)
                 item = pickle.load(fi)
             if isinstance(item, tuple) and len(item) == 2:
@@ -231,20 +238,21 @@ class CorpusDataset(IndexMappingDataset):
 
 class ScpDataset(AbsDataset):
     """
-    Read data from scp file ranging [idx_beg, idx_end)
+    Read data from scp file
     """
 
-    def __init__(self, scp_file: str) -> None:
+    def __init__(self, scp_file: str, sort_by_key: bool = False) -> None:
         super().__init__(scp_file)
 
         if not os.path.isfile(scp_file):
             raise FileNotFoundError(f"{scp_file} is not a valid file.")
 
         self._dataset = []
-        with open(scp_file, 'r') as fi:
+        with open(scp_file, "r") as fi:
             for line in fi:
                 self._dataset.append(line.split())
-
+        if sort_by_key:
+            self._dataset = sorted(self._dataset, key=lambda x: x[0])
         self.freader = FeatureReader()
 
     def __len__(self) -> int:
@@ -267,11 +275,14 @@ class ScpDataset(AbsDataset):
 
 
 class NbestListDataset(AbsDataset):
-    def __init__(self, path: str) -> None:
+    def __init__(self, path: str, sort_by_key: bool = False) -> None:
         super().__init__(path)
-        with open(self.f_path, 'rb') as fi:
+        with open(self.f_path, "rb") as fi:
             # type: Dict[str, Dict[int, Tuple[float, str]]]
-            self._dataset = list(pickle.load(fi).items())
+            if sort_by_key:
+                self._dataset = sorted(pickle.load(fi).items(), key=lambda x: x[0])
+            else:
+                self._dataset = list(pickle.load(fi).items())
 
     def impl_get_len(self):
         return [len(hypos) for _, hypos in self._dataset]
@@ -291,15 +302,14 @@ class NbestListDataset(AbsDataset):
         return keys, scores, trans
 
 
-class NbestListCollate():
+class NbestListCollate:
     """Collator for N-best list file.
     The passing tokenizer should have method `encode` to convert text to indices.
     """
 
     def __init__(self, tokenizer: AbsTokenizer, bos_id: int = 0) -> None:
         self._tokenizer = tokenizer
-        assert isinstance(
-            bos_id, int) and bos_id >= 0, f"ValueError: bos_id={bos_id}"
+        assert isinstance(bos_id, int) and bos_id >= 0, f"ValueError: bos_id={bos_id}"
         self.bos_id = bos_id
 
     def __call__(self, batches: List[Tuple[List[str], List[float], List[str]]]):
@@ -324,19 +334,16 @@ class NbestListCollate():
             scores += ls
             trans += lt
 
-        ids = [[self.bos_id] +
-               self._tokenizer.encode(seqs) for seqs in trans]
-        token_ids = coreutils.pad_list(
-            [torch.LongTensor(i) for i in ids])
+        ids = [[self.bos_id] + self._tokenizer.encode(seqs) for seqs in trans]
+        token_ids = coreutils.pad_list([torch.LongTensor(i) for i in ids])
         lens = torch.LongTensor([len(x) for x in ids])
-        token_mask = torch.arange(
-            lens.max())[None, :] >= lens[:, None]
+        token_mask = torch.arange(lens.max())[None, :] >= lens[:, None]
 
         scores = torch.FloatTensor(scores)
         return keys, trans, scores, token_ids, token_mask
 
 
-class sortedPadCollateASR():
+class sortedPadCollateASR:
     """Collect data into batch by desending order according to frame length and add padding.
 
     Args:
@@ -355,10 +362,7 @@ class sortedPadCollateASR():
         self._flatten_target = flatten_target
 
     def __call__(self, batch: List[Tuple[torch.FloatTensor, torch.IntTensor]]):
-        batches = [
-            (mat, label, mat.size(0))
-            for mat, label in batch
-        ]
+        batches = [(mat, label, mat.size(0)) for mat, label in batch]
         batch_sorted = sorted(batches, key=lambda item: item[2], reverse=True)
 
         mats = coreutils.pad_list([x[0] for x in batch_sorted])
@@ -366,8 +370,7 @@ class sortedPadCollateASR():
         if self._flatten_target:
             labels = torch.cat([x[1] for x in batch_sorted], dim=0)
         else:
-            labels = coreutils.pad_list(
-                [x[1] for x in batch_sorted]).to(torch.long)
+            labels = coreutils.pad_list([x[1] for x in batch_sorted]).to(torch.long)
 
         input_lengths = torch.LongTensor([x[2] for x in batch_sorted])
 
@@ -376,11 +379,11 @@ class sortedPadCollateASR():
         return mats, input_lengths, labels, label_lengths
 
 
-class sortedPadCollateLM():
+class sortedPadCollateLM:
     """Collect data into batch by desending order and add padding.
 
     Args:
-        batch  : [sentences] or [(labels, targets)] 
+        batch  : [sentences] or [(labels, targets)]
             labels  : torch.LongTensor, sentences[:-1]
             targets : torch.LongTensor, sentences[1:]
 
@@ -392,15 +395,13 @@ class sortedPadCollateLM():
         self.flatten_target = flatten_target
 
     def __call__(self, batch: List[Tuple[torch.LongTensor, torch.LongTensor]]):
-        batch_sorted = sorted(
-            batch, key=lambda item: item[0].size(0), reverse=True)
+        batch_sorted = sorted(batch, key=lambda item: item[0].size(0), reverse=True)
 
         X, Y = list(zip(*batch_sorted))
-        xlens = torch.LongTensor([x.size(0)
-                                 for x in X])  # type: torch.LongTensor
+        xlens = torch.LongTensor([x.size(0) for x in X])  # type: torch.LongTensor
         ylens = torch.LongTensor([y.size(0) for y in Y])
 
-        xs = coreutils.pad_list(X)   # type: torch.Tensor
+        xs = coreutils.pad_list(X)  # type: torch.Tensor
 
         if self.flatten_target:
             target = torch.cat(Y, dim=0)
@@ -410,7 +411,7 @@ class sortedPadCollateLM():
         return xs, xlens, target, ylens
 
 
-class sortedScpPadCollate():
+class sortedScpPadCollate:
     """Collect data into batch and add padding.
     Args:
         batch   : list of (key, feature)
@@ -420,11 +421,11 @@ class sortedScpPadCollate():
         (keys, logits, lengths)
     """
 
-    def __call__(self, batch: Sequence[Tuple[str, torch.FloatTensor]]) -> Tuple[Sequence[str], torch.FloatTensor, torch.LongTensor]:
-
+    def __call__(
+        self, batch: Sequence[Tuple[str, torch.FloatTensor]]
+    ) -> Tuple[Sequence[str], torch.FloatTensor, torch.LongTensor]:
         if len(batch) > 1:
-            batch = sorted(
-                batch, key=lambda item: item[1].size(0), reverse=True)
+            batch = sorted(batch, key=lambda item: item[1].size(0), reverse=True)
         keys = [key for key, _ in batch]
 
         mats = coreutils.pad_list([feature for _, feature in batch])
@@ -434,65 +435,92 @@ class sortedScpPadCollate():
         return keys, mats, lengths
 
 
-class DynamicBatchDistSampler(DistributedSampler):
-    def __init__(self,
-                 dataset: AbsDataset,
-                 mode: Literal['bucket', 'batch'],
-                 global_batch_size: int = -1,
-                 max_bucket_size: int = -1,
-                 num_replicas: Optional[int] = None,
-                 rank: Optional[int] = None,
-                 local_rank: int = None,
-                 shuffle: bool = True,
-                 seed: int = 0,
-                 drop_last: bool = False) -> None:
-        super().__init__(dataset, num_replicas=num_replicas, rank=rank,
-                         shuffle=shuffle, seed=seed, drop_last=drop_last)
+class BatchDistSampler(DistributedSampler):
+    def __init__(
+        self,
+        dataset: AbsDataset,
+        mode: Literal["bucket", "batch"] = "batch",
+        dispatch_even: bool = False,
+        global_batch_size: int = -1,
+        max_bucket_size: int = -1,
+        num_replicas: Optional[int] = None,
+        rank: Optional[int] = None,
+        local_rank: int = None,
+        shuffle: bool = True,
+        seed: int = 0,
+        drop_last: bool = False,
+    ) -> None:
+        super().__init__(
+            dataset,
+            num_replicas=num_replicas,
+            rank=rank,
+            shuffle=shuffle,
+            seed=seed,
+            drop_last=drop_last,
+        )
+        if self.num_replicas == 1:
+            dispatch_even = True
 
-        if not hasattr(dataset, 'get_seq_len'):
-            raise RuntimeError(
-                f"{type(dataset)} has not implement get_seq_len(), "
-                f"which is required for {self.__class__.__name__}.")
+        if not (dispatch_even and mode == "batch"):
+            # get length info
+            if not hasattr(dataset, "get_seq_len"):
+                raise RuntimeError(
+                    f"{type(dataset)} has not implement get_seq_len(), "
+                    f"which is required for {self.__class__.__name__}."
+                )
 
-        # scan data length, this might take a while
-        if local_rank is None:
-            # using 1 node
-            local_rank = self.rank
+            # scan data length, this might take a while
+            if local_rank is None:
+                # using 1 node
+                local_rank = self.rank
 
-        if local_rank == 0:
-            # save length info into cache file
-            dataset.get_seq_len()
+            if local_rank == 0:
+                # save length info into cache file
+                dataset.get_seq_len()
 
-        dist.barrier()
+            dist.barrier()
 
-        if mode == 'bucket':
+        self.g_bs = global_batch_size
+
+        if mode == "bucket":
+            linfo = dataset.get_seq_len()
+            avglen = sum(linfo) / len(linfo)
             if max_bucket_size == -1:
-                linfo = dataset.get_seq_len()
-                avglen = sum(linfo)/len(linfo)
-                max_bucket_size = int(avglen*global_batch_size)
+                max_bucket_size = int(avglen * global_batch_size)
+            else:
+                self.g_bs = int(max_bucket_size // avglen)
 
-            assert max_bucket_size > 0 and max_bucket_size >= self.num_replicas, max_bucket_size
+            assert (
+                max_bucket_size > 0 and max_bucket_size >= self.num_replicas
+            ), max_bucket_size
 
             self.index_dispatcher = BucketGrouper(
                 max_bucket_size=max_bucket_size,
                 rank=self.rank,
                 n_procs=self.num_replicas,
-                linfo=dataset.get_seq_len()
+                linfo=linfo,
+                dispatch_even=dispatch_even,
             )
-        elif mode == 'batch':
-            assert global_batch_size > 0 and \
-                global_batch_size >= self.num_replicas and \
-                global_batch_size <= len(dataset), global_batch_size
+        elif mode == "batch":
+            assert (
+                global_batch_size > 0
+                and global_batch_size >= self.num_replicas
+                and global_batch_size <= len(dataset)
+            ), global_batch_size
 
             self.index_dispatcher = BatchGrouper(
                 g_batchsize=global_batch_size,
                 rank=self.rank,
                 n_procs=self.num_replicas,
-                linfo=dataset.get_seq_len()
+                linfo=(None if dispatch_even else dataset.get_seq_len()),
+                dispatch_even=dispatch_even,
             )
         else:
-            raise ValueError(
-                f"{self.__class__.__name__}: unknown mode '{mode}'")
+            raise ValueError(f"{self.__class__.__name__}: unknown mode '{mode}'")
+
+    def __len__(self) -> int:
+        """Roughly estimated value, might be incorrect."""
+        return len(self.dataset) // self.g_bs
 
     def __iter__(self):
         # DistributedSampler.__iter__()
@@ -511,11 +539,12 @@ class DynamicBatchDistSampler(DistributedSampler):
             if padding_size <= len(indices):
                 indices += indices[:padding_size]
             else:
-                indices += (indices * math.ceil(padding_size /
-                            len(indices)))[:padding_size]
+                indices += (indices * math.ceil(padding_size / len(indices)))[
+                    :padding_size
+                ]
         else:
             # remove tail of data to make it evenly divisible.
-            indices = indices[:self.total_size]
+            indices = indices[: self.total_size]
         assert len(indices) == self.total_size
 
         # Add implementation here
@@ -523,31 +552,48 @@ class DynamicBatchDistSampler(DistributedSampler):
 
 
 class Grouper:
-    def __init__(self, rank: int, n_procs: int, linfo: List[int]) -> None:
-        self.weight = linfo
+    def __init__(
+        self,
+        rank: int,
+        n_procs: int,
+        linfo: List[int] = None,
+        dispatch_even: bool = False,
+    ) -> None:
+        if not dispatch_even:
+            assert (
+                linfo is not None
+            ), "when dispatching batches unevenly, length info is required."
+        self.linfo = linfo
         self.rank = rank
         self.num_procs = n_procs
-        self._bsinfo = Queue(maxsize=4096)
+        self.dispatch_even = dispatch_even
+        # NOTE (huahuan): use a infinite size queue,
+        # otherwise the dataloader might be blocked at put() method
+        self._bsinfo = SimpleQueue()
 
-    def _call_group(self, indices: List[int]):
+    def _call_group(self, indices: List[int]) -> List[int]:
+        assert len(indices) >= self.num_procs
         self._bsinfo.put(len(indices))
-        g_sorted = sorted(list(zip(
-            indices,
-            [self.weight[i]for i in indices]
-        )), key=lambda x: x[1], reverse=True)
-        return coreutils.weighted_group(
-            g_sorted, self.num_procs)[self.rank]
+        if self.dispatch_even:
+            return indices[self.rank : len(indices) : self.num_procs]
+        else:
+            g_sorted = sorted(
+                list(zip(indices, [self.linfo[i] for i in indices])),
+                key=lambda x: x[1],
+                reverse=True,
+            )
+            return coreutils.weighted_group(g_sorted, self.num_procs)[self.rank]
 
 
 class BatchGrouper(Grouper):
-    def __init__(self, g_batchsize: int, rank: int, n_procs: int, linfo: List[int]) -> None:
-        super().__init__(rank, n_procs, linfo)
+    def __init__(self, g_batchsize: int, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
         self.g_batchsize = g_batchsize
 
     def __call__(self, indices: Iterable[int]):
         cur_batch = []
-        for idx in indices:
-            cur_batch.append(idx)
+        for i in indices:
+            cur_batch.append(i)
             if len(cur_batch) == self.g_batchsize:
                 yield self._call_group(cur_batch)
                 cur_batch.clear()
@@ -555,8 +601,8 @@ class BatchGrouper(Grouper):
 
 
 class BucketGrouper(Grouper):
-    def __init__(self, max_bucket_size: int, rank: int, n_procs: int, linfo: List[int]) -> None:
-        super().__init__(rank, n_procs, linfo)
+    def __init__(self, max_bucket_size: int, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
         self.max_bucket_size = max_bucket_size
 
     def __call__(self, indices: Iterable[int]):
@@ -564,7 +610,7 @@ class BucketGrouper(Grouper):
         cumsum = 0
         for i in indices:
             cur_batch.append(i)
-            cumsum += self.weight[i]
+            cumsum += self.linfo[i]
             if cumsum >= self.max_bucket_size and len(cur_batch) >= self.num_procs:
                 yield self._call_group(cur_batch)
                 cur_batch.clear()
@@ -577,36 +623,138 @@ class PipeTokenize:
         assert isinstance(tokenizer, AbsTokenizer)
         self._tokenizer = tokenizer
 
-    def __call__(self, samples: Tuple[np.ndarray, str]) -> Tuple[np.ndarray, torch.LongTensor]:
-        return (torch.as_tensor(samples[0]), torch.LongTensor(self._tokenizer.encode(samples[1])))
+    def __call__(
+        self, samples: Tuple[np.ndarray, str]
+    ) -> Tuple[np.ndarray, torch.LongTensor]:
+        return (
+            torch.as_tensor(samples[0]),
+            torch.LongTensor(self._tokenizer.encode(samples[1])),
+        )
 
 
 class ReadBatchDataLoader:
-    def __init__(self, dataloader: DataLoader, bs: int = -1, dynamic: bool = False):
+    """Get batch with the batch size, used with BatchDistSampler and Grouper."""
+
+    def __init__(
+        self, dataloader: DataLoader, bs: int = -1, collect_via_dist: bool = False
+    ):
         """
         Args:
             dataloader : any instances of pytorch dataloader
-            bs (int)   : global batch size, not required if `dynamic` is True
-            dynamic (bool) : tell the use of DynamicBatchDistSampler
+            bs (int)   : global batch size, not required if dataloader is BatchDistSampler
+            collect_via_dist (bool): collect batchsize via ddp all_reduce, this should be the last
+                        choice if the others do not work.
         """
-        if dynamic:
-            assert dataloader.batch_sampler is not None
-            assert isinstance(dataloader.batch_sampler,
-                              DynamicBatchDistSampler)
-            self.batch_size = None
-            self._bsinfo = dataloader.batch_sampler.index_dispatcher._bsinfo
+        if collect_via_dist:
+            assert dist.is_initialized()
+            self.dist_collect = True
+            self._bs_buffer = torch.tensor([0], device=torch.cuda.current_device())
+            self._sync_stream = torch.cuda.Stream()
         else:
-            self.batch_size = bs
-            self._bsinfo = None
+            self.dist_collect = False
+            assert isinstance(bs, int)
+            if bs > 0:
+                self.g_bs = bs
+                self._bsinfo = None
+            else:
+                assert dataloader.batch_sampler is not None
+                assert isinstance(dataloader.batch_sampler, BatchDistSampler)
+                self._bsinfo = dataloader.batch_sampler.index_dispatcher._bsinfo
 
-        self._isdynamic = dynamic
+                self.g_bs = -1
         self.dl = dataloader
+
+    def get_bs(self) -> int:
+        """Call this function every update. Otherwise returned value might be wrong."""
+        if self.dist_collect:
+            torch.cuda.default_stream().wait_stream(self._sync_stream)
+            return self._bs_buffer.item()
+        elif self.g_bs == -1:
+            return self._bsinfo.get()
+        else:
+            return self.g_bs
+
+    def __len__(self) -> int:
+        return len(self.dl)
 
     def __iter__(self):
         for batch in self.dl:
-            if self._isdynamic:
-                bs = self._bsinfo.get()
-            else:
-                bs = self.batch_size
-            yield bs, batch
+            if self.dist_collect:
+                with torch.cuda.stream(self._sync_stream):
+                    # assume batch is a tuple, where the first element is (N, ...)
+                    self._bs_buffer.fill_(batch[0].shape[0])
+                    handle = dist.all_reduce(
+                        self._bs_buffer, op=dist.ReduceOp.SUM, async_op=True
+                    )
+                    handle.wait()
+            yield batch
+        return
+
+
+# dynamic batching for webdataset
+# refer to https://github.com/webdataset/webdataset/blob/main/webdataset/filters.py#L466
+class PipeDynamicBatching:
+    """Batching with given bucketsize for dynamic batching.
+    Apply this after .decode() ; This would drop the last res.
+
+    node_bucket_size: target batch size
+    collate_fn: collation function to gather the batch
+    count_paddings: count the seqs and the paddings
+
+        e.g.
+        A list of data with lengths [1, 1, 1, 1, 1, 995] sums up to 1000 (overall bucket size).
+
+        However, if we conduct padding, the lengths is indeed 995*6=4975, probably causing CUDA OOM.
+    """
+
+    def __init__(
+        self,
+        node_bucket_size: int,
+        collate_fn: Optional[Callable] = None,
+        count_paddings: bool = True,
+    ) -> None:
+        assert isinstance(node_bucket_size, int)
+        assert node_bucket_size > 0
+        assert isinstance(count_paddings, bool)
+
+        self.node_bucket_size = node_bucket_size
+        self.collate_fn = collate_fn
+        self.count_paddings = count_paddings
+
+    def __call__(self, data: Iterator) -> Iterator:
+        if self.count_paddings:
+            return self.count_padding_impl(data)
+        else:
+            return self.native_impl(data)
+
+    def native_impl(self, data: Iterator) -> Iterator:
+        batch = []
+        cnt = 0
+        # sample: (mat, text)
+        for sample in data:
+            cnt += sample[0].shape[0]
+            batch.append(sample)
+            if cnt >= self.node_bucket_size:
+                if self.collate_fn is None:
+                    yield batch
+                else:
+                    yield self.collate_fn(batch)
+                batch.clear()
+                cnt = 0
+        return
+
+    def count_padding_impl(self, data: Iterator) -> Iterator:
+        batch = []
+        max_bin = 0
+        for sample in data:
+            max_bin = max(max_bin, sample[0].shape[0])
+            if max_bin * len(batch) + max_bin > self.node_bucket_size:
+                assert len(batch) > 0
+                if self.collate_fn is None:
+                    yield batch
+                else:
+                    yield self.collate_fn(batch)
+                batch.clear()
+                max_bin = sample[0].shape[0]
+            batch.append(sample)
         return

@@ -1,11 +1,12 @@
 # prepare spec feats by kaldi tool
-# author: Huahuan Zheng (maxwellzh@outlook.com)
+# see also _data_prep_kaldi.py
+# author: Zheng Huahuan
 set -e
 <<"PARSER"
 ("data_dir", type=str, nargs='+',
     help="Directory of data (containing wav.scp, utt2spk, ...)")
-("--feat-dir", type=str, required=True,
-    help="Ouput directory of features. This only includes the raw features. "
+("--feat-dir", type=str, default='data/fbank',
+    help="Ouput directory of features (default: data/fbank). This only includes the raw features. "
     "The .scp files would be stored as $data_dir/feats.scp | $data_dir/feats_cmvn.scp")
 ("--fbank-conf", type=str,
     help="Specify the configuration file for extracting FBank features. "
@@ -18,13 +19,19 @@ set -e
 PARSER
 eval $(python utils/parseopt.py $0 $*)
 
+for d in $data_dir; do
+    [ ! -d $d ] && {
+        echo "dir not found: $d" >&2
+        exit 1
+    }
+done
+
 # generate fbank features
 if [ $fbank_conf == "None" ]; then
-    echo "--num-mel-bins=80" >>fb.conf.tmp
-else
-    cp $fbank_conf fb.conf.tmp
+    fbank_conf="$(pwd)/fb.conf.tmp"
+    echo "--num-mel-bins=80" >>$fbank_conf
 fi
-export fbank_conf=$(readlink -f fb.conf.tmp)
+export fbank_conf=$(readlink -f $fbank_conf)
 
 if [ $kaldi_root != "None" ]; then
     export KALDI_ROOT=$kaldi_root
@@ -40,7 +47,12 @@ fi
 )
 
 export feat_dir=$(readlink -f $feat_dir)
-export data_dir=$(readlink -f $data_dir)
+
+abs_path=""
+for d in $data_dir; do
+    abs_path="$abs_path $(readlink -f $d)"
+done
+export data_dir=$abs_path
 cd $KALDI_ROOT/egs/wsj/s5 && . ./path.sh
 
 [ $apply_3way_speed_perturbation == "True" ] && {
@@ -91,7 +103,7 @@ for dir in $data_dir; do
                 $feat_dir/cmvn ||
                 exit 1
 
-            copy-feats --compress=true \
+            copy-feats \
                 "ark,s,cs:apply-cmvn --norm-vars=true --utt2spk=ark:$dir/utt2spk \
                 scp:$dir/cmvn.scp scp:$dir/feats_orin.scp ark:- |" \
                 "ark,scp:$dir/applied_cmvn.ark,$dir/feats_cmvn.scp"
@@ -105,7 +117,8 @@ for dir in $data_dir; do
     fi
 
 done
-rm -rf $fbank_conf
+[ $(basename $fbank_conf) == "fb.conf.tmp" ] &&
+    rm -rf $fbank_conf
 cd - >/dev/null
 
 echo "$0 done."

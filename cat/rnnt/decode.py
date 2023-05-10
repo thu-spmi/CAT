@@ -6,14 +6,12 @@
 Parallel decode with distributed GPU/CPU support 
 """
 
-from .beam_search import BeamSearcher
+from .rnnt_decoder import RNNTDecoder
+from .ctct_decoder import CTCTDecoder
 from ..lm import lm_builder
 from ..shared import coreutils
 from ..shared import tokenizer as tknz
-from ..shared.data import (
-    ScpDataset,
-    sortedScpPadCollate
-)
+from ..shared.data import ScpDataset, sortedScpPadCollate
 
 import os
 import sys
@@ -36,7 +34,8 @@ def main(args: argparse.Namespace = None):
 
     if args.tokenizer is None or not os.path.isfile(args.tokenizer):
         raise FileNotFoundError(
-            "Invalid tokenizer model file: {}".format(args.tokenizer))
+            "Invalid tokenizer model file: {}".format(args.tokenizer)
+        )
     if args.cpu or not torch.cuda.is_available():
         args.cpu = True
 
@@ -50,7 +49,7 @@ def main(args: argparse.Namespace = None):
     args.world_size = world_size
 
     try:
-        mp.set_start_method('spawn')
+        mp.set_start_method("spawn")
     except RuntimeError as re:
         print(re)
 
@@ -62,16 +61,20 @@ def main(args: argparse.Namespace = None):
     consumer.start()
 
     if args.cpu:
-        model, ext_lm = build_model(args, 'cpu')
+        model, ext_lm = build_model(args, "cpu")
         model.share_memory()
         if ext_lm is not None:
             ext_lm.share_memory()
 
-        mp.spawn(main_worker, nprocs=world_size,
-                 args=(args, q_data_producer, q_nbest_saver, (model, ext_lm)))
+        mp.spawn(
+            main_worker,
+            nprocs=world_size,
+            args=(args, q_data_producer, q_nbest_saver, (model, ext_lm)),
+        )
     else:
-        mp.spawn(main_worker, nprocs=world_size,
-                 args=(args, q_data_producer, q_nbest_saver))
+        mp.spawn(
+            main_worker, nprocs=world_size, args=(args, q_data_producer, q_nbest_saver)
+        )
 
     producer.join()
     consumer.join()
@@ -83,27 +86,35 @@ def dataserver(args, q: mp.Queue):
     testset = ScpDataset(args.input_scp)
     # sort the dataset in desencding order
     testset_ls = testset.get_seq_len()
-    len_match = sorted(list(zip(testset_ls, testset._dataset)),
-                       key=lambda item: item[0], reverse=True)
+    len_match = sorted(
+        list(zip(testset_ls, testset._dataset)), key=lambda item: item[0], reverse=True
+    )
     testset._dataset = [data for _, data in len_match]
     n_frames = sum(testset_ls)
     del len_match, testset_ls
     testloader = DataLoader(
         testset,
-        batch_size=max(1, min(8, len(testset)//args.world_size)),
+        batch_size=max(1, min(8, len(testset) // args.world_size)),
         shuffle=False,
         num_workers=1,
-        collate_fn=sortedScpPadCollate())
+        collate_fn=sortedScpPadCollate(),
+    )
 
-    f_nbest = args.output_prefix+'.nbest'
+    f_nbest = args.output_prefix + ".nbest"
     if os.path.isfile(f_nbest):
-        with open(f_nbest, 'rb') as fi:
+        with open(f_nbest, "rb") as fi:
             nbest = pickle.load(fi)
     else:
         nbest = {}
 
     t_beg = time.time()
-    for batch in tqdm(testloader, desc="RNN-T decode", total=len(testloader), disable=(args.silent), leave=False):
+    for batch in tqdm(
+        testloader,
+        desc="RNN-T decode",
+        total=len(testloader),
+        disable=(args.silent),
+        leave=False,
+    ):
         key = batch[0][0]
         """
         NOTE (Huahuan):
@@ -117,26 +128,30 @@ def dataserver(args, q: mp.Queue):
         if key not in nbest:
             q.put(batch, block=True)
 
-    for i in range(args.world_size+1):
+    for i in range(args.world_size + 1):
         q.put(None, block=True)
     t_dur = time.time() - t_beg
 
     if not args.silent:
-        print("Time = {:.2f} s | RTF = {:.2f} ".format(
-            t_dur, t_dur*args.world_size / n_frames * 100))
+        print(
+            "Time = {:.2f} s | RTF = {:.2f} ".format(
+                t_dur, t_dur * args.world_size / n_frames * 100
+            )
+        )
 
 
 def datawriter(args, q: mp.Queue):
     """Get data from queue and save to file."""
+
     def load_and_save(_nbest: dict):
         if os.path.isfile(f_nbest):
-            with open(f_nbest, 'rb') as fi:
+            with open(f_nbest, "rb") as fi:
                 _nbest.update(pickle.load(fi))
-        with open(f_nbest, 'wb') as fo:
+        with open(f_nbest, "wb") as fo:
             pickle.dump(_nbest, fo)
 
-    f_nbest = args.output_prefix+'.nbest'
-    interval_check = 1000   # save nbestlist to file every 1000 steps
+    f_nbest = args.output_prefix + ".nbest"
+    interval_check = 1000  # save nbestlist to file every 1000 steps
     cnt_done = 0
     nbest = {}
     while True:
@@ -154,7 +169,7 @@ def datawriter(args, q: mp.Queue):
 
     load_and_save(nbest)
     # write the 1-best result to text file.
-    with open(args.output_prefix, 'w') as fo:
+    with open(args.output_prefix, "w") as fo:
         for k, hypo_items in nbest.items():
             best_hypo = max(hypo_items.values(), key=lambda item: item[0])[1]
             fo.write(f"{k}\t{best_hypo}\n")
@@ -162,14 +177,15 @@ def datawriter(args, q: mp.Queue):
     del load_and_save
 
 
-def main_worker(pid: int, args: argparse.Namespace, q_data: mp.Queue, q_nbest: mp.Queue, models=None):
-
+def main_worker(
+    pid: int, args: argparse.Namespace, q_data: mp.Queue, q_nbest: mp.Queue, models=None
+):
     args.gpu = pid
     # only support one node
     args.rank = pid
 
     if args.cpu:
-        device = 'cpu'
+        device = "cpu"
         torch.set_num_threads(args.thread_per_woker)
         model, ext_lm = models
     else:
@@ -177,23 +193,31 @@ def main_worker(pid: int, args: argparse.Namespace, q_data: mp.Queue, q_nbest: m
         torch.cuda.set_device(device)
         model, ext_lm = build_model(args, device)
 
-    est_ilm = (args.ilm_weight != 0.)
-    searcher = BeamSearcher(
+    tokenizer = tknz.load(args.tokenizer)
+
+    est_ilm = args.ilm_weight != 0.0
+    if args.topo == "rnnt":
+        DECODER = RNNTDecoder
+    elif args.topo == "ctct":
+        DECODER = CTCTDecoder
+
+    searcher = DECODER(
         predictor=model.predictor,
         joiner=model.joiner,
         blank_id=0,
-        bos_id=model.bos_id,
+        bos_id=tokenizer.get_index("<s>", True),
+        eos_id=tokenizer.get_index("</s>", True),
         beam_size=args.beam_size,
         nbest=args.beam_size,
         lm_module=ext_lm,
         alpha=args.alpha,
         beta=args.beta,
         est_ilm=est_ilm,
-        ilm_weight=args.ilm_weight)
+        ilm_weight=args.ilm_weight,
+    )
 
-    tokenizer = tknz.load(args.tokenizer)
     nbest = {}
-    with torch.no_grad(), autocast(enabled=(True if device != 'cpu' else False)):
+    with torch.no_grad(), autocast(enabled=(True if device != "cpu" else False)):
         while True:
             batch = q_data.get(block=True)
             if batch is None:
@@ -218,18 +242,17 @@ def main_worker(pid: int, args: argparse.Namespace, q_data: mp.Queue, q_nbest: m
 
 
 def build_model(args, device) -> Tuple[torch.nn.Module, Union[torch.nn.Module, None]]:
+    import importlib
 
+    interface = importlib.import_module(args.built_model_by)
     if isinstance(device, int):
-        device = f'cuda:{device}'
-    if args.unified:
-        from .train_unified import build_model as rnnt_builder
-    else:
-        from .train import build_model as rnnt_builder
-    model = rnnt_builder(
-        coreutils.readjson(args.config),
-        args, dist=False)
+        device = f"cuda:{device}"
+
+    model = interface.build_model(coreutils.readjson(args.config), args, dist=False)
     model = model.to(device)
-    assert args.resume is not None, "Trying to decode with uninitialized parameters. Add --resume"
+    assert (
+        args.resume is not None
+    ), "Trying to decode with uninitialized parameters. Add --resume"
 
     model = coreutils.load_checkpoint(model, args.resume)
     model.eval()
@@ -241,11 +264,12 @@ def build_model(args, device) -> Tuple[torch.nn.Module, Union[torch.nn.Module, N
         ext_lm_model = lm_builder(lm_configures, args, dist=False)
         if args.lm_check is not None:
             if os.path.isfile(args.lm_check):
-                coreutils.load_checkpoint(
-                    ext_lm_model.to(device), args.lm_check)
+                coreutils.load_checkpoint(ext_lm_model.to(device), args.lm_check)
             else:
-                print(f"warning: --lm-check={args.lm_check} does not exist. \n"
-                      "skip loading params. this is OK if the model is NGram.")
+                print(
+                    f"WARNING: --lm-check={args.lm_check} does not exist. \n"
+                    "skip loading params. this is OK if the model is NGram."
+                )
         ext_lm_model = ext_lm_model.lm
         ext_lm_model.eval()
         return model, ext_lm_model
@@ -253,37 +277,51 @@ def build_model(args, device) -> Tuple[torch.nn.Module, Union[torch.nn.Module, N
 
 def _parser():
     parser = coreutils.basic_trainer_parser(
-        prog='RNN-Transducer decoder.',
-        training=False,
-        isddp=False
+        prog="RNN-Transducer decoder.", training=False, isddp=False
     )
 
-    parser.add_argument("--lm-config", type=str, default=None,
-                        help="Config of external LM.")
-    parser.add_argument("--lm-check", type=str, default=None,
-                        help="Checkpoint of external LM.")
-    parser.add_argument("--alpha", type=float, default=0.,
-                        help="Weight of external LM.")
-    parser.add_argument("--beta", type=float, default=0.,
-                        help="Penalty value of external LM.")
-    parser.add_argument("--ilm-weight", type=float, default=0.,
-                        help="ILM weight."
-                        "ilm weight != 0 would enable internal language model estimation. "
-                        "This would slightly slow down the decoding.")
-
+    parser.add_argument(
+        "--lm-config", type=str, default=None, help="Config of external LM."
+    )
+    parser.add_argument(
+        "--lm-check", type=str, default=None, help="Checkpoint of external LM."
+    )
+    parser.add_argument(
+        "--alpha", type=float, default=0.0, help="Weight of external LM."
+    )
+    parser.add_argument(
+        "--beta", type=float, default=0.0, help="Penalty value of external LM."
+    )
+    parser.add_argument(
+        "--ilm-weight",
+        type=float,
+        default=0.0,
+        help="ILM weight."
+        "ilm weight != 0 would enable internal language model estimation. "
+        "This would slightly slow down the decoding.",
+    )
+    parser.add_argument("--topo", type=str, choices=["rnnt", "ctct"], default="rnnt")
     parser.add_argument("--input_scp", type=str, default=None)
-    parser.add_argument("--output_prefix", type=str, default='./decode')
+    parser.add_argument("--output_prefix", type=str, default="./decode")
     parser.add_argument("--beam-size", type=int, default=3)
-    parser.add_argument("--tokenizer", type=str,
-                        help="Tokenizer model file. See cat/shared/tokenizer.py for details.")
+    parser.add_argument(
+        "--tokenizer",
+        type=str,
+        help="Tokenizer model file. See cat/shared/tokenizer.py for details.",
+    )
     parser.add_argument("--nj", type=int, default=-1)
     parser.add_argument("--thread-per-woker", type=int, default=1)
-    parser.add_argument("--cpu", action='store_true', default=False)
-    parser.add_argument("--silent", action='store_true', default=False)
-    parser.add_argument("--unified", action='store_true', default=False)
-    parser.add_argument("--streaming", action='store_true', default=False)
+    parser.add_argument("--cpu", action="store_true", default=False)
+    parser.add_argument("--silent", action="store_true", default=False)
+    parser.add_argument("--streaming", action="store_true", default=False)
+    parser.add_argument(
+        "--built-model-by",
+        type=str,
+        default="cat.rnnt.train",
+        help="Tell where to import build_model() function. defautl: cat.ctc.train",
+    )
     return parser
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

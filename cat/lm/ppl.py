@@ -1,13 +1,18 @@
-""" Compute ppl on specified test sets with LM.
+# Copyright 2023 Tsinghua University
+# Apache 2.0.
+# Author: Huahuan Zheng (maxwellzh@outlook.com)
 
+"""Compute perplexity on specified data corpus with LM.
+
+By default, this script would use GPU (if it's supported).
+If you want to use CPU instead, configure the os environment with
+$ export CUDA_VISIBLE_DEVICES=""
+before running the script.
 """
 
 from . import lm_builder
 from cat.shared import coreutils
-from cat.shared.data import (
-    CorpusDataset,
-    sortedPadCollateLM
-)
+from cat.shared.data import CorpusDataset, sortedPadCollateLM
 
 import os
 import sys
@@ -17,8 +22,6 @@ import uuid
 import shutil
 import argparse
 from typing import *
-
-import gather
 
 import torch
 import torch.multiprocessing as mp
@@ -36,9 +39,10 @@ def main(args: argparse.Namespace = None):
 
     if args.tokenizer is not None:
         assert os.path.isfile(
-            args.tokenizer), f"no such tokenizer file: '{args.tokenizer}'"
-        assert os.access('/tmp', os.W_OK), f"/tmp is non-writable."
-        cachedir = os.path.join('/tmp', str(uuid.uuid4()))
+            args.tokenizer
+        ), f"no such tokenizer file: '{args.tokenizer}'"
+        assert os.access("/tmp", os.W_OK), f"/tmp is non-writable."
+        cachedir = os.path.join("/tmp", str(uuid.uuid4()))
         os.makedirs(cachedir)
     else:
         cachedir = None
@@ -58,7 +62,7 @@ def main(args: argparse.Namespace = None):
         world_size = args.nj
     assert world_size > 0
     try:
-        mp.set_start_method('spawn')
+        mp.set_start_method("spawn")
     except RuntimeError as re:
         if str(re) != "context has already been set":
             raise RuntimeError(str(re))
@@ -78,17 +82,26 @@ def main(args: argparse.Namespace = None):
         processed_files.append(binfile)
 
     if usegpu:
-        mp.spawn(evaluate_nnlm, nprocs=world_size,
-                 args=(world_size, q, args, processed_files))
+        mp.spawn(
+            evaluate_nnlm,
+            nprocs=world_size,
+            args=(world_size, q, args, processed_files),
+        )
     else:
-        model = build_model(args, 'cpu')
+        model = build_model(args, "cpu")
         model.share_memory()
         if isngram:
-            mp.spawn(evaluate_ngram, nprocs=world_size,
-                     args=(world_size, q, args, processed_files, model))
+            mp.spawn(
+                evaluate_ngram,
+                nprocs=world_size,
+                args=(world_size, q, args, processed_files, model),
+            )
         else:
-            mp.spawn(evaluate_nnlm, nprocs=world_size,
-                     args=(world_size, q, args, processed_files, model))
+            mp.spawn(
+                evaluate_nnlm,
+                nprocs=world_size,
+                args=(world_size, q, args, processed_files, model),
+            )
 
     if cachedir is not None:
         shutil.rmtree(cachedir)
@@ -98,21 +111,26 @@ def main(args: argparse.Namespace = None):
 
 
 @torch.no_grad()
-def evaluate_ngram(pid: int, wsize: int, q: mp.Queue, args: argparse.Namespace, testsets: List[str], model):
+def evaluate_ngram(
+    pid: int,
+    wsize: int,
+    q: mp.Queue,
+    args: argparse.Namespace,
+    testsets: List[str],
+    model,
+):
     """Evaluate datasets and return sum of logprobs and tokens."""
 
     torch.set_num_threads(1)
-    output = []     # type: List[Tuple[float, int]]
-    prob_ilm = args.probing_ilm
+    output = []  # type: List[Tuple[float, int]]
     for f_data in testsets:
         testdata = CorpusDataset(f_data)
-        log_probs = 0.
+        log_probs = 0.0
         n_tokens = 0
-        for i in range(pid * (len(testdata) // wsize), (pid+1) * (len(testdata) // wsize)):
+        for i in range(
+            pid * (len(testdata) // wsize), (pid + 1) * (len(testdata) // wsize)
+        ):
             in_tokens, targets = testdata[i]
-            if prob_ilm:
-                in_tokens = in_tokens[:-1]
-                targets = targets[:-1]
             scores = model.score(in_tokens.unsqueeze(0), targets.unsqueeze(0))
             log_probs += scores
             n_tokens += in_tokens.size(0)
@@ -121,7 +139,14 @@ def evaluate_ngram(pid: int, wsize: int, q: mp.Queue, args: argparse.Namespace, 
 
 
 @torch.no_grad()
-def evaluate_nnlm(pid: int, wsize: int, q: mp.Queue, args: argparse.Namespace, testsets: List[str], model=None):
+def evaluate_nnlm(
+    pid: int,
+    wsize: int,
+    q: mp.Queue,
+    args: argparse.Namespace,
+    testsets: List[str],
+    model=None,
+):
     """Evaluate datasets and return sum of logprobs and tokens."""
 
     if args.usegpu:
@@ -130,42 +155,40 @@ def evaluate_nnlm(pid: int, wsize: int, q: mp.Queue, args: argparse.Namespace, t
         model = build_model(args, device, verbose=(pid == 0))
     else:
         torch.set_num_threads(1)
-        device = 'cpu'
+        device = "cpu"
         assert model is not None
     assert next(iter(model.parameters())).device == torch.device(device)
 
-    prob_ilm = args.probing_ilm
-    output = []     # type: List[Tuple[float, int]]
+    output = []  # type: List[Tuple[float, int]]
     for f_data in testsets:
         testdata = CorpusDataset(f_data)
         # slice the dataset to avoid duplicated
         testdata.offsets = testdata.offsets[
-            pid * (len(testdata)//wsize):(pid+1)*(len(testdata)//wsize)]
+            pid * (len(testdata) // wsize) : (pid + 1) * (len(testdata) // wsize)
+        ]
         testloader = DataLoader(
-            testdata, batch_size=32,
+            testdata,
+            batch_size=32,
             num_workers=1,
-            collate_fn=sortedPadCollateLM(flatten_target=False)
+            collate_fn=sortedPadCollateLM(flatten_target=False),
         )
-        tot_log_probs = 0.
+        tot_log_probs = 0.0
         n_tokens = 0
         for minibatch in testloader:
             in_tokens, in_lens, targets, _ = minibatch
-            if prob_ilm:
-                in_lens -= 1
             in_tokens = in_tokens.to(device, non_blocking=True)
             targets = targets.to(device, non_blocking=True)
 
-            tot_log_probs += model.score(in_tokens,
-                                         targets, in_lens).sum(dim=0)
+            tot_log_probs += model.score(in_tokens, targets, in_lens).sum(dim=0)
             n_tokens += in_lens.sum(dim=0)
         output.append((tot_log_probs.item(), n_tokens))
 
     q.put(output, block=True)
-    time.sleep(2.)
+    time.sleep(2.0)
 
 
 def consume_worker(wsize: int, q: mp.Queue, args):
-    output = []     # type: List[List[Tuple[float, int]]]
+    output = []  # type: List[List[Tuple[float, int]]]
     for i in range(wsize):
         data = q.get(block=True)
         output.append(data)
@@ -173,48 +196,42 @@ def consume_worker(wsize: int, q: mp.Queue, args):
     sys.stdout.write("ppl: ")
     for i_f, f_data in enumerate(args.evaluate):
         ppl = math.exp(
-            -sum(
-                output[i_worker][i_f][0]
-                for i_worker in range(wsize)
-            )/sum(
-                output[i_worker][i_f][1]
-                for i_worker in range(wsize)
-            )
+            -sum(output[i_worker][i_f][0] for i_worker in range(wsize))
+            / sum(output[i_worker][i_f][1] for i_worker in range(wsize))
         )
         sys.stdout.write("  {:.2f}  |".format(ppl))
-    sys.stdout.write('\n')
+    sys.stdout.write("\n")
 
 
 def text2corpusbin(f_text: str, f_bin: str, tokenizer):
     from ..utils.pipeline.common_utils import parse_args_from_var
     from ..utils.data import pack_corpus as t2b
-    t2b.main(parse_args_from_var(
-        t2b._parser(),
-        {
-            'tokenizer': tokenizer,
-            'quiet': True
-        },
-        [f_text, f_bin]
-    ))
+
+    t2b.main(
+        parse_args_from_var(
+            t2b._parser(), {"tokenizer": tokenizer, "quiet": True}, [f_text, f_bin]
+        )
+    )
 
     return
 
 
 def isNGram(args):
     configures = coreutils.readjson(args.config)
-    return configures['decoder']['type'] == 'NGram'
+    return configures["decoder"]["type"] == "NGram"
 
 
 def build_model(args: argparse.Namespace, device, verbose: bool = True):
     configures = coreutils.readjson(args.config)
-    isngram = (configures['decoder']['type'] == 'NGram')
+    isngram = configures["decoder"]["type"] == "NGram"
     if not isngram:
         model = lm_builder(configures, dist=False, wrapper=True)
         if args.resume is None:
             if verbose:
                 sys.stderr.write(
                     f"You're trying to compute ppl with un-initialized model.\n"
-                    f"... ensure you know what you're doing.\n")
+                    f"... ensure you know what you're doing.\n"
+                )
         else:
             coreutils.load_checkpoint(model, args.resume)
         # squeeze the wrapper
@@ -229,17 +246,29 @@ def build_model(args: argparse.Namespace, device, verbose: bool = True):
 
 def _parser():
     parser = argparse.ArgumentParser(prog="Compute perplexity to evaluate LM.")
-    parser.add_argument("config", type=str,
-                        help="Path to the configuration file, usually 'path/to/config.json'")
+    parser.add_argument(
+        "config",
+        type=str,
+        help="Path to the configuration file, usually 'path/to/config.json'",
+    )
     parser.add_argument("--nj", type=int, default=-1)
-    parser.add_argument("-e", "--evaluate", type=str, nargs='+',
-                        help="Evaluate test sets. w/o --tokenizer, -e inputs are assumed to be CorpusDataset format binary data.")
-    parser.add_argument("--tokenizer", type=str,
-                        help="Use tokenizer to encode the evaluation sets. If passed, would take -e inputs as text files.")
-    parser.add_argument("--resume", type=str,
-                        help="Path to the checkpoint of NNLM, not required for N-gram LM.")
-    parser.add_argument("--probing-ilm", action="store_true",
-                        help="Probing the LM as ILM, </s> would be excluded due to limitation of E2E model.")
+    parser.add_argument(
+        "-e",
+        "--evaluate",
+        type=str,
+        nargs="+",
+        help="Evaluate test sets. w/o --tokenizer, -e inputs are assumed to be CorpusDataset format binary data.",
+    )
+    parser.add_argument(
+        "--tokenizer",
+        type=str,
+        help="Use tokenizer to encode the evaluation sets. If passed, would take -e inputs as text files.",
+    )
+    parser.add_argument(
+        "--resume",
+        type=str,
+        help="Path to the checkpoint of NNLM, not required for N-gram LM.",
+    )
     return parser
 
 

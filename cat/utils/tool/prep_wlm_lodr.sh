@@ -1,3 +1,12 @@
+#!/bin/bash
+# Copyright 2023 Tsinghua University
+# Apache 2.0.
+# Author: Huahuan Zheng (maxwellzh@outlook.com)
+# 
+# Train the pruned bigram LM described in LODR method:
+# "An Empirical Study of Language Model Integration for Transducer based Speech Recognition"
+# https://arxiv.org/abs/2203.16776
+
 set -e
 set -u
 
@@ -28,12 +37,10 @@ export PATH=../../src/bin:$PATH
 python utils/pipeline/lm.py --sto 2 $dir
 
 export corpus_count="/tmp/$(
-    tr -dc A-Za-z0-9 </dev/urandom | head -c 13
-    echo ''
+    head /dev/urandom | tr -dc A-Za-z0-9 | head -c10
 ).corpus.tmp"
 export vocab="/tmp/$(
-    tr -dc A-Za-z0-9 </dev/urandom | head -c 13
-    echo ''
+    head /dev/urandom | tr -dc A-Za-z0-9 | head -c10
 ).corpus.tmp"
 python utils/data/corpus2index.py $dir/pkl/train.pkl --map 0: 1: |
     count_ngrams -o $order -S 20% --write_vocab_list $vocab \
@@ -49,5 +56,5 @@ prune=$(python -c "print('0 '*($order-1),end='')")
 prune="$prune $prunearg"
 
 bash utils/pipeline/ngram.sh $dir \
-    --start 2 -o $order \
+    --start 3 -o $order \
     --prune $prune
