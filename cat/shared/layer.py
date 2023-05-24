@@ -31,7 +31,7 @@ class StackDelta(nn.Module):
         assert x.dim() == 3
         assert x.size(2) % 3 == 0
 
-        x = x.view(x.size(0), x.size(1), 3, x.size(2)//3)
+        x = x.view(x.size(0), x.size(1), 3, x.size(2) // 3)
         if x.requires_grad:
             out = x.transpose(1, 2).contiguous()
         else:
@@ -56,11 +56,11 @@ class UnStackDelta(nn.Module):
         return out
 
 
-'''
+"""
 Conv2dSubsampling: From Google TensorflowASR
 https://github.com/TensorSpeech/TensorFlowASR/blob/5fbd6a89b93b703888662f5c47d05bae256e98b0/tensorflow_asr/models/layers/subsampling.py
 Originally wrote with Tensorflow, translated into PyTorch by Huahuan.
-'''
+"""
 
 
 class Unsqueeze(nn.Module):
@@ -75,7 +75,12 @@ class Unsqueeze(nn.Module):
 
 
 class Conv2dSubdampling(nn.Module):
-    def __init__(self, multiplier: int, norm: Literal['batch', 'layer', 'none'] = 'none', stacksup: bool = False):
+    def __init__(
+        self,
+        multiplier: int,
+        norm: Literal["batch", "layer", "none"] = "none",
+        stacksup: bool = False,
+    ):
         super().__init__()
         self._lens_in_args_ = None
 
@@ -86,32 +91,33 @@ class Conv2dSubdampling(nn.Module):
             self.stack = Unsqueeze(1)
             idim = 1
 
-        if norm == 'none':
+        if norm == "none":
             self.conv = nn.Sequential(
-                nn.ConstantPad2d(padding=(0, 1, 0, 1), value=0.),
+                nn.ConstantPad2d(padding=(0, 1, 0, 1), value=0.0),
                 nn.Conv2d(idim, multiplier, kernel_size=3, stride=2),
                 nn.ReLU(),
-                nn.ConstantPad2d(padding=(0, 1, 0, 1), value=0.),
+                nn.ConstantPad2d(padding=(0, 1, 0, 1), value=0.0),
                 nn.Conv2d(multiplier, multiplier, kernel_size=3, stride=2),
-                nn.ReLU()
+                nn.ReLU(),
             )
             return
-        elif norm == 'batch':
+        elif norm == "batch":
             Norm = nn.BatchNorm2d
-        elif norm == 'layer':
+        elif norm == "layer":
             Norm = nn.LayerNorm
         else:
             raise RuntimeError(
-                f"Unknown normalization method: {norm}, expect one of ['batch', 'layer', 'none']")
+                f"Unknown normalization method: {norm}, expect one of ['batch', 'layer', 'none']"
+            )
         self.conv = nn.Sequential(
-            nn.ConstantPad2d(padding=(0, 1, 0, 1), value=0.),
+            nn.ConstantPad2d(padding=(0, 1, 0, 1), value=0.0),
             nn.Conv2d(idim, multiplier, kernel_size=3, stride=2),
             Norm(multiplier),
             nn.ReLU(),
-            nn.ConstantPad2d(padding=(0, 1, 0, 1), value=0.),
+            nn.ConstantPad2d(padding=(0, 1, 0, 1), value=0.0),
             nn.Conv2d(multiplier, multiplier, kernel_size=3, stride=2),
             Norm(multiplier),
-            nn.ReLU()
+            nn.ReLU(),
         )
 
     def forward(self, x: torch.Tensor, lens: torch.Tensor):
@@ -132,29 +138,29 @@ class Conv2dSubdampling(nn.Module):
         # [B, OD, T//4, D//4] -> [B, T//4, OD, D//4]
         out = out.permute(0, 2, 1, 3)
         # [B, T//4, OD, D//4] -> [B, T//4, OD * D//4]
-        out = out.contiguous().view(B, NT, OD*ND)
-        lens_out = torch.div(lens, 2, rounding_mode='floor')
-        lens_out = torch.div(lens_out, 2, rounding_mode='floor').to(lens.dtype)
+        out = out.contiguous().view(B, NT, OD * ND)
+        lens_out = torch.div(lens, 2, rounding_mode="floor")
+        lens_out = torch.div(lens_out, 2, rounding_mode="floor").to(lens.dtype)
         return out, lens_out
 
 
-'''NOTE (Huahuan):
+"""NOTE (Huahuan):
 VGG2L with 1/4 subsample of time dimension.
 In ESPNET impl, there is no normalization, so I just follow it.
 Reference:
 https://espnet.github.io/espnet/_modules/espnet/nets/pytorch_backend/rnn/encoders.html#VGG2L
-'''
+"""
 
 
 class VGG2LSubsampling(nn.Module):
     def __init__(self, in_channel: int = 1):
-        '''VGG 1/4 subsample layer
+        """VGG 1/4 subsample layer
 
         Input: shape (B, T, D)
         Ouput: shape (B, T//4, 128*(D//C//4)),
             C: in_channel, ensure `D % C == 0`
 
-        '''
+        """
         super().__init__()
 
         self.vgg_conv = nn.Sequential(
@@ -169,12 +175,13 @@ class VGG2LSubsampling(nn.Module):
             nn.ReLU(),
             nn.Conv2d(128, 128, 3, stride=1, padding=1),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True)
+            nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True),
         )
         self.in_channel = in_channel
 
-    def forward(self, x: torch.Tensor, lens: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
-
+    def forward(
+        self, x: torch.Tensor, lens: torch.Tensor
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         # [B, T, D] -> [B, C, T, D//C]
         x = x.view(
             x.size(0),
@@ -189,79 +196,78 @@ class VGG2LSubsampling(nn.Module):
         transposed_out = conv_out.transpose(1, 2)
         # [B, T//4, 128, D//C//4] -> [B, T//4, 128 * (D//C//4)]
         contiguous_out = transposed_out.contiguous().view(
-            transposed_out.size(0), transposed_out.size(1), -1)
+            transposed_out.size(0), transposed_out.size(1), -1
+        )
 
-        lens_out = torch.ceil(torch.ceil(lens/2).to(lens.dtype)/2)
+        lens_out = torch.ceil(torch.ceil(lens / 2).to(lens.dtype) / 2)
         return contiguous_out, lens_out
 
 
-'''
+"""
 PositionalEncoding: From PyTorch implementation
 The origin impl return pos_enc + x. Our impl only return pos_enc
-'''
+"""
 
 
 class PositionalEncoding(nn.Module):
-
     def __init__(self, d_model, max_len=4096):
         super(PositionalEncoding, self).__init__()
 
         pe = torch.zeros(max_len, d_model)
         position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
-        div_term = torch.exp(torch.arange(
-            0, d_model, 2).float() * (-math.log(10000.0) / d_model))
+        div_term = torch.exp(
+            torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model)
+        )
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
-        self.register_buffer('pe', pe, persistent=False)
+        self.register_buffer("pe", pe, persistent=False)
 
     def forward(self, x):
-        return self.pe[:x.size(1), :]
+        return self.pe[: x.size(1), :]
 
 
-'''
+"""
 Relative positional multi-head attention implementation of Transformer-XL
 from huggingface
 https://github.com/huggingface/transformers/blob/1bdf42409c452a767ac8e2119bceb8f5c704c8f1/src/transformers/models/transfo_xl/modeling_transfo_xl.py
 And part of the codes are modified according to TensorflowASR impl
 https://github.com/TensorSpeech/TensorFlowASR/blob/5fbd6a89b93b703888662f5c47d05bae256e98b0/tensorflow_asr/models/layers/multihead_attention.py
-'''
+"""
 
 
 class RelPositionMultiHeadAttention(nn.Module):
     def __init__(
         self,
-        idim: int,
+        hdim: int,
         n_head: int,
         d_head: int,
-        pe: PositionalEncoding,
-        dropatt: float = 0.0
+        pe: PositionalEncoding = None,
+        dropatt: float = 0.0,
     ):
-
         super().__init__()
 
+        if pe is None:
+            pe = PositionalEncoding(hdim)
         self.pe = pe
 
         self.n_head = n_head
-        self.d_model = idim
+        self.d_model = hdim
         self.d_head = d_head
 
-        self.call_qkv = nn.Linear(idim, 3 * n_head * d_head, bias=False)
+        self.call_qkv = nn.Linear(hdim, 3 * n_head * d_head, bias=False)
 
         self.dropoutatt = nn.Dropout(dropatt)
-        self.linearout = nn.Linear(n_head * d_head, idim, bias=False)
+        self.linearout = nn.Linear(n_head * d_head, hdim, bias=False)
 
-        self.scale = 1 / (d_head ** 0.5)
+        self.scale = 1 / (d_head**0.5)
 
-        self.r_r_bias = nn.Parameter(
-            torch.FloatTensor(self.n_head, self.d_head))
-        self.r_w_bias = nn.Parameter(
-            torch.FloatTensor(self.n_head, self.d_head))
+        self.r_r_bias = nn.Parameter(torch.FloatTensor(self.n_head, self.d_head))
+        self.r_w_bias = nn.Parameter(torch.FloatTensor(self.n_head, self.d_head))
 
         torch.nn.init.xavier_uniform_(self.r_r_bias)
         torch.nn.init.xavier_uniform_(self.r_w_bias)
 
-        self.linearpos = nn.Linear(
-            self.d_model, self.n_head * self.d_head, bias=False)
+        self.linearpos = nn.Linear(self.d_model, self.n_head * self.d_head, bias=False)
 
     @staticmethod
     def _rel_shift(x: torch.Tensor):
@@ -288,15 +294,15 @@ class RelPositionMultiHeadAttention(nn.Module):
             word_embedding (torch.Tensor): input segment (word) embedding, size [B, T, E]
             lens (torch.Tensor): input sequence lengths, used to generate attention mask, size [B]
             mems (torch.Tensor, None): if not None, memory tensors, size [B, C, E]
-        
+
         Returns:
             torch.Tensor: attention out
 
         """
-        '''
+        """
         word_embedding: [B, T, E] -> [T, B, E]
         mems: [B, C, E] -> [C, B, E] (if not None)
-        '''
+        """
         word_embedding = word_embedding.transpose(0, 1).contiguous()
         len_seq, batchsize = word_embedding.size()[:2]
         len_k = len_seq
@@ -313,7 +319,8 @@ class RelPositionMultiHeadAttention(nn.Module):
                 len_k += mems.size(0)
             # attn_mask: [K, B]_{1,0}
             attn_mask = torch.arange(len_k, device=word_embedding.device)[
-                :, None] >= lens[None, :].to(word_embedding.device)
+                :, None
+            ] >= lens[None, :].to(word_embedding.device)
 
         # pos_embedding: [K, E]
         pos_enc = self.pe(torch.empty((1, len_k)))
@@ -321,11 +328,11 @@ class RelPositionMultiHeadAttention(nn.Module):
         if mems is not None:
             # embed_with_mem: cat([C, B, E], [T, B, E]) -> [C+T, B, E] = [K, B, E]
             embed_with_mem = torch.cat([mems, word_embedding], dim=0)
-            '''
+            """
             W_heads: f([K, B, E]) -> [K, B, 3*H*D]
                 H: n_heads
                 D: d_heads
-            '''
+            """
             W_heads = self.call_qkv(embed_with_mem)
 
             # R_head_k: f([K, E]) -> [K, H*D]
@@ -381,7 +388,8 @@ class RelPositionMultiHeadAttention(nn.Module):
         if attn_mask is not None:
             # use in-plcae fill
             attn_score = attn_score.masked_fill_(
-                attn_mask[None, :, :, None], -float('inf'))
+                attn_mask[None, :, :, None], -float("inf")
+            )
 
         # attn_prob: f([T, K, B, H]) -> [T, K, B, H]
         attn_prob = torch.softmax(attn_score, dim=1)
@@ -394,8 +402,8 @@ class RelPositionMultiHeadAttention(nn.Module):
 
         # attn_vec: [T, B, H, D] -> [T, B, HD]
         attn_vec = attn_vec.contiguous().view(
-            attn_vec.size(0), attn_vec.size(1),
-            self.n_head * self.d_head)
+            attn_vec.size(0), attn_vec.size(1), self.n_head * self.d_head
+        )
 
         # attn_out: f([T, B, HD]) -> [T, B, E]
         attn_out = self.linearout(attn_vec)
@@ -407,8 +415,10 @@ class RelPositionMultiHeadAttention(nn.Module):
 
 
 class StandardRelPositionalMultiHeadAttention(RelPositionMultiHeadAttention):
-    def __init__(self, idim: int, n_head: int, pe: PositionalEncoding, dropatt: float = 0):
-        super().__init__(idim, n_head, idim//n_head, pe, dropatt=dropatt)
+    def __init__(
+        self, hdim: int, n_head: int, pe: PositionalEncoding, dropatt: float = 0
+    ):
+        super().__init__(hdim, n_head, hdim // n_head, pe, dropatt=dropatt)
 
 
 class FFModule(nn.Module):
@@ -419,16 +429,18 @@ class FFModule(nn.Module):
     x0 + res_factor * x1 -> output
     """
 
-    def __init__(self, idim: int, res_factor: float = 0.5, dropout: float = 0.0) -> None:
+    def __init__(
+        self, idim: int, res_factor: float = 0.5, dropout: float = 0.0
+    ) -> None:
         super().__init__()
-        assert res_factor > 0. and dropout >= 0.
+        assert res_factor > 0.0 and dropout >= 0.0
         self._res_factor = res_factor
 
         self.ln = nn.LayerNorm([idim])
-        self.fc0 = nn.Linear(idim, idim*4)
+        self.fc0 = nn.Linear(idim, idim * 4)
         self.swish = nn.SiLU()
         self.dropout0 = nn.Dropout(dropout)
-        self.fc1 = nn.Linear(idim*4, idim)
+        self.fc1 = nn.Linear(idim * 4, idim)
         self.dropout1 = nn.Dropout(dropout)
 
     def forward(self, x: torch.Tensor):
@@ -444,19 +456,29 @@ class FFModule(nn.Module):
 
 
 class ConvModule(nn.Module):
-    def __init__(self, idim: int, kernel_size: int = 32, dropout: float = 0.0, multiplier: int = 1) -> None:
+    def __init__(
+        self,
+        idim: int,
+        kernel_size: int = 32,
+        dropout: float = 0.0,
+        multiplier: int = 1,
+    ) -> None:
         super().__init__()
 
         self.ln = nn.LayerNorm([idim])
-        self.pointwise_conv0 = nn.Conv1d(
-            idim, 2 * idim, kernel_size=1, stride=1)
+        self.pointwise_conv0 = nn.Conv1d(idim, 2 * idim, kernel_size=1, stride=1)
         self.glu = nn.GLU(dim=1)
         cdim = idim
-        padding = (kernel_size-1)//2
-        self.padding = nn.ConstantPad2d(
-            (padding, kernel_size-1-padding, 0, 0), 0.)
+        padding = (kernel_size - 1) // 2
+        self.padding = nn.ConstantPad2d((padding, kernel_size - 1 - padding, 0, 0), 0.0)
         self.depthwise_conv = nn.Conv1d(
-            cdim, multiplier*cdim, kernel_size=kernel_size, stride=1, groups=cdim, padding=0)
+            cdim,
+            multiplier * cdim,
+            kernel_size=kernel_size,
+            stride=1,
+            groups=cdim,
+            padding=0,
+        )
         cdim = multiplier * cdim
         self.bn = nn.BatchNorm1d(cdim)
         self.swish = nn.SiLU()
@@ -489,17 +511,27 @@ class ConvModule(nn.Module):
 
 
 class MHSAModule(nn.Module):
-    def __init__(self, idim, d_head: int, num_heads: int, pe: PositionalEncoding, dropout: float = 0.0, dropout_attn: float = 0.0):
+    def __init__(
+        self,
+        hdim,
+        d_head: int,
+        num_heads: int,
+        pe: PositionalEncoding,
+        dropout: float = 0.0,
+        dropout_attn: float = 0.0,
+    ):
         super().__init__()
 
-        self.ln = nn.LayerNorm(idim)
+        self.ln = nn.LayerNorm(hdim)
         if d_head == -1:
             # a "standard" multi-head attention
             self.mha = StandardRelPositionalMultiHeadAttention(
-                idim, num_heads, pe, dropout_attn)
+                hdim, num_heads, pe, dropout_attn
+            )
         else:
             self.mha = RelPositionMultiHeadAttention(
-                idim, num_heads, d_head, pe, dropout_attn)
+                hdim, num_heads, d_head, pe, dropout_attn
+            )
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x: torch.Tensor, lens: torch.Tensor, mems=None):
@@ -511,28 +543,26 @@ class MHSAModule(nn.Module):
 
 class ConformerCell(nn.Module):
     def __init__(
-            self,
-            idim: int,
-            pe: PositionalEncoding,
-            res_factor: float = 0.5,
-            d_head: int = 36,
-            num_heads: int = 4,
-            kernel_size: int = 32,
-            multiplier: int = 1,
-            dropout: float = 0.1,
-            dropout_attn: float = 0.0):
+        self,
+        idim: int,
+        pe: PositionalEncoding,
+        res_factor: float = 0.5,
+        d_head: int = 36,
+        num_heads: int = 4,
+        kernel_size: int = 32,
+        multiplier: int = 1,
+        dropout: float = 0.1,
+        dropout_attn: float = 0.0,
+    ):
         super().__init__()
 
         self.ffm0 = FFModule(idim, res_factor, dropout)
-        self.mhsam = MHSAModule(idim, d_head, num_heads,
-                                pe, dropout, dropout_attn)
-        self.convm = ConvModule(
-            idim, kernel_size, dropout, multiplier)
+        self.mhsam = MHSAModule(idim, d_head, num_heads, pe, dropout, dropout_attn)
+        self.convm = ConvModule(idim, kernel_size, dropout, multiplier)
         self.ffm1 = FFModule(idim, res_factor, dropout)
         self.ln = nn.LayerNorm(idim)
 
     def forward(self, x: torch.Tensor, lens: torch.Tensor):
-
         ffm0_out = self.ffm0(x)
         attn_out, attn_ls = self.mhsam(ffm0_out, lens)
         conv_out = self.convm(attn_out)
@@ -547,20 +577,22 @@ class VGG2L(nn.Module):
         kernel_size = 3
         padding = 1
         self.conv1_1 = torch.nn.Conv2d(
-            in_channel, 64, kernel_size, stride=1, padding=padding)
-        self.conv1_2 = torch.nn.Conv2d(
-            64, 64, kernel_size, stride=1, padding=padding)
+            in_channel, 64, kernel_size, stride=1, padding=padding
+        )
+        self.conv1_2 = torch.nn.Conv2d(64, 64, kernel_size, stride=1, padding=padding)
         self.bn1 = torch.nn.BatchNorm2d(64)
-        self.conv2_1 = torch.nn.Conv2d(
-            64, 128, kernel_size, stride=1, padding=padding)
-        self.conv2_2 = torch.nn.Conv2d(
-            128, 128, kernel_size, stride=1, padding=padding)
+        self.conv2_1 = torch.nn.Conv2d(64, 128, kernel_size, stride=1, padding=padding)
+        self.conv2_2 = torch.nn.Conv2d(128, 128, kernel_size, stride=1, padding=padding)
         self.bn2 = torch.nn.BatchNorm2d(128)
         self.in_channel = in_channel
 
     def forward(self, xs_pad, ilens):
-        xs_pad = xs_pad.view(xs_pad.size(0), xs_pad.size(1), self.in_channel,
-                             xs_pad.size(2) // self.in_channel).transpose(1, 2)
+        xs_pad = xs_pad.view(
+            xs_pad.size(0),
+            xs_pad.size(1),
+            self.in_channel,
+            xs_pad.size(2) // self.in_channel,
+        ).transpose(1, 2)
         xs_pad = F.relu(self.conv1_1(xs_pad))
         xs_pad = F.relu(self.conv1_2(xs_pad))
         xs_pad = self.bn1(xs_pad)
@@ -571,7 +603,8 @@ class VGG2L(nn.Module):
         xs_pad = F.max_pool2d(xs_pad, [1, 2], stride=[1, 2], ceil_mode=True)
         xs_pad = xs_pad.transpose(1, 2)
         xs_pad = xs_pad.contiguous().view(
-            xs_pad.size(0), xs_pad.size(1), xs_pad.size(2) * xs_pad.size(3))
+            xs_pad.size(0), xs_pad.size(1), xs_pad.size(2) * xs_pad.size(3)
+        )
         return xs_pad, ilens
 
 
@@ -582,8 +615,15 @@ class Lookahead(nn.Module):
         self.context = context
         self.n_features = n_features
         self.pad = (0, self.context - 1)
-        self.conv = nn.Conv1d(self.n_features, self.n_features, kernel_size=self.context, stride=1,
-                              groups=self.n_features, padding=0, bias=None)
+        self.conv = nn.Conv1d(
+            self.n_features,
+            self.n_features,
+            kernel_size=self.context,
+            stride=1,
+            groups=self.n_features,
+            padding=0,
+            bias=None,
+        )
 
     def forward(self, x):
         x = x.transpose(1, 2)
@@ -594,7 +634,14 @@ class Lookahead(nn.Module):
 
 
 class TDNN(nn.Module):
-    def __init__(self, idim: int, odim: int, half_context: int = 1, dilation: int = 1, stride: int = 1):
+    def __init__(
+        self,
+        idim: int,
+        odim: int,
+        half_context: int = 1,
+        dilation: int = 1,
+        stride: int = 1,
+    ):
         super().__init__()
 
         self.stride = stride
@@ -605,7 +652,13 @@ class TDNN(nn.Module):
             padding = half_context * dilation
 
         self.conv = torch.nn.Conv1d(
-            idim, odim, 2*half_context+1, stride=stride, padding=padding, dilation=dilation)
+            idim,
+            odim,
+            2 * half_context + 1,
+            stride=stride,
+            padding=padding,
+            dilation=dilation,
+        )
         # NOTE (Huahuan): I think we should use layernorm instead of batchnorm
         # self.bn = MaskedBatchNorm1d(odim, eps=1e-5, affine=True)
         self.ln = nn.LayerNorm(odim)
@@ -622,8 +675,17 @@ class TDNN(nn.Module):
         output = self.ln(output)
         return output, ilens
 
+
 class _LSTM(nn.Module):
-    def __init__(self, idim: int, hdim: int, num_layers: int = 1, dropout: float = 0.0, bidirectional: bool = False, proj_size: int = 0):
+    def __init__(
+        self,
+        idim: int,
+        hdim: int,
+        num_layers: int = 1,
+        dropout: float = 0.0,
+        bidirectional: bool = False,
+        proj_size: int = 0,
+    ):
         super().__init__()
         self.lstm = nn.LSTM(
             input_size=idim,
@@ -632,18 +694,17 @@ class _LSTM(nn.Module):
             bidirectional=bidirectional,
             batch_first=True,
             dropout=dropout,
-            proj_size=proj_size
+            proj_size=proj_size,
         )
 
     def forward(self, x: torch.Tensor, ilens: torch.Tensor, hidden=None):
         self.lstm.flatten_parameters()
 
-        packed_input = pack_padded_sequence(
-            x, ilens.to("cpu"), batch_first=True)
+        packed_input = pack_padded_sequence(x, ilens.to("cpu"), batch_first=True)
         packed_output, _ = self.lstm(packed_input, hidden)
         out, olens = pad_packed_sequence(packed_output, batch_first=True)
 
-        return out, olens
+        return out, olens.to(ilens.device)
 
 
 class TimeReduction(nn.Module):
@@ -655,7 +716,10 @@ class TimeReduction(nn.Module):
         self.N = N
 
     def forward(self, x: torch.Tensor, x_lens: torch.Tensor):
-        return x[:, ::self.N, :].clone(), torch.div(x_lens-1, self.N, rounding_mode='floor') + 1
+        return (
+            x[:, :: self.N, :].clone(),
+            torch.div(x_lens - 1, self.N, rounding_mode="floor") + 1,
+        )
 
 
 class CausalConv2d(nn.Module):
@@ -668,31 +732,66 @@ class CausalConv2d(nn.Module):
         kernel_size  (int): the kernel size (kernel is square)
     """
 
-    def __init__(self, in_channels: int, out_channels: int, kernel_size: Union[int, Tuple[int, int]], islast: bool = False):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: Union[int, Tuple[int, int]],
+        islast: bool = False,
+    ):
         super().__init__()
         if in_channels < 1 or out_channels < 1:
             raise ValueError(
-                f"Invalid initialization for CausalConv2d: {in_channels}, {out_channels}, {kernel_size}")
+                f"Invalid initialization for CausalConv2d: {in_channels}, {out_channels}, {kernel_size}"
+            )
 
         if islast:
-            self.causal_conv = nn.Sequential(OrderedDict([
-                # seperate convlution
-                ('depth_conv', nn.Conv2d(in_channels, in_channels,
-                 kernel_size=kernel_size, groups=in_channels)),
-                ('point_conv', nn.Conv2d(in_channels, out_channels, kernel_size=1))
-                # 'conv': nn.Conv2d(in_channels, out_channels, kernel_size)
-            ]))
+            self.causal_conv = nn.Sequential(
+                OrderedDict(
+                    [
+                        # seperate convlution
+                        (
+                            "depth_conv",
+                            nn.Conv2d(
+                                in_channels,
+                                in_channels,
+                                kernel_size=kernel_size,
+                                groups=in_channels,
+                            ),
+                        ),
+                        (
+                            "point_conv",
+                            nn.Conv2d(in_channels, out_channels, kernel_size=1),
+                        )
+                        # 'conv': nn.Conv2d(in_channels, out_channels, kernel_size)
+                    ]
+                )
+            )
         else:
             # NOTE (Huahuan): I think a normalization is helpful so that the padding won't change the distribution of features.
-            self.causal_conv = nn.Sequential(OrderedDict([
-                # seperate convlution
-                ('depth_conv', nn.Conv2d(in_channels, in_channels,
-                 kernel_size=kernel_size, groups=in_channels)),
-                ('point_conv', nn.Conv2d(in_channels, out_channels, kernel_size=1)),
-                ('relu', nn.ReLU(inplace=True)),
-                ('bn', nn.BatchNorm2d(in_channels)),
-                # 'conv': nn.Conv2d(in_channels, out_channels, kernel_size)
-            ]))
+            self.causal_conv = nn.Sequential(
+                OrderedDict(
+                    [
+                        # seperate convlution
+                        (
+                            "depth_conv",
+                            nn.Conv2d(
+                                in_channels,
+                                in_channels,
+                                kernel_size=kernel_size,
+                                groups=in_channels,
+                            ),
+                        ),
+                        (
+                            "point_conv",
+                            nn.Conv2d(in_channels, out_channels, kernel_size=1),
+                        ),
+                        ("relu", nn.ReLU(inplace=True)),
+                        ("bn", nn.BatchNorm2d(in_channels)),
+                        # 'conv': nn.Conv2d(in_channels, out_channels, kernel_size)
+                    ]
+                )
+            )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.causal_conv(x)
@@ -701,19 +800,17 @@ class CausalConv2d(nn.Module):
 def lengths_to_mask(lengths, max_len=None, dtype=None):
     """
     Converts a "lengths" tensor to its binary mask representation.
-    
+
     Based on: https://discuss.pytorch.org/t/how-to-generate-variable-length-mask/23397
-    
+
     :lengths: N-dimensional tensor
     :returns: N*max_len dimensional tensor. If max_len==None, max_len=max(lengtsh)
     """
-    assert len(lengths.shape) == 1, 'Length shape should be 1 dimensional.'
+    assert len(lengths.shape) == 1, "Length shape should be 1 dimensional."
     max_len = max_len or lengths.max().item()
-    mask = torch.arange(
-        max_len,
-        device=lengths.device,
-        dtype=lengths.dtype)\
-        .expand(len(lengths), max_len) < lengths.unsqueeze(1)
+    mask = torch.arange(max_len, device=lengths.device, dtype=lengths.dtype).expand(
+        len(lengths), max_len
+    ) < lengths.unsqueeze(1)
     if dtype is not None:
         mask = torch.as_tensor(mask, dtype=dtype, device=lengths.device)
     return mask
@@ -722,23 +819,26 @@ def lengths_to_mask(lengths, max_len=None, dtype=None):
 class MaskedBatchNorm1d(nn.BatchNorm1d):
     """
     Masked verstion of the 1D Batch normalization.
-    
+
     Based on: https://github.com/ptrblck/pytorch_misc/blob/20e8ea93bd458b88f921a87e2d4001a4eb753a02/batch_norm_manual.py
-    
+
     Receives a N-dim tensor of sequence lengths per batch element
     along with the regular input for masking.
-    
+
     Check pytorch's BatchNorm1d implementation for argument details.
     """
 
-    def __init__(self,
-                 num_features,
-                 eps=1e-5,
-                 momentum=0.1,
-                 affine=True,
-                 track_running_stats=True):
-        super(MaskedBatchNorm1d, self).__init__(num_features, eps, momentum,
-                                                affine, track_running_stats)
+    def __init__(
+        self,
+        num_features,
+        eps=1e-5,
+        momentum=0.1,
+        affine=True,
+        track_running_stats=True,
+    ):
+        super(MaskedBatchNorm1d, self).__init__(
+            num_features, eps, momentum, affine, track_running_stats
+        )
 
     def forward(self, inp, lengths):
         self._check_input_dim(inp)
@@ -757,8 +857,7 @@ class MaskedBatchNorm1d(nn.BatchNorm1d):
             if self.num_batches_tracked is not None:
                 self.num_batches_tracked += 1
                 if self.momentum is None:  # use cumulative moving average
-                    exponential_average_factor = 1.0 / float(
-                        self.num_batches_tracked)
+                    exponential_average_factor = 1.0 / float(self.num_batches_tracked)
                 else:  # use exponential moving average
                     exponential_average_factor = self.momentum
 
@@ -772,17 +871,20 @@ class MaskedBatchNorm1d(nn.BatchNorm1d):
             # This should be numerically equivalent to the biased sample variance
             var = (mask * inp**2).sum([0, 2]) - mean**2
             with torch.no_grad():
-                self.running_mean = exponential_average_factor * mean\
+                self.running_mean = (
+                    exponential_average_factor * mean
                     + (1 - exponential_average_factor) * self.running_mean
+                )
                 # Update running_var with unbiased var
-                self.running_var = exponential_average_factor * var * n / (n - 1)\
+                self.running_var = (
+                    exponential_average_factor * var * n / (n - 1)
                     + (1 - exponential_average_factor) * self.running_var
+                )
         else:
             mean = self.running_mean
             var = self.running_var
 
-        inp = (inp - mean[None, :, None]) / (torch.sqrt(var[None, :, None] +
-                                                        self.eps))
+        inp = (inp - mean[None, :, None]) / (torch.sqrt(var[None, :, None] + self.eps))
         if self.affine:
             inp = inp * self.weight[None, :, None] + self.bias[None, :, None]
 
@@ -814,7 +916,6 @@ class SampledSoftmax(nn.Module):
         self.uniform_ratio = float(uniform_ratio)
 
     def forward(self, x: torch.Tensor, labels: torch.Tensor):
-
         orin_shape = labels.shape
         if labels.dim() > 1:
             labels = labels.flatten()
@@ -822,21 +923,24 @@ class SampledSoftmax(nn.Module):
         dtype = labels.dtype
         if self.uniform_ratio == 0.0:
             indices_sampled, labels = torch.unique(
-                labels, sorted=True, return_inverse=True)
+                labels, sorted=True, return_inverse=True
+            )
         else:
             n_uniform = int(x.size(-1) * self.uniform_ratio)
             assert n_uniform > 0
             concat_labels = torch.cat(
                 [
                     labels,
-                    torch.randperm(x.size(-1), device=labels.device,
-                                   dtype=dtype)[:n_uniform]
+                    torch.randperm(x.size(-1), device=labels.device, dtype=dtype)[
+                        :n_uniform
+                    ],
                 ],
-                dim=0
+                dim=0,
             )
             indices_sampled, concat_labels = torch.unique(
-                concat_labels, sorted=True, return_inverse=True)
-            labels = concat_labels[:labels.size(0)]
+                concat_labels, sorted=True, return_inverse=True
+            )
+            labels = concat_labels[: labels.size(0)]
 
         indices_sampled = indices_sampled.to(torch.long)
         labels = labels.to(dtype)
@@ -856,12 +960,12 @@ class SyllableEmbedding(nn.Module):
         super().__init__()
         self.char_embedding = nn.Embedding(num_classes, dim_emb)
 
-        with open(syllable_data, 'rb') as fib:
+        with open(syllable_data, "rb") as fib:
             data = pickle.load(fib)
-        self.register_buffer('converter', torch.from_numpy(
-            data['converter']), persistent=False)
-        self.syllable_embedding = nn.Embedding(
-            data['num_syllables'], dim_emb)
+        self.register_buffer(
+            "converter", torch.from_numpy(data["converter"]), persistent=False
+        )
+        self.syllable_embedding = nn.Embedding(data["num_syllables"], dim_emb)
         del data
 
     def forward(self, x: torch.Tensor):

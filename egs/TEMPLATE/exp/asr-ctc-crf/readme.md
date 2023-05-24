@@ -12,9 +12,9 @@
 
 ### Result
 ```
-yesno   %SER 96.67 | %WER 36.04 [ 173 / 480, 0 ins, 17 del, 156 sub ]
+yesno   %SER 100.00 | %WER 66.04 [ 317 / 480, 0 ins, 302 del, 15 sub ]
 ```
 
 |     training process    |
 |:-----------------------:|
-|![monitor](./monitor.png)|
+|![tb-plot](./monitor.png)|

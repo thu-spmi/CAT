@@ -1,5 +1,9 @@
-# get bigcidian for segmentation or phone-based training
-# author: Huahuan Zheng
+#!/bin/bash
+# Copyright 2023 Tsinghua University
+# Apache 2.0.
+# Author: Huahuan Zheng (maxwellzh@outlook.com)
+# 
+# Get bigcidian for segmentation or phone-based training
 
 set -e
 set -u

@@ -9,11 +9,11 @@ property:
 
 - prune: 
 - type:  probing
-- size:  17MB
+- size:  25MB
 
 perplexity:
 
 ```
-Test file: data/local-lm/ptb.valid.txt -> ppl: 252.96
-Test file: data/local-lm/ptb.test.txt -> ppl: 268.65
+data: data/local-lm/libri-part.dev
+ppl:   436.06  |
 ```

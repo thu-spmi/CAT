@@ -17,14 +17,6 @@ Use one of the options:
    bash local/data.sh -h
    ```
 
-Source data info will be automatically stored at `data/metainfo.json`. You can run
-
-```bash
-cd /path/to/libri
-python utils/data/resolvedata.py
-```
-to refresh the information. Manually modifying is also OK.
-
 ## Result
 
 Summarize experiments here.

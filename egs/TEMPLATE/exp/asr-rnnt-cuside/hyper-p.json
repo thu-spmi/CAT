@@ -10,8 +10,6 @@
         "option-train": {
             "model_type": "char",
             "use_all_vocab": true,
-            "bos_id": 0,
-            "unk_id": 1,
             "vocab_size": 8,
             "model_prefix": "sentencepiece/yesno_char/spm"
         }
@@ -31,9 +29,9 @@
         "infer": {
             "bin": "cat.rnnt.decode",
             "option": {
-                "unified": true,
+                "built_model_by": "cat.rnnt.train_unified",
                 "streaming": true,
-                "beam_size": 16,
+                "beam_size": 4,
                 "cpu": true,
                 "nj": 8
             }

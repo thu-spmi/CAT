@@ -1,4 +1,8 @@
-"""Beam search for Transducer sequence.
+# Copyright 2023 Tsinghua University
+# Apache 2.0.
+# Author: Huahuan Zheng (maxwellzh@outlook.com)
+
+"""Beam search for Transducer recognizer.
 
 For the performance/speed of decoding, only
 ... RNA (Recurrent neural aligner, a.k.a. monototic topo)
@@ -11,16 +15,10 @@ where there are:
 - vallina decoding (with prefix merge)
 - latency controlled decoding (with prefix merge)
 - alignment-length synchronous decoding
-
-Author: Huahuan Zhengh (maxwellzh@outlook.com)
 """
 
 from .joiner import AbsJointNet
-from cat.shared.decoder import (
-    LSTM,
-    AbsDecoder,
-    AbsStates
-)
+from cat.shared.decoder import LSTM, AbsDecoder, AbsStates
 
 import os
 from typing import *
@@ -28,14 +26,14 @@ from typing import *
 import torch
 
 
-def logaddexp(a: torch.Tensor, b: torch.Tensor):
+def logaddexp(a: Union[float, torch.Tensor], b: Union[float, torch.Tensor]):
     if a.dtype == torch.float:
         return torch.logaddexp(a, b)
     elif a.dtype == torch.half:
         if a < b:
             a, b = b, a
         # a + log(1 + exp(b-a))
-        return a + (1 + (b-a).exp()).log()
+        return a + (1 + (b - a).exp()).log()
     else:
         raise ValueError
 
@@ -44,19 +42,19 @@ def hash_tensor(t: torch.LongTensor) -> Tuple[int]:
     return tuple(t.cpu().tolist())
 
 
-class Hypothesis():
+class Hypothesis:
     def __init__(
-            self,
-            pred: torch.LongTensor,
-            log_prob: Union[torch.Tensor, float],
-            cache: Dict[str, Union[AbsStates, torch.Tensor]],
-            lm_score: Union[torch.Tensor, float] = 0.0) -> None:
-
-        self._last_token = pred[-1:]
+        self,
+        pred: torch.LongTensor,
+        log_prob: Union[torch.Tensor, float],
+        cache: Dict[str, Union[AbsStates, torch.Tensor]],
+        lm_score: Union[torch.Tensor, float] = 0.0,
+    ) -> None:
+        self.last_tok = pred[-1:]
         self.pred = hash_tensor(pred)
-        self.log_prob = log_prob + 0.   # implictly clone
+        self.log_prob = log_prob + 0.0  # implictly clone
         self.cache = cache
-        self.lm_score = lm_score + 0.
+        self.lm_score = lm_score + 0.0
 
     @property
     def score(self):
@@ -64,16 +62,13 @@ class Hypothesis():
 
     def get_pred_token(self, return_tensor: bool = False):
         if return_tensor:
-            return self._last_token.new_tensor(self.pred)
+            return self.last_tok.new_tensor(self.pred)
         else:
             return list(self.pred)
 
     def clone(self):
         new_hypo = Hypothesis(
-            self._last_token,
-            self.log_prob,
-            self.cache.copy(),
-            self.lm_score
+            self.last_tok, self.log_prob, self.cache.copy(), self.lm_score
         )
         new_hypo.pred = self.pred[:]
         return new_hypo
@@ -84,12 +79,12 @@ class Hypothesis():
         return new_hypo
 
     def add_(self, rhypo: "Hypothesis"):
-        '''in-place version of __add__'''
+        """in-place version of __add__"""
         self.log_prob = logaddexp(self.log_prob, rhypo.log_prob)
         return self
 
     def add_token(self, tok: torch.LongTensor):
-        self._last_token = tok.view(1)
+        self.last_tok = tok.view(1)
         self.pred += (tok.item(),)
 
     def __len__(self) -> int:
@@ -99,15 +94,15 @@ class Hypothesis():
         return f"Hypothesis({self.pred}, score={self.score:.2f})"
 
 
-class PrefixCacheDict():
+class PrefixCacheDict:
     """
     This use a map-style way to store the cache.
-    Compared to tree-like structure, thie would be less efficient when the tree is 
+    Compared to tree-like structure, thie would be less efficient when the tree is
     quite large. But more efficient when it is small.
     """
 
     def __init__(self) -> None:
-        self._cache = {}    # type: Dict[Tuple[int], Dict]
+        self._cache = {}  # type: Dict[Tuple[int], Dict]
 
     def __contains__(self, pref: Tuple[int]) -> bool:
         return pref in self._cache
@@ -119,8 +114,7 @@ class PrefixCacheDict():
             self._cache[pref] = new_cache.copy()
 
     def fetch(self, pref: Tuple[int]) -> Union[None, dict]:
-        '''Get cache. If there isn't such prefix, return None.
-        '''
+        """Get cache. If there isn't such prefix, return None."""
         if pref in self._cache:
             return self._cache[pref]
         else:
@@ -144,32 +138,27 @@ class PrefixCacheDict():
         for k in self._cache.keys():
             cache[k] = {}
             for _k in self._cache[k].keys():
-                cache[k][_k] = '...'
+                cache[k][_k] = "..."
 
         return str(cache)
 
-# TODO:
-# 1. add a interface of decoder
-# 2.[done] batch-fly the decoding
-# 3.[done] interface for introducing external LM(s)
-# 4.[done] rename tn -> encoder
 
-
-class BeamSearcher:
-
+class RNNTDecoder:
     def __init__(
         self,
         predictor: AbsDecoder,
         joiner: AbsJointNet,
         blank_id: int = 0,
         bos_id: int = 0,
+        # if set -1, decoding runs until end of input frames, otherwise ends at emitting <eos>
+        eos_id: int = -1,
         beam_size: int = 5,
         nbest: int = -1,
         lm_module: Optional[AbsDecoder] = None,
-        alpha: Optional[float] = 0.,
-        beta: Optional[float] = 0.,
+        alpha: Optional[float] = 0.0,
+        beta: Optional[float] = 0.0,
         est_ilm: bool = False,
-        ilm_weight: Optional[float] = 0.
+        ilm_weight: Optional[float] = 0.0,
     ):
         assert blank_id == bos_id
 
@@ -178,6 +167,10 @@ class BeamSearcher:
             lm_module = None
 
         if lm_module is None:
+            if alpha != 0 or beta != 0:
+                print(
+                    f"WARNING: external LM is None while setting alpha={alpha} | beta={beta}"
+                )
             alpha = 0.0
             beta = 0.0
 
@@ -185,6 +178,10 @@ class BeamSearcher:
         self.joiner = joiner
         self.blank_id = blank_id
         self.bos_id = bos_id
+        if blank_id == eos_id:
+            eos_id = -1
+        self.eos_id = eos_id
+
         self.beam_size = beam_size
         if nbest == -1:
             nbest = beam_size
@@ -198,24 +195,29 @@ class BeamSearcher:
         if ilm_weight == 0.0:
             self.est_ilm = False
 
-    def __call__(self, enc_out: torch.Tensor, frame_lens: Optional[torch.Tensor] = None) -> List[Tuple[List[List[int]], List[float]]]:
+    def __call__(
+        self, enc_out: torch.Tensor, frame_lens: Optional[torch.Tensor] = None
+    ) -> List[Tuple[List[List[int]], List[float]]]:
         hypos = self.batch_decode(enc_out, frame_lens)
 
         return [
             (
                 [hypo.get_pred_token()[1:] for hypo in _hyps],
-                [hypo.score.item() for hypo in _hyps]
+                [float(hypo.score) for hypo in _hyps],
             )
             for _hyps in hypos
         ]
 
-    def batch_decode(self, encoder_out: torch.Tensor, frame_lens: Optional[torch.Tensor] = None) -> List[List[Hypothesis]]:
+    def batch_decode(
+        self, encoder_out: torch.Tensor, frame_lens: Optional[torch.Tensor] = None
+    ) -> List[List[Hypothesis]]:
         """
         An implementation of batched RNA decoding
 
         encoder_out: (N, T, H)
         """
         use_lm = self.lm is not None
+        early_stop = self.eos_id != -1
         if isinstance(self.predictor, LSTM):
             if use_lm and not isinstance(self.lm, LSTM):
                 fixlen_state = False
@@ -230,7 +232,8 @@ class BeamSearcher:
         if frame_lens is None:
             n_max_frame_length = encoder_out.size(1)
             frame_lens = dummy_token.new_full(
-                (n_batches,), fill_value=n_max_frame_length)
+                (n_batches,), fill_value=n_max_frame_length
+            )
         else:
             frame_lens = frame_lens.clone()
             n_max_frame_length = frame_lens.max().int()
@@ -240,16 +243,17 @@ class BeamSearcher:
                 Hypothesis(
                     pred=dummy_token.new_tensor([self.bos_id]),
                     log_prob=0.0,
-                    cache={'pn_state': self.predictor.init_states()}
+                    cache={"pn_state": self.predictor.init_states()},
                 )
             ]
             for _ in range(n_batches)
         ]
+        if early_stop:
+            Finals = [{} for _ in range(n_batches)]
 
         if use_lm:
             for idx in range(n_batches):
-                Beams[idx][0].cache.update(
-                    {'lm_state': self.lm.init_states()})
+                Beams[idx][0].cache.update({"lm_state": self.lm.init_states()})
         pref_cache = PrefixCacheDict()
 
         for t in range(n_max_frame_length):
@@ -257,16 +261,16 @@ class BeamSearcher:
             idx_ongoing_seq = idx_seq[frame_lens > 0]
             n_seqs = idx_ongoing_seq.size(0)
             batched_beams = sum((Beams[i_] for i_ in idx_ongoing_seq), [])
+            if len(batched_beams) == 0:
+                break
             # n_beams = len(batched_beams)
             group_uncached, group_cached = group_to_batch(
-                batched_beams,
-                dummy_token,
-                pref_cache,
-                statelen_fixed=fixlen_state)
+                batched_beams, dummy_token, pref_cache, statelen_fixed=fixlen_state
+            )
             group_beams = group_uncached + group_cached
 
-            idxbeam2srcidx = []   # len: n_beams
-            group_pn_out = []     # len: len(group_beams)
+            idxbeam2srcidx = []  # len: n_beams
+            group_pn_out = []  # len: len(group_beams)
             group_lm_out = []
 
             n_group_uncached = len(group_uncached)
@@ -276,30 +280,35 @@ class BeamSearcher:
             for i, (g_index, g_tokens, g_states) in enumerate(group_beams):
                 idxbeam2srcidx += g_index
                 if i < n_group_uncached:
-                    pn_out, pn_state = self.predictor(
-                        g_tokens, g_states['pn_state']())
+                    pn_out, pn_state = self.predictor(g_tokens, g_states["pn_state"]())
                     if use_lm:
                         lm_out, lm_state = self.lm.get_log_prob(
-                            g_tokens, g_states['lm_state']())
+                            g_tokens, g_states["lm_state"]()
+                        )
                     # add into cache
                     for bid, absidx in enumerate(g_index):
                         cur_cache = {
-                            'pn_out': pn_out[bid:bid+1],
-                            'pn_state': self.predictor.get_state_from_batch(pn_state, bid)
+                            "pn_out": pn_out[bid : bid + 1],
+                            "pn_state": self.predictor.get_state_from_batch(
+                                pn_state, bid
+                            ),
                         }
                         if use_lm:
-                            cur_cache.update({
-                                'lm_out': lm_out[bid:bid+1],
-                                'lm_state': self.lm.get_state_from_batch(lm_state, bid)
-                            })
-                        pref_cache.update(
-                            batched_beams[absidx].pred, cur_cache)
+                            cur_cache.update(
+                                {
+                                    "lm_out": lm_out[bid : bid + 1],
+                                    "lm_state": self.lm.get_state_from_batch(
+                                        lm_state, bid
+                                    ),
+                                }
+                            )
+                        pref_cache.update(batched_beams[absidx].pred, cur_cache)
                 else:
-                    pn_out = g_tokens['pn_out']
-                    pn_state = g_states['pn_state']()
+                    pn_out = g_tokens["pn_out"]
+                    pn_state = g_states["pn_state"]()
                     if use_lm:
-                        lm_out = g_tokens['lm_out']
-                        lm_state = g_states['lm_state']()
+                        lm_out = g_tokens["lm_out"]
+                        lm_state = g_states["lm_state"]()
 
                 group_pn_out.append(pn_out)
                 if use_lm:
@@ -307,7 +316,7 @@ class BeamSearcher:
 
             # pn_out: (n_beams, 1, H)
             pn_out = torch.cat(group_pn_out, dim=0)
-            '''
+            """
             Since we merge all hypos in a batch into one group, 
             Frames in enc_out may be mapped to various number of frames of pn_out
             e.g. a batch with 2 utterances, enc_out: (2, T, H), where the first utt 
@@ -318,38 +327,47 @@ class BeamSearcher:
                     -> concat them -> (8, T, H)
                 note that indices in merged beams are not consistent to that of expand_enc_out,
                 so we have to re-arange it via expand_enc_out[idxbeam2srcidx]
-            '''
+            """
             # expand_enc_out: (n_beams, 1, H)
             expand_enc_out = torch.cat(
-                [encoder_out[b:b+1, t:t+1, :].expand(len(Beams[b]), -1, -1)
-                 for b in idx_ongoing_seq], dim=0)[idxbeam2srcidx]
+                [
+                    encoder_out[b : b + 1, t : t + 1, :].expand(len(Beams[b]), -1, -1)
+                    for b in idx_ongoing_seq
+                ],
+                dim=0,
+            )[idxbeam2srcidx]
             # log_prob: (n_beams, 1, 1, V) -> (n_beams, V)
-            log_prob = self.joiner(
-                expand_enc_out, pn_out).squeeze(1).squeeze(1)
+            log_prob = self.joiner(expand_enc_out, pn_out).squeeze(1).squeeze(1)
 
             # combine_score: (n_beams, V)
-            combine_score = log_prob + 0.
+            combine_score = log_prob + 0.0
             for i, b in enumerate(idxbeam2srcidx):
-                combine_score[i] += batched_beams[b].log_prob + \
-                    batched_beams[b].lm_score
+                combine_score[i] += (
+                    batched_beams[b].log_prob + batched_beams[b].lm_score
+                )
 
             if use_lm:
                 # lm_score: (n_beams, V)
-                lm_score = self.beta_ + self.alpha_ * \
-                    torch.cat(group_lm_out, dim=0).squeeze(1)
+                lm_score = self.beta_ + self.alpha_ * torch.cat(
+                    group_lm_out, dim=0
+                ).squeeze(1)
                 if self.blank_id == 0:
                     combine_score[:, 1:] += lm_score[:, 1:]
                 else:
                     raise NotImplementedError
 
             if self.est_ilm:
-                ilm_score = self.joiner.impl_forward(
-                    torch.zeros_like(expand_enc_out), pn_out).squeeze(1).squeeze(1)
+                ilm_score = (
+                    self.joiner.impl_forward(torch.zeros_like(expand_enc_out), pn_out)
+                    .squeeze(1)
+                    .squeeze(1)
+                )
                 if self.blank_id == 0:
                     # rm the blank symbol
-                    ilm_score[:, 0] = 0.
-                    ilm_score[:, 1:] = self.ilm_weight * \
-                        ilm_score[:, 1:].log_softmax(dim=1)
+                    ilm_score[:, 0] = 0.0
+                    ilm_score[:, 1:] = self.ilm_weight * ilm_score[:, 1:].log_softmax(
+                        dim=1
+                    )
                 else:
                     raise NotImplementedError
 
@@ -361,44 +379,69 @@ class BeamSearcher:
             srcidx2beamidx = {i_: idx for idx, i_ in enumerate(idxbeam2srcidx)}
             for s_ in range(n_seqs):
                 idxinbatch = idx_ongoing_seq[s_]
+                if len(Beams[idxinbatch]) == 0:
+                    continue
                 # map2rearangeidx tells which beam in combine_score derived from
                 # ... the same utterance in the batch.
-                map2rearangeidx = [srcidx2beamidx[offset+beamidx]
-                                   for beamidx in range(len(Beams[idxinbatch]))]
+                map2rearangeidx = [
+                    srcidx2beamidx[offset + beamidx]
+                    for beamidx in range(len(Beams[idxinbatch]))
+                ]
                 # flattened_pos: (K, )
                 flatten_score = combine_score[map2rearangeidx].flatten()
                 k = min(self.beam_size, flatten_score.numel())
                 _, flatten_pos = torch.topk(flatten_score, k=k)
                 flatten_pos = torch.sort(flatten_pos)[0]
                 # idx_beam, tokens: (K, )
-                idx_beam = [map2rearangeidx[i_] for i_ in torch.div(
-                    flatten_pos, V, rounding_mode='floor')]
+                idx_beam = [
+                    map2rearangeidx[i_]
+                    for i_ in torch.div(flatten_pos, V, rounding_mode="floor")
+                ]
                 tokens = flatten_pos % V
-                A = {}      # type: Dict[Tuple[int], Hypothesis]
+                A = {}  # type: Dict[Tuple[int], Hypothesis]
                 for i in range(k):
-                    hasduplicate = (i < k-1) and (idx_beam[i] == idx_beam[i+1])
+                    is_multiple_candidates = (i < k - 1) and (
+                        idx_beam[i] == idx_beam[i + 1]
+                    )
 
+                    # type: Hypothesis
                     cur_hypo = batched_beams[idxbeam2srcidx[idx_beam[i]]]
                     new_log_prob = log_prob[idx_beam[i], tokens[i]]
+                    if early_stop and tokens[i] == self.eos_id:
+                        if cur_hypo.pred in Finals[idxinbatch]:
+                            Finals[idxinbatch][cur_hypo.pred].log_prob = logaddexp(
+                                Finals[idxinbatch][cur_hypo.pred].log_prob,
+                                cur_hypo.log_prob + new_log_prob,
+                            )
+                        else:
+                            if is_multiple_candidates:
+                                cur_hypo = cur_hypo.clone()
+                            cur_hypo.log_prob += new_log_prob
+                            Finals[idxinbatch][cur_hypo.pred] = cur_hypo
+                        continue
+
                     if tokens[i] == self.blank_id:
                         if cur_hypo.pred in A:
                             A[cur_hypo.pred].log_prob = logaddexp(
-                                A[cur_hypo.pred].log_prob, cur_hypo.log_prob+new_log_prob)
+                                A[cur_hypo.pred].log_prob,
+                                cur_hypo.log_prob + new_log_prob,
+                            )
                             continue
-                        elif hasduplicate:
+                        elif is_multiple_candidates:
                             cur_hypo = cur_hypo.clone()
                     else:
-                        if (new_pred := cur_hypo.pred + (tokens[i].item(), )) in A:
+                        if (new_pred := cur_hypo.pred + (tokens[i].item(),)) in A:
                             A[new_pred].log_prob = logaddexp(
-                                A[new_pred].log_prob, cur_hypo.log_prob+new_log_prob)
+                                A[new_pred].log_prob, cur_hypo.log_prob + new_log_prob
+                            )
                             continue
-                        elif hasduplicate:
+                        elif is_multiple_candidates:
                             cur_hypo = cur_hypo.clone()
 
                         # the order of following two lines cannot be changed
                         cur_hypo.cache = pref_cache.fetch(cur_hypo.pred)
                         # cur_hypo.add_token(tokens[i])
-                        cur_hypo._last_token = tokens[i].view(1)
+                        cur_hypo.last_tok = tokens[i].view(1)
                         cur_hypo.pred = new_pred
                         if self.est_ilm:
                             cur_hypo.lm_score += ilm_score[idx_beam[i], tokens[i]]
@@ -408,19 +451,31 @@ class BeamSearcher:
                     A[cur_hypo.pred] = cur_hypo
 
                 offset += len(Beams[idxinbatch])
+                if early_stop and len(Finals[idxinbatch]) >= self.nbest:
+                    Beams[idxinbatch].clear()
+                    continue
                 Beams[idxinbatch] = list(A.values())
                 min_len = min(min_len, min(len(pred) for pred in A))
             pref_cache.prune_shorterthan(min_len)
 
             frame_lens -= 1
 
+        if early_stop:
+            for B_, F_ in zip(Beams, Finals):
+                B_.extend(F_.values())
+
         return [
-            sorted(B_, key=lambda item: item.score, reverse=True)[:self.nbest]
+            sorted(B_, key=lambda item: item.score, reverse=True)[: self.nbest]
             for B_ in Beams
         ]
 
 
-def group_to_batch(hypos: List[Hypothesis], dummy_tensor: torch.Tensor = None, prefix_cache: PrefixCacheDict = None, statelen_fixed: bool = False) -> Tuple[List[int], torch.Tensor, Dict[str, AbsStates]]:
+def group_to_batch(
+    hypos: List[Hypothesis],
+    dummy_tensor: torch.Tensor = None,
+    prefix_cache: PrefixCacheDict = None,
+    statelen_fixed: bool = False,
+) -> Tuple[List[int], torch.Tensor, Dict[str, AbsStates]]:
     """Group the hypothesis in the list into batch with their hidden states
 
     Args:
@@ -436,7 +491,7 @@ def group_to_batch(hypos: List[Hypothesis], dummy_tensor: torch.Tensor = None, p
         batched_tokens (torch.LongTensor): [N, 1]
         batched_states (Dict[str, AbsStates]): the hidden states of the hypotheses, depending on the prediction network type.
         batched_output (Dict[str, torch.Tensor]): the cached output being batched
-        statelen_fixed (bool, default False): whether to group the states by hypo lengths, 
+        statelen_fixed (bool, default False): whether to group the states by hypo lengths,
             if set True, this would slightly speedup training, however it requires the cache state to be of fixed length with variable seq lengths (like LSTM)
     """
     if dummy_tensor is None:
@@ -455,20 +510,17 @@ def group_to_batch(hypos: List[Hypothesis], dummy_tensor: torch.Tensor = None, p
     # group that cache doesn't hit
     batched_out = []
     if statelen_fixed:
-        groups_uncached = [hypos_with_index] if len(
-            hypos_with_index) > 0 else []
+        groups_uncached = [hypos_with_index] if len(hypos_with_index) > 0 else []
     else:
-        groups_uncached = groupby(
-            hypos_with_index, key=lambda item: len(item[1]))
+        groups_uncached = groupby(hypos_with_index, key=lambda item: len(item[1]))
     for _hypos_with_index in groups_uncached:
         _index, _hypos = list(zip(*_hypos_with_index))
-        _batched_tokens = torch.cat(
-            [hyp._last_token for hyp in _hypos], dim=0).view(-1, 1)
+        _batched_tokens = torch.cat([hyp.last_tok for hyp in _hypos], dim=0).view(-1, 1)
         _batched_states = {
-            _key: _state.batching(
-                [_hyp.cache[_key]for _hyp in _hypos]
-            ) for _key, _state in _hypos[0].cache.items()
-            if isinstance(_state, AbsStates)}     # type: Dict[str, AbsStates]
+            _key: _state.batching([_hyp.cache[_key] for _hyp in _hypos])
+            for _key, _state in _hypos[0].cache.items()
+            if isinstance(_state, AbsStates)
+        }  # type: Dict[str, AbsStates]
 
         batched_out.append((list(_index), _batched_tokens, _batched_states))
 
@@ -491,11 +543,11 @@ def group_to_batch(hypos: List[Hypothesis], dummy_tensor: torch.Tensor = None, p
             for k in caches[0].keys():
                 if isinstance(caches[0][k], AbsStates):
                     _batched_states[k] = caches[0][k].batching(
-                        [_cache[k] for _cache in caches])
+                        [_cache[k] for _cache in caches]
+                    )
                 else:
                     # [1, 1, H]
-                    _batched_out[k] = torch.cat(
-                        [_cache[k] for _cache in caches], dim=0)
+                    _batched_out[k] = torch.cat([_cache[k] for _cache in caches], dim=0)
             cached_out.append((list(_index), _batched_out, _batched_states))
 
         return batched_out, cached_out

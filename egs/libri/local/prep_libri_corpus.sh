@@ -1,4 +1,4 @@
-# Author: Huahuan Zheng (maxwellzh@outlook.com)
+# Author: Zheng Huahuan (maxwellzh@outlook.com)
 # This script includes the processing of librispeech extra corpus text
 set -e -u
 

@@ -1,5 +1,10 @@
+#!/bin/bash
+# Copyright 2023 Tsinghua University
+# Apache 2.0.
+# Author: Huahuan Zheng (maxwellzh@outlook.com)
+# 
 # prepare denominator LM (for CRF training.)
-# author: Huahuan Zheng
+
 set -e
 <<"PARSER"
 ("r_specifier", type=str, help="Input file (raw text with ids). Use /dev/stdin if needed.")

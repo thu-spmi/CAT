@@ -72,9 +72,7 @@ if __name__ == "__main__":
         audios[_set] = []
         subtrans[_set] = []
         for _raw_wav in _audios:
-            uid = os.path.basename(_raw_wav)
-            if uid.endswith('.wav'):
-                uid = uid[:-4]
+            uid = os.path.basename(_raw_wav).removesuffix('.wav')
             if uid not in trans:
                 continue
             audios[_set].append((uid, _raw_wav))

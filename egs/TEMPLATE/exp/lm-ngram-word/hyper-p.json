@@ -1,18 +1,17 @@
 {
     "data": {
-        "train": "data/local-lm/ptb.train.txt",
+        "train": "data/local-lm/libri-part.train",
         "test": [
-            "data/local-lm/ptb.valid.txt",
-            "data/local-lm/ptb.test.txt"
+            "data/local-lm/libri-part.dev"
         ]
     },
     "tokenizer": {
         "type": "SentencePieceTokenizer",
         "option-train": {
             "model_type": "word",
-            "vocab_size": 10000,
+            "vocab_size": 45899,
             "use_all_vocab": true,
-            "model_prefix": "sentencepiece/ptb-word/spm"
+            "model_prefix": "sentencepiece/lm-word/spm"
         }
     },
     "inference": {}

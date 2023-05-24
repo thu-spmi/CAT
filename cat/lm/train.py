@@ -11,14 +11,8 @@ __all__ = ["LMTrainer", "build_model", "_parser", "main"]
 from ..shared import coreutils
 from ..shared import decoder as model_zoo
 from ..shared.decoder import AbsDecoder
-from ..shared.manager import (
-    Manager,
-    evaluate as default_eval
-)
-from ..shared.data import (
-    CorpusDataset,
-    sortedPadCollateLM
-)
+from ..shared.manager import Manager, evaluate as default_eval
+from ..shared.data import CorpusDataset, sortedPadCollateLM
 
 import gather
 import math
@@ -37,11 +31,15 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
     torch.cuda.set_device(args.gpu)
 
     dist.init_process_group(
-        backend=args.dist_backend, init_method=args.dist_url,
-        world_size=args.world_size, rank=args.rank)
+        backend=args.dist_backend,
+        init_method=args.dist_url,
+        world_size=args.world_size,
+        rank=args.rank,
+    )
 
-    manager = Manager(CorpusDataset, sortedPadCollateLM(),
-                      args, build_model, func_eval=evaluate)
+    manager = Manager(
+        CorpusDataset, sortedPadCollateLM(), args, build_model, func_eval=evaluate
+    )
 
     # lm training does not need specaug
     manager.specaug = None
@@ -53,11 +51,17 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
 class LMTrainer(nn.Module):
     def __init__(self, lm: AbsDecoder = None):
         super().__init__()
-        self.lm = lm    # type: AbsDecoder
+        self.lm = lm  # type: AbsDecoder
         self.criterion = nn.CrossEntropyLoss()
 
-    def forward(self, inputs: torch.FloatTensor, targets: torch.LongTensor, input_lengths: torch.LongTensor, *args, **kwargs) -> torch.FloatTensor:
-
+    def forward(
+        self,
+        inputs: torch.FloatTensor,
+        input_lengths: torch.LongTensor,
+        targets: torch.LongTensor,
+        *args,
+        **kwargs,
+    ) -> torch.FloatTensor:
         # preds: (N, S, C)
         preds, _ = self.lm(inputs, input_lengths=input_lengths)
 
@@ -80,22 +84,23 @@ def evaluate(*args) -> float:
     try:
         return math.exp(celoss)
     except OverflowError:
-        return float('inf')
+        return float("inf")
 
 
 def build_model(
-        cfg: dict,
-        args: Optional[Union[argparse.Namespace, dict]] = None,
-        dist=True, wrapper=True) -> Union[nn.parallel.DistributedDataParallel, LMTrainer, AbsDecoder]:
-
-    assert 'decoder' in cfg
+    cfg: dict,
+    args: Optional[Union[argparse.Namespace, dict]] = None,
+    dist=True,
+    wrapper=True,
+) -> Union[nn.parallel.DistributedDataParallel, LMTrainer, AbsDecoder]:
+    assert "decoder" in cfg
     # when training standalone LM,
     # one usually forget to set the `with_head=True`
-    if not cfg['decoder']['kwargs'].get('with_head', True):
-        print("warning: 'with_head' in field:decoder:kwargs is False.")
+    if not cfg["decoder"]["kwargs"].get("with_head", True):
+        print("WARNING: 'with_head' in field:decoder:kwargs is False.")
 
-    LMNet = getattr(model_zoo, cfg['decoder']['type'])  # type: AbsDecoder
-    decoder = LMNet(**cfg['decoder']['kwargs'])
+    LMNet = getattr(model_zoo, cfg["decoder"]["type"])  # type: AbsDecoder
+    decoder = LMNet(**cfg["decoder"]["kwargs"])
 
     if wrapper:
         model = LMTrainer(decoder)
@@ -114,15 +119,14 @@ def build_model(
     # make batchnorm synced across all processes
     model = coreutils.convert_syncBatchNorm(model)
 
-    model.cuda(args['gpu'])
-    model = torch.nn.parallel.DistributedDataParallel(
-        model, device_ids=[args['gpu']])
+    model.cuda(args["gpu"])
+    model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args["gpu"]])
 
     return model
 
 
 def _parser():
-    parser = coreutils.basic_trainer_parser('Language model trainer.')
+    parser = coreutils.basic_trainer_parser("Language model trainer.")
     return parser
 
 

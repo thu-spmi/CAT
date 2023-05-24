@@ -1,5 +1,8 @@
-"""
-Resolve the data location from data/src.
+# Copyright 2023 Tsinghua University
+# Apache 2.0.
+# Author: Huahuan Zheng (maxwellzh@outlook.com)
+
+"""Resolve the data location from data/src.
 
 e.g.
 $ cd path_to_transducer/egs/wsj
@@ -26,6 +29,7 @@ import os
 import sys
 import json
 from typing import Dict, List
+
 # fmt:off
 try:
     import utils.pipeline
@@ -34,7 +38,7 @@ except ModuleNotFoundError:
 from utils.pipeline._constants import *
 # fmt:on
 
-D_SRCDATA = 'data/src'
+D_SRCDATA = "data/src"
 
 
 def find_dataset(d_data: str) -> Dict[str, Dict[str, str]]:
@@ -48,9 +52,9 @@ def find_dataset(d_data: str) -> Dict[str, Dict[str, str]]:
 
         check_cnt = 0
         for f in os.listdir(_setdir):
-            if f == 'feats.scp':
+            if f == "feats.scp":
                 check_cnt += 1
-            elif f == 'text':
+            elif f == "text":
                 check_cnt += 1
 
             if check_cnt == 2:
@@ -59,8 +63,8 @@ def find_dataset(d_data: str) -> Dict[str, Dict[str, str]]:
             continue
 
         datasets[d] = {
-            'scp': os.path.abspath(os.path.join(_setdir, 'feats.scp')),
-            'trans': os.path.abspath(os.path.join(_setdir, 'text')),
+            "scp": os.path.abspath(os.path.join(_setdir, "feats.scp")),
+            "trans": os.path.abspath(os.path.join(_setdir, "text")),
         }
     return datasets
 
@@ -71,10 +75,11 @@ def main():
     else:
         found_datasets = {}
         sys.stderr.write(
-            f"speech data resolve: {D_SRCDATA} is not found, did you run the pre-processing steps?\n")
+            f"speech data resolve: {D_SRCDATA} is not found, did you run the pre-processing steps?\n"
+        )
 
     if os.path.isfile(F_DATAINFO):
-        backup = json.load(open(F_DATAINFO, 'r'))
+        backup = json.load(open(F_DATAINFO, "r"))
         meta = backup.copy()
     else:
         os.makedirs(os.path.dirname(F_DATAINFO), exist_ok=True)
@@ -83,11 +88,11 @@ def main():
 
     meta.update(found_datasets)
     try:
-        with open(F_DATAINFO, 'w') as fo:
+        with open(F_DATAINFO, "w") as fo:
             json.dump(meta, fo, indent=4, sort_keys=True)
     except Exception as e:
         if backup is not None:
-            with open(F_DATAINFO, 'w') as fo:
+            with open(F_DATAINFO, "w") as fo:
                 json.dump(backup, fo, indent=4, sort_keys=True)
         raise RuntimeError(str(e))
 

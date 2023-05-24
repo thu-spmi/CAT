@@ -1,7 +1,10 @@
 #!/bin/bash
+# Copyright 2022 Tsinghua University
+# Apache 2.0.
 # Author: Huahuan Zheng (maxwellzh@outlook.com)
-# Decoding the logits (obtained by cat/ctc/cal_logit.py)
-# ... with FST decoding graph (obtained by utils/tool/build_decoding_graph.sh).
+#
+# Decode the logits (obtained by cat/ctc/cal_logit.py) with
+# ... FST decoding graph (obtained by utils/tool/build_decoding_graph.sh).
 set -e
 
 <<"PARSER"
@@ -18,8 +21,9 @@ set -e
 ("--lmwt", type=float, default=1.0, help="LM score weight. default: 1.0")
 ("--wip", type=float, default=0.0, help="Word insertion penalty factor. default: 0.0")
 
-("--beam", type=float, default=17.0, help="latgen-faster args: --beam")
-("--lattice-beam", type=float, default=8.0, help="latgen-faster args: --lattice-beam")
+("--beam", type=int, default=17, help="latgen-faster args: --beam")
+("--lattice-beam", type=int, default=8, help="latgen-faster args: --lattice-beam")
+("-n", "--nbest", type=int, default=16, help="Number of output nbest lists per utterance.")
 PARSER
 eval $(python utils/parseopt.py $0 $*)
 
@@ -47,29 +51,50 @@ cd $kaldienv && . ./path.sh && cd - >/dev/null
 
 log_dir="$out_dir/log"
 hyps_dir="$out_dir/hyp"
+lat_dir="$out_dir/lat"
 symtab="$graph/r_words.txt"
-[ -d $log_dir ] && rm -r $log_dir
-[ -d $hyps_dir ] && rm -r $hyps_dir
-mkdir -p $log_dir
-mkdir -p $hyps_dir
-f_out=$out_dir/text_$(basename $graph)_ac${acwt}_lm${lmwt}_wip${wip}.hyp
+f_out=$out_dir/trans_$(basename $graph)_ac${acwt}_lm${lmwt}_wip${wip}.hyp
 if [[ ! -f $f_out || $force == "True" ]]; then
-    run.pl JOB=1:$nj $log_dir/JOB.log latgen-faster \
+    mkdir -p $log_dir
+    mkdir -p $hyps_dir
+    mkdir -p $lat_dir
+    # obtain lattice
+    run.pl JOB=1:$nj $log_dir/lat.JOB.log latgen-faster \
         --max-mem=200000000 --minimize=false --allow-partial=true \
         --min-active=200 --max-active=7000 \
         --beam=$beam --lattice-beam=$lattice_beam \
         --acoustic-scale=$(echo "$acwt / $lmwt" | bc -l) --word-symbol-table=$symtab \
         $graph/TLG.fst "ark:$rspecifier/decode.JOB.ark" ark:- \| \
         lattice-scale --acoustic-scale=$acwt --lm-scale=$lmwt ark:- ark:- \| \
-        lattice-add-penalty --word-ins-penalty=$wip ark:- ark:- \| \
-        lattice-best-path --word-symbol-table=$symtab ark:- ark,t:- \| \
-        $kaldienv/utils/int2sym.pl -f 2- $symtab '>' $hyps_dir/JOB.hyp
+        lattice-add-penalty --word-ins-penalty=$wip ark:- ark:$lat_dir/lat.JOB.ark
 
+    # obtain transcript
+    run.pl JOB=1:$nj $log_dir/text.JOB.log \
+        lattice-best-path --word-symbol-table=$symtab ark:$lat_dir/lat.JOB.ark ark,t:- \| \
+        $kaldienv/utils/int2sym.pl -f 2- $symtab '>' $hyps_dir/JOB.hyp
     cat $hyps_dir/*.hyp | sort -k 1,1 >$f_out
+
+    # lattice to nbest list
+    run.pl JOB=1:$nj $log_dir/lat2nbest.JOB.log \
+        lattice-to-nbest --n=$nbest ark:$lat_dir/lat.JOB.ark ark:- \| \
+        nbest-to-linear ark:- ark:/dev/null ark,t:- \
+        ark,t:$lat_dir/lm_cost.JOB.txt ark,t:$lat_dir/ac_cost.JOB.txt \| \
+        int2sym.pl -f 2- $symtab \| \
+        sed "'s/<UNK>//g'" ">" $lat_dir/trans.JOB.txt
+
+    for file in trans lm_cost ac_cost; do
+        for i in $(seq 1 1 $nj); do
+            cat $lat_dir/$file.$i.txt
+        done | sort -k 1 >$lat_dir/$file.txt
+        rm $lat_dir/$file.*.txt
+    done
+    python utils/data/text2nbest.py $lat_dir/{trans.txt,ac_cost.txt} $f_out.nbest
+
 else
-    echo "$out_dir/text.hyp exists, skip decoding." 1>&2
+    echo "$f_out exists, skip decoding." 1>&2
 fi
 
 echo $f_out
 echo "$0 done." 1>&2
+rm -r $log_dir $hyps_dir $lat_dir
 exit 0

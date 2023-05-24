@@ -4,10 +4,9 @@
         "kwargs": {
             "attn_dropout": 0.2,
             "dim_hid": 256,
-            "num_classes": 10000,
+            "num_classes": 45899,
             "num_head": 2,
-            "num_layers": 4,
-            "with_head": true
+            "num_layers": 4
         }
     },
     "scheduler": {

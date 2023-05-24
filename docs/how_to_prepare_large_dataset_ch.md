@@ -36,81 +36,31 @@
 
 2. 将特征和label（文本格式）每2000个句子打包为一个文件，进行处理。这一过程不涉及计算，主要是在做大量IO操作
 
-当前为了兼容传统方式，1/2过程是分离的，后续可以考虑将1/2结合，进一步提高特征处理的效率。
+上述 1 & 2 步骤可以分别进行，也可以同时完成，具体可参考使用示例。
 
 **NOTE:**
-和传统方式有比较大差异的是，label会被保存为文本格式，这是考虑到我们实际使用中可能会更换tokenizer，如果保存label的ID，就要把流程2再跑一次，这是非常不值得的。保存label的文本信息后，数据加载时直接由tokenizer做on-the-fly的编码，引入的额外开销也是基本可以忽略的。
+和传统方式有比较大差异的是，label会被保存为文本格式。在模型训练中，数据加载时直接由tokenizer做on-the-fly的编码，引入的额外开销也是基本可以忽略的。
 
 特别要注意的是，使用某些tokenizer时，要处理好label中的空格，例如:
 
 使用汉字建模的SentencePiece tokenizer（tokenizer训练时不带空格），如果这里数据准备时label中的空格没有去掉，就会被映射成`<unk>`，对模型性能造成严重影响，因此对中文数据集而言，最好先将label中空格去除，再进行数据sharding；
 对一些空格不敏感的tokenizer（例如Jieba分词tokenizer），空格不会影响分词，因此没有关系。
 
-后续可以考虑将音频特征和label分开独立处理，文本文件的处理比较轻松，一次性完整加载入内存也不会带来太多额外开销。
+## 使用示例
 
-## 接口设计
+参考实验[yesno](../egs/TEMPLATE/exp/asr-ctc-large-corpora)
 
-### 数据准备
-使用`webdataset`完成步骤2的代码可参考[code](../egs/wenetspeech/local/prep_wds.py#L16)。函数接口具体是
+**NOTE:** 
 
-```python
-# 每个文件保存的句子数，无特殊需要不用修改
-UTTS_PER_FILE = 2000
+- 由于开发集数据本身`shuffle=False`，且数据量一般较小，因此开发集数据仍然使用传统方式加载；
+- 在大规模数据训练中，**epoch** 的概念不再存在，数据是以数据流的形式不断传入 dataloader；因此在训练中，日志输出的 epoch id 总是 1，我们无法严格准确地获取当前 epoch 数目，但可以通过以下方式估算
+   
+   ```
+   num_epochs = num_steps * batch_size / num_total_utts
+   ```
 
-def pack_data(
-        # kaldi格式的.scp索引文件，支持多个文件以list形式传入
-        f_scps: Union[List[str], str],
-        # 文本文件，第一列为句子ID，和.scp文件中ID必须匹配，支持多个文件list传入
-        f_labels: Union[List[str], str],
-        # 输出文件夹
-        d_out: str,
-        # 输出文件格式
-        fmt: str = "data-%05d.tar",
-        # 长度分组配置，例如，"10:2000"表示仅保留长度在10-2000帧的句子，可以使用多个进行分组
-        #           如，["10:500", "500:800", "800:1000", "1000:1200"]，不同长度组的文件会被保存在对应文件夹内
-        filter_group: List[str] = None):
-    ...
-```
+- 在大规模数据训练中，从训练中断点恢复（`--resume`）是不严格的恢复，会难以避免地导致一部分数据被模型学习更多次（如果不是频繁中断+恢复，影响理应不大）。
 
-### 模型训练
-
-在`hyper-p.json`文件中设置`train:option:large_dataset=True`使用，同时需要设定`train:option:tokenizer=xxx`和`train:option:trset=xxx`，`trset`为输出文件的格式匹配，例如：
-
-```
-# 在数据处理时，指定 d_out='./data', filter_group=['10:1000', '1000:2000']
-# 则trset可以指定为：
-# 1. 仅使用长度10-1000的句子
-trset='./data/10_1000/data-*.tar'
-# 2. 使用长度10-2000的句子
-trset='./data/{10_1000,1000_2000}/data-*.tar'
-# 3. 代码debug，仅使用10x2000个句子
-trset='./data/10_1000/data-0000{0..9}.tar'
-```
-
-底层的`webdataset`接口调用在[code](../cat/shared/manager.py#L79)
-
-**NOTE:** 由于开发集数据本身`shuffle=False`，且数据量一般较小，因此开发集数据仍然使用传统方式加载。
-
-## DDP
-
-上述所有讨论都建立在单机单卡的情况下，当涉及到DDP多卡或多机多卡训练时，这个问题会变得更复杂，例如：
-
-```
-trset="data-0{0..2}.tar"    # 包含3个tar文件，共3x2000句子
-# 假设此时有两个进程（两块GPU）使用DDP训练
-# 在tar文件层级做shuffle，把tar文件shuffle后分配到两个进程
-gpu0: data-00.tar
-gpu1: data-02.tar, data-01.tar
-```
-
-随之而来的问题是，两个进程上数据量不同，而DDP是同步式梯度更新训练，直接训练的话，gpu1会一直在等待gpu0同步，而gpu0已经完成所有数据遍历退出了。对这个问题，[wenet-e2e](https://github.com/wenet-e2e/wenet/blob/main/docs/UIO.md#qa)提出的解决方案是使用`model.join()`。
-
-我们使用更简单直接的方式：当一个进程遍历所有的数据后，直接强制所有进程结束当前迭代轮次（epoch），这样做使得1 epoch内训练的数据量减少了，但由于我们会迭代比较多轮次，并且每次会重新shuffle，这一部分带来的影响是比较小的。
-
-> wenetspeech-L（～10000 hour）中包含约15 million句子，处理后得到约7500个`.tar`文件，使用8 GPU训练，7500 % 8 = 4，即每轮有4x2000句子被抛弃
-
-**NOTE:**
-上述例子只是为了便于理解，实际中webdataset会对tar文件做一些重复，使得tar文件层级能够被均分；但由于数据集句子无法被2000整除，会有一个（使用长度分组、多个数据集时会有多个）tar文件的句子相对其他较少，在最糟糕的情况下，会丢弃 `2000*(N-1)` 个句子，N 为总GPU数。
 
 ## 参考
 

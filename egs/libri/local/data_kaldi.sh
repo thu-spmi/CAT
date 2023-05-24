@@ -14,7 +14,7 @@ set -e
         "Download from https://www.openslr.org/12")
 ("-use-3way-sp", action="store_true",
     help="Use 3-way speed perturbation.")
-("-subsets-fbank", type=str, nargs="+",
+("-subset", type=str, nargs="+",
     choices=['dev-clean', 'dev-other', 'test-clean', 'test-other', 'train-clean-100', 'train-clean-360', 'train-other-500'],
     default=['dev-clean', 'dev-other', 'test-clean', 'test-other', 'train-clean-100', 'train-clean-360', 'train-other-500'],
     help="Subset(s) for extracting FBanks. Default all.")
@@ -36,13 +36,13 @@ fi
 
 # extract meta
 python local/extract_meta_kaldi.py $src \
-    --subset $subsets_fbank
+    --subset $subset
 
 # compute fbank feat
 # by default, we use 80-dim raw fbank and do not apply
 # ... the CMVN, which matches the local/data.sh via torchaudio
 bash utils/data/data_prep_kaldi.sh \
-    $(printf "data/src/%s " $subsets_fbank) \
+    $(printf "data/src/%s " $subset) \
     --feat-dir=data/fbank \
     --nj=48 \
     --not-apply-cmvn \

@@ -16,11 +16,11 @@ import torch.nn as nn
 class MaskFreq(nn.Module):
     def __init__(
         self,
-        mask_width_range: Union[float, Sequence[float]] = (0., 0.15),
-        num_mask: int = 2
+        mask_width_range: Union[float, Sequence[float]] = (0.0, 0.15),
+        num_mask: int = 2,
     ):
         if isinstance(mask_width_range, float):
-            mask_width_range = (0., mask_width_range)
+            mask_width_range = (0.0, mask_width_range)
         if len(mask_width_range) != 2:
             raise TypeError(
                 f"mask_width_range must be a tuple of int and int values: "
@@ -28,7 +28,7 @@ class MaskFreq(nn.Module):
             )
 
         assert mask_width_range[1] > mask_width_range[0]
-        assert mask_width_range[1] < 1. and mask_width_range[0] >= 0.
+        assert mask_width_range[1] < 1.0 and mask_width_range[0] >= 0.0
 
         super().__init__()
         self.mask_width_range = mask_width_range
@@ -42,7 +42,9 @@ class MaskFreq(nn.Module):
         mask_width_range = self.mask_width_range
         idim = spec.size(-1)
         mask_width_range = (
-            int(idim*mask_width_range[0]), int(idim*mask_width_range[1]))
+            int(idim * mask_width_range[0]),
+            int(idim * mask_width_range[1]),
+        )
 
         if mask_width_range[0] == mask_width_range[1]:
             return spec
@@ -81,7 +83,7 @@ class MaskFreq(nn.Module):
 
         if spec.requires_grad:
             spec = spec.masked_fill(mask, 0.0)
-        else:   # in-place fill
+        else:  # in-place fill
             spec = spec.masked_fill_(mask, 0.0)
         spec = spec.view(*org_size)
         return spec
@@ -90,11 +92,11 @@ class MaskFreq(nn.Module):
 class MaskTime(nn.Module):
     def __init__(
         self,
-        mask_width_range: Union[float, Sequence[float]] = (0., 0.15),
-        num_mask: int = 2
+        mask_width_range: Union[float, Sequence[float]] = (0.0, 0.15),
+        num_mask: int = 2,
     ):
         if isinstance(mask_width_range, float):
-            mask_width_range = (0., mask_width_range)
+            mask_width_range = (0.0, mask_width_range)
         if len(mask_width_range) != 2:
             raise TypeError(
                 f"mask_width_range must be a tuple of int and int values: "
@@ -102,7 +104,7 @@ class MaskTime(nn.Module):
             )
 
         assert mask_width_range[1] > mask_width_range[0]
-        assert mask_width_range[1] < 1. and mask_width_range[0] >= 0.
+        assert mask_width_range[1] < 1.0 and mask_width_range[0] >= 0.0
 
         super().__init__()
         self.mask_width_range = mask_width_range
@@ -117,7 +119,9 @@ class MaskTime(nn.Module):
         mask_width_range = self.mask_width_range
         idim = x.size(1)
         mask_width_range = (
-            int(idim*mask_width_range[0]), int(idim*mask_width_range[1]))
+            int(idim * mask_width_range[0]),
+            int(idim * mask_width_range[1]),
+        )
 
         if mask_width_range[0] == mask_width_range[1]:
             return x
@@ -129,7 +133,7 @@ class MaskTime(nn.Module):
             low=mask_width_range[0],
             high=mask_width_range[1],
             size=(fusedBC, self.num_mask),
-            device=x.device
+            device=x.device,
         ).unsqueeze(2)
         mask_pos = torch.randint(
             0, max(1, L - mask_len.max()), (fusedBC, self.num_mask), device=x.device
@@ -169,7 +173,8 @@ class MaskTime(nn.Module):
             for i in range(batch):
                 for j in range(ch):
                     _out = self.mask_by_batch(
-                        spec[i*ch+j][None, :spec_length[i], :])
+                        spec[i * ch + j][None, : spec_length[i], :]
+                    )
                     outs.append(_out)
             out = pad_list(outs, 0.0, dim=1)
             out = out.view(*org_size)
@@ -248,12 +253,14 @@ class TimeWarp(torch.nn.Module):
 
         if all(le == spec_lengths[0] for le in spec_lengths):
             # Note that applying same warping for each sample
-            y = time_warp(spec, window=int(spec_lengths[0]*self.window))
+            y = time_warp(spec, window=int(spec_lengths[0] * self.window))
         else:
             ys = []
             for i in range(batch):
-                _y = time_warp(spec[i*ch:i*ch+ch][:, :spec_lengths[i], :],
-                               window=int(spec_lengths[i]*self.window))
+                _y = time_warp(
+                    spec[i * ch : i * ch + ch][:, : spec_lengths[i], :],
+                    window=int(spec_lengths[i] * self.window),
+                )
                 ys.append(_y)
             y = pad_list(ys, 0.0, dim=1)
 
@@ -281,12 +288,12 @@ class SpecAug(nn.Module):
         apply_time_warp: bool = True,
         time_warp_window: float = 0.2,
         apply_freq_mask: bool = True,
-        freq_mask_width_range: Union[float, Sequence[float]] = (0., 0.15),
+        freq_mask_width_range: Union[float, Sequence[float]] = (0.0, 0.15),
         num_freq_mask: int = 2,
         apply_time_mask: bool = True,
-        time_mask_width_range: Union[float, Sequence[float]] = (0., 0.1),
+        time_mask_width_range: Union[float, Sequence[float]] = (0.0, 0.1),
         num_time_mask: int = 2,
-        delta_feats: bool = False
+        delta_feats: bool = False,
     ):
         if not apply_time_warp and not apply_time_mask and not apply_freq_mask:
             raise ValueError(
@@ -301,8 +308,7 @@ class SpecAug(nn.Module):
             self.unstack = UnStackDelta()
 
         if apply_time_warp and time_warp_window > 0.0:
-            self.time_warp = TimeWarp(
-                window=time_warp_window)
+            self.time_warp = TimeWarp(window=time_warp_window)
         else:
             self.time_warp = None
 

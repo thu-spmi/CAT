@@ -10,8 +10,6 @@
         "option-train": {
             "model_type": "word",
             "use_all_vocab": true,
-            "bos_id": 0,
-            "unk_id": 1,
             "vocab_size": 4,
             "model_prefix": "sentencepiece/yesno_word/spm"
         }
@@ -22,16 +20,12 @@
     "train": {
         "bin": "cat.ctc.train",
         "option": {
-            "amp": true,
-            "batch_size": 4,
-            "check_freq": 50
+            "amp": false,
+            "batch_size": 1,
+            "eval_error_rate": true
         }
     },
     "inference": {
-        "avgmodel": {
-            "mode": "best",
-            "num": 2
-        },
         "infer": {
             "bin": "cat.ctc.decode",
             "option": {

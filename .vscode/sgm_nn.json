@@ -16,6 +16,7 @@
                         "BLSTMN",
                         "ConformerLSTM",
                         "ConformerNet",
+                        "EmbeddingEncoder",
                         "LSTM",
                         "LSTMrowCONV",
                         "TDNN_LSTM",
@@ -227,6 +228,34 @@
                     "if": {
                         "properties": {
                             "type": {
+                                "const": "EmbeddingEncoder"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "kwargs": {
+                                "type": "object",
+                                "properties": {
+                                    "edim": {
+                                        "type": "number"
+                                    },
+                                    "num_classes": {
+                                        "type": "number"
+                                    },
+                                    "enc_head_type": {
+                                        "type": "string",
+                                        "default": "ConformerNet"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
                                 "const": "LSTM"
                             }
                         }
@@ -243,10 +272,12 @@
                                         "type": "number"
                                     },
                                     "num_layers": {
-                                        "type": "number"
+                                        "type": "number",
+                                        "default": 1
                                     },
                                     "dropout": {
-                                        "type": "number"
+                                        "type": "number",
+                                        "default": 0.0
                                     },
                                     "proj_size": {
                                         "type": "number",
@@ -476,6 +507,7 @@
                         "LSTM",
                         "MultiDecoder",
                         "NGram",
+                        "PretrainedTransformer",
                         "SyllableEnhancedLSTM",
                         "ZeroDecoder"
                     ]
@@ -522,7 +554,7 @@
                                     },
                                     "with_head": {
                                         "type": "boolean",
-                                        "default": true
+                                        "default": false
                                     }
                                 }
                             }
@@ -562,11 +594,7 @@
                                         "type": "boolean",
                                         "default": true
                                     },
-                                    "padding_idx": {
-                                        "type": "number",
-                                        "default": -1
-                                    },
-                                    "use_cache": {
+                                    "enable_cache": {
                                         "type": "boolean",
                                         "default": false
                                     }
@@ -779,6 +807,41 @@
                     "if": {
                         "properties": {
                             "type": {
+                                "const": "PretrainedTransformer"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "kwargs": {
+                                "type": "object",
+                                "properties": {
+                                    "T_model": {
+                                        "type": "string"
+                                    },
+                                    "T_config": {
+                                        "type": "string"
+                                    },
+                                    "model": {
+                                        "type": "string"
+                                    },
+                                    "with_head": {
+                                        "type": "boolean",
+                                        "default": true
+                                    },
+                                    "enable_cache": {
+                                        "type": "boolean",
+                                        "default": false
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
                                 "const": "SyllableEnhancedLSTM"
                             }
                         }
@@ -891,7 +954,6 @@
                     "type": "string",
                     "examples": [
                         "AbsJointNet",
-                        "ConvJoiner",
                         "HAT",
                         "JointNet",
                         "LogAdd"
@@ -917,36 +979,6 @@
                             "kwargs": {
                                 "type": "object",
                                 "properties": {}
-                            }
-                        }
-                    }
-                },
-                {
-                    "if": {
-                        "properties": {
-                            "type": {
-                                "const": "ConvJoiner"
-                            }
-                        }
-                    },
-                    "then": {
-                        "properties": {
-                            "kwargs": {
-                                "type": "object",
-                                "properties": {
-                                    "odim_enc": {
-                                        "type": "number"
-                                    },
-                                    "odim_pred": {
-                                        "type": "number"
-                                    },
-                                    "num_classes": {
-                                        "type": "number"
-                                    },
-                                    "hdim": {
-                                        "type": "number"
-                                    }
-                                }
                             }
                         }
                     }
@@ -1045,12 +1077,7 @@
                         "properties": {
                             "kwargs": {
                                 "type": "object",
-                                "properties": {
-                                    "compact": {
-                                        "type": "boolean",
-                                        "default": false
-                                    }
-                                }
+                                "properties": {}
                             }
                         }
                     }
@@ -1135,7 +1162,11 @@
                                             "weight_decay": {
                                                 "default": 0
                                             },
-                                            "foreach": {}
+                                            "foreach": {},
+                                            "maximize": {
+                                                "type": "boolean",
+                                                "default": false
+                                            }
                                         }
                                     }
                                 }
@@ -1478,7 +1509,15 @@
                                             "centered": {
                                                 "default": false
                                             },
-                                            "foreach": {}
+                                            "foreach": {},
+                                            "maximize": {
+                                                "type": "boolean",
+                                                "default": false
+                                            },
+                                            "differentiable": {
+                                                "type": "boolean",
+                                                "default": false
+                                            }
                                         }
                                     }
                                 }
@@ -1513,7 +1552,11 @@
                                                     50
                                                 ]
                                             },
-                                            "foreach": {}
+                                            "foreach": {},
+                                            "maximize": {
+                                                "type": "boolean",
+                                                "default": false
+                                            }
                                         }
                                     }
                                 }
@@ -1576,6 +1619,10 @@
                                             },
                                             "eps": {
                                                 "default": 1e-08
+                                            },
+                                            "maximize": {
+                                                "type": "boolean",
+                                                "default": false
                                             }
                                         }
                                     }

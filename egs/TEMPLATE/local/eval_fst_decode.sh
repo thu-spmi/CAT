@@ -13,8 +13,11 @@ set -e -u
     help="LM score weight.")
 ("--wip", type=float, default=0.0, 
     help="Word insertion penalty.")
+("--mode", type=str, choices=['cer', 'wer'], default='wer',
+    help="Evaluate with wer or cer..")
 ("-f", "--force", action="store_true", default=False,
     help="Force to do the decoding whatever the result exists or not.")
+("-n", "--nbest", type=int, default=16, help="Number of output nbest lists per utterance.")
 PARSER
 eval $(python utils/parseopt.py $0 $*)
 
@@ -22,19 +25,21 @@ opt_force=""
 [ $force == "True" ] &&
     opt_force="-f"
 
+opt_er=""
+[ $mode == "cer" ] &&
+    opt_er="--cer"
+
 cache="/tmp/$(
-    tr -dc A-Za-z0-9 </dev/urandom | head -c 13
-    echo ''
+    head /dev/urandom | tr -dc A-Za-z0-9 | head -c10
 ).log"
 for set in $data; do
     fout=$(bash cat/ctc/fst_decode.sh $opt_force \
-        --acwt $acwt \
-        --lmwt $lmwt \
-        --wip $wip \
-        $dir/decode/$set $graph $dir/decode/$set)
+        --acwt $acwt --lmwt $lmwt \
+        --wip $wip --nbest $nbest \
+        $dir/decode/$set/ark $graph $dir/decode/$set)
 
-    echo -en "$fout\t"
-    python utils/wer.py --cer \
+    echo -en "$(basename $fout)\t"
+    python utils/wer.py $opt_er \
         data/src/$set/text $fout
 
 done 2>$cache || {

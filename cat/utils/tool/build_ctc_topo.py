@@ -1,10 +1,12 @@
-"""
-Author: Huahuan Zheng (maxwellzh@outlook.com)
+# Copyright 2023 Tsinghua University
+# Apache 2.0.
+# Author: Huahuan Zheng (maxwellzh@outlook.com)
 
-Build CTC topo FST for denominator or decoding graph.
+"""Build CTC topo FST for denominator or decoding graph.
+
 assume <blk> = 0 in tokenizer.
 
-Note that the built topo is kind of special, where
+note that the built topo is kind of special, where
 ... the input token is indeed real token + 1. e.g. 
 ... <blk> is 1 in input token, but 0 in output token.
 """
@@ -13,12 +15,22 @@ import argparse
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("vocab_size", type=int,
-                        help="Vocabulary size (include the <blk>).")
-    parser.add_argument("--n-disambig", type=int, default=0, help="Number of disambiguous symbols (include #0). "
-                        "Used with --build-for-decode")
-    parser.add_argument("--build-for-decode", action="store_true", default=False,
-                        help="Build CTC TOPO for decoding , default: False.")
+    parser.add_argument(
+        "vocab_size", type=int, help="Vocabulary size (include the <blk>)."
+    )
+    parser.add_argument(
+        "--n-disambig",
+        type=int,
+        default=0,
+        help="Number of disambiguous symbols (include #0). "
+        "Used with --build-for-decode",
+    )
+    parser.add_argument(
+        "--build-for-decode",
+        action="store_true",
+        default=False,
+        help="Build CTC TOPO for decoding , default: False.",
+    )
     args = parser.parse_args()
 
     if len(sys.argv[1:]) == 0:
@@ -44,15 +56,13 @@ if __name__ == "__main__":
         for prev_s in range(1, vocab_size):
             for next_s in range(1, vocab_size):
                 if prev_s != next_s:
-                    sys.stdout.write(
-                        f"{prev_s} {next_s} {next_s+1} {next_s+isdec}\n"
-                    )
+                    sys.stdout.write(f"{prev_s} {next_s} {next_s+1} {next_s+isdec}\n")
             sys.stdout.write(f"{prev_s}\n")
 
         if isdec:
             # suppose all disambiguous symbols are behinded real symbols
             for i in range(vocab_size):
-                for j in range(vocab_size+1, vocab_size+1+args.n_disambig):
+                for j in range(vocab_size + 1, vocab_size + 1 + args.n_disambig):
                     sys.stdout.write(f"{i} {i} {0} {j}\n")
     except IOError:
         sys.exit(0)

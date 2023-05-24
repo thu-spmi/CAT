@@ -1,6 +1,9 @@
 #!/bin/bash
 # author: Huahuan Zheng
 # this script prepare the data by kaldi tool
+# ... by default, this would extract the fbank for 
+# ... 1000-hour train-m subset.
+# ... You could modify it in local/wenetspeech_data_prep.sh
 set -e -u
 
 [ ! $(command -v python) ] && (

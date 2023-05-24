@@ -1,11 +1,11 @@
 # gather >= 0.2.3
 -e git+https://github.com/maxwellzh/torch-gather.git#egg=gather
-# warp-rnnt >= 0.8.0
+# warp-rnnt >= 0.9.0
 -e git+https://github.com/maxwellzh/warp-rnnt.git#egg=warp-rnnt
-# webdataset do not use 'pip install webdataset', that's outdated
+# webdataset, do not use 'pip install webdataset', that's outdated
 -e git+https://github.com/webdataset/webdataset.git@d7334016f44a03c4a385971aa835c4f460d3f30a#egg=webdataset
-# kenlm
-# -e git+https://github.com/kpu/kenlm.git#egg=kenlm
+# warp-ctct >= 0.3.0
+-e git+https://github.com/maxwellzh/warp-ctct.git#egg=warp-ctct
 
 # module dependencies
 torch>=1.9.0
@@ -20,4 +20,4 @@ jiwer>=2.2.0
 pyyaml>=6.0
 transformers>=4.12.3
 jieba>=0.42.1
-numpy>=1.23.2
+levenshtein
