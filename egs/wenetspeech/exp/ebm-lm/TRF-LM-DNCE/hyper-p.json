@@ -1,0 +1,48 @@
+{
+    "data": {
+        "train": "train_l",
+        "dev": "dev",
+        "test": [
+            "test_net",
+            "test_meeting"
+        ],
+        "packing-text-lm": {
+            "prune_shorter": 4,
+            "skip_control_sym": true,
+            "truncate": 32
+        }
+    },
+    "tokenizer": {
+        "type": "PretrainedTokenizer",
+        "option-init": {
+            "T_cls": "BertTokenizer",
+            "pretrained": "bert-base-chinese"
+        }
+    },
+    "train": {
+        "bin": "cat.lm.trf.train",
+        "option": {
+            "amp": true,
+            "batch_size": 512,
+            "check-freq": 500,
+            "grad-norm": 5.0
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "best",
+            "num": 3
+        },
+        "infer": {
+            "bin": "cat.lm.rescore",
+            "option": {
+                "built_model_by": "cat.lm.trf.train",
+                "output": "/path/to/output/text",
+                "nbestlist": "/path/to/nbestlist",
+                "alpha": 0.625,
+                "beta": 1.0,
+                "verbose": true
+            }
+        }
+    }
+}

@@ -1,0 +1,30 @@
+{
+    "decoder": {
+        "type": "EBM_IS",
+        "kwargs": {
+            "noise_rate": 1,
+            "method": "IS",
+            "energy_func": "sumtokenlogit",
+            "config_ebm_model": "exp/ebm-lm/GN-ELM-ML/config_ebm.json",
+            "config_noise_model": "exp/ebm-lm/GN-ELM-DNCE/config_noise.json",
+            "tokenizer_path": "exp/ebm-lm/GN-ELM-DNCE/tokenizer.tknz",
+            "bert_tokenizer": true,
+            "freeze_noise": false
+        }
+    },
+    "scheduler": {
+        "type": "SchedulerNoam",
+        "kwargs": {
+            "dim_model": 768,
+            "peak_factor": 0.15,
+            "warmup_step": 3000,
+            "stop_step": 5000
+        },
+        "optimizer": {
+            "type": "Adam",
+            "kwargs": {
+                "lr": 0.001
+            }
+        }
+    }
+}

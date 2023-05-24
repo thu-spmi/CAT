@@ -318,10 +318,24 @@ class EBM(nn.Module):
         return self.calculate_energy(inputs, targets, input_lengths)
 
 
+def hist_length(linfo: np.ndarray, max_len: int = 200):
+    max_len = max(max_len, max(linfo) + 1)
+    histinfo = np.zeros(max_len, dtype=np.float32)
+
+    for l in linfo:
+        histinfo[l] += 1
+
+    histinfo[0] = 0.0
+    # Laplace smoothing
+    histinfo[1:] += 1
+    histinfo /= histinfo.sum() + max_len
+    return histinfo
+
+
 class TRFLM(EBM):
     def __init__(
         self,
-        f_linfo: str = None,  # length information file
+        f_data: str = None,  # path to training data
         alpha: float = 0.25,  # Interpolated coefficients alpha in dnce
         with_end_mark: bool = True,  # whether each sentence has an end mark
         **kwargs
@@ -333,9 +347,10 @@ class TRFLM(EBM):
         self.with_end_mark = with_end_mark
 
         # initialize Pi and Zeta for TRF model
-        with open(f_linfo, "rb") as fib:
-            linfo = pickle.load(fib)
-        self.max_len = linfo["max_len"]
+        from ...shared.data import CorpusDataset
+
+        self.max_len = 200
+        dist_len = hist_length(CorpusDataset(f_data).get_seq_len(), self.max_len)
         self.num_classes = (
             self.udlying_nn.config.vocab_size
             if self.ebm_config[self.nn_type]["type"] == "PretrainedTransformer"
@@ -353,13 +368,8 @@ class TRFLM(EBM):
                 * torch.tensor(range(-1, self.max_len - 1), dtype=torch.float32)
             )
         self.zeta[0].data.zero_()
-        self.pi = nn.Parameter(torch.tensor(linfo["pi"], dtype=torch.float32))
-        # len_distribution = norm(linfo['mean'], linfo['std'])
-        # self.pi = nn.Parameter(torch.tensor([len_distribution.pdf(i) for i in range(self.max_len)]))
-        self.pi_noise_model = nn.Parameter(
-            torch.tensor(linfo["pi"], dtype=torch.float32)
-        )
-        # self.pi_noise_model = nn.Parameter(torch.tensor([len_distribution.pdf(i) for i in range(self.max_len)]))
+        self.pi = nn.Parameter(torch.tensor(dist_len, dtype=torch.float32))
+        self.pi_noise_model = nn.Parameter(torch.tensor(dist_len, dtype=torch.float32))
         self.pi.requires_grad_(False)
         self.pi_noise_model.requires_grad_(False)
 
