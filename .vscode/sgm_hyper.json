@@ -56,28 +56,32 @@
                             "description": "Number of threads. Default: 8",
                             "default": 8
                         },
-                        "concat": {
+                        "skip_control_sym": {
+                            "description": "Disable adding extra <s> and </s> to data.",
+                            "default": false
+                        },
+                        "prune_shorter": {
                             "type": "number",
-                            "description": "Use concat mode instead valid mode with given length. Default: -1 (disable)",
+                            "description": "Eliminate sequences shorter than given length (after padding <s> and </s>). Default: -1 (disable)",
                             "default": -1
                         },
                         "truncate": {
                             "type": "number",
-                            "description": "Truncate the seq longer than trunc and take res of it as new seq. Default: -1 (disable)",
+                            "description": "Truncate the seq longer than trunc size (after padding <s> and </s>) and take res of it as new seq. Default: -1 (disable)",
                             "default": -1
                         },
                         "bos_id": {
                             "type": "number",
-                            "description": "Begin of sequence index, used when concat > 1. Default: -1 (get from tokenizer)",
+                            "description": "Index of control symbol: <s> (begin of sequences). Default: -1 (get from tokenizer)",
                             "default": -1
                         },
                         "eos_id": {
                             "type": "number",
-                            "description": "End of sequence index, used when concat > 1. Default: -1 (see --bos_id)",
+                            "description": "Index of control symbol: </s> (end of sequences). Default: -1 (see --bos_id)",
                             "default": -1
                         },
                         "quiet": {
-                            "description": "Supress hint messages",
+                            "description": "Supress output messages.",
                             "default": false
                         }
                     },
@@ -96,6 +100,7 @@
                         "JiebaComposeLexiconTokenizer",
                         "JiebaTokenizer",
                         "LexiconTokenizer",
+                        "PretrainedTokenizer",
                         "RawTokenizer",
                         "SentencePieceTokenizer",
                         "SimpleTokenizer"
@@ -227,6 +232,36 @@
                                     "sort_units": {
                                         "type": "boolean",
                                         "default": false
+                                    }
+                                },
+                                "description": "options for initializing the tokenizer."
+                            },
+                            "option-train": {
+                                "type": "object",
+                                "properties": {},
+                                "description": "options for traininig tokenizer."
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "PretrainedTokenizer"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "option-init": {
+                                "type": "object",
+                                "properties": {
+                                    "T_cls": {
+                                        "type": "string"
+                                    },
+                                    "pretrained_model": {
+                                        "type": "string"
                                     }
                                 },
                                 "description": "options for initializing the tokenizer."

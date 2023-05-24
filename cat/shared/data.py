@@ -8,11 +8,13 @@
 """
 
 from queue import SimpleQueue
+from typing import List
 from . import coreutils as coreutils
 from .tokenizer import AbsTokenizer
 
 import io
 import os
+import bisect
 import kaldiio
 import pickle
 import math
@@ -208,32 +210,63 @@ class KaldiSpeechDataset(AbsDataset):
         return torch.tensor(mat), torch.tensor(label)
 
 
-class CorpusDataset(IndexMappingDataset):
-    """LM corpus dataset"""
+class CorpusDataset(AbsDataset):
+    """LM corpus dataset
+
+    check cat/utils/data/pack_corpus.py for how data is packed.
+    """
 
     def __init__(self, f_index: str) -> None:
         super().__init__(f_index)
 
-        self._mode = 0
-        if len(self) > 0:
-            with open(self.f_data, "rb") as fi:
-                fi.seek(self.offsets[0], 0)
-                item = pickle.load(fi)
-            if isinstance(item, tuple) and len(item) == 2:
-                self._mode = 1
+        path_prefix = os.path.dirname(f_index)
+        with open(self.f_path, "rb") as fi:
+            # paths to raw data
+            self._raw_data = [
+                os.path.join(path_prefix, x) for x in pickle.load(fi)
+            ]  # type: List[str]
+            # lengths of seqs
+            self._linfo = pickle.load(fi)  # type: np.ndarray
+            # seeks of seqs
+            self._seeks = pickle.load(fi)  # type: List[np.ndarray]
 
-    @property
-    def mode(self):
-        # 1 for return tuple of tensors, 0 for return tensor
-        return self._mode
+        self._read_buffer = [None] * len(
+            self._raw_data
+        )  # type: List[Union[io.BufferedReader, None]]
+        self._cum_len = np.zeros((len(self._raw_data)), dtype=np.int32)
+        self._cum_len[0] = self._seeks[0].shape[0]
+        for i in range(1, len(self._seeks)):
+            self._cum_len[i] = self._seeks[i].shape[0] + self._cum_len[i - 1]
 
-    def _readbuffer(self, fileio: "io.BufferedReader"):
-        if self._mode:
-            x, y = pickle.load(fileio)
-            return torch.LongTensor(x), torch.LongTensor(y)
+    def __len__(self):
+        return self._cum_len[-1]
+
+    def get_seq_len(self) -> List[int]:
+        return self._linfo
+
+    def __del__(self):
+        if hasattr(self, "_read_buffer"):
+            for f in self._read_buffer:
+                if f is not None:
+                    f.close()
+
+    def __getitem__(self, index: int) -> Any:
+        pos = bisect.bisect_right(self._cum_len, index)
+        if self._read_buffer[pos] is None:
+            self._read_buffer[pos] = open(self._raw_data[pos], "rb")
+
+        if pos > 0:
+            index -= self._cum_len[pos - 1]
+        self._read_buffer[pos].seek(self._seeks[pos][index], 0)
+        data = pickle.load(self._read_buffer[pos])
+
+        if isinstance(data[0], int):
+            x = data[:-1]
+            y = data[1:]
         else:
-            x = pickle.load(fileio)
-            return torch.LongTensor(x[:-1]), torch.LongTensor(x[1:])
+            x, y = data
+
+        return torch.LongTensor(x), torch.LongTensor(y)
 
 
 class ScpDataset(AbsDataset):

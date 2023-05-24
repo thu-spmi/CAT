@@ -9,7 +9,7 @@ Here are some toy examples you can finish in minutes. But before starting on lar
 Prepare `yesno` data:
 
 * yesno data is only for debugging.
-* it's hard to train a recognizer in such a small corpora based on CTC/RNN-T. Therefore, you will find higher error rates in results (compared to 0% in kaldi).
+* it's hard to train a recognizer in such a small corpora based on CTC / RNN-T. Therefore, you will find higher error rates in results (compared to 0% in kaldi).
 
 ```bash
 bash local/data.sh

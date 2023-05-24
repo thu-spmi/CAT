@@ -507,6 +507,7 @@
                         "LSTM",
                         "MultiDecoder",
                         "NGram",
+                        "PretrainedTransformer",
                         "SyllableEnhancedLSTM",
                         "ZeroDecoder"
                     ]
@@ -553,7 +554,7 @@
                                     },
                                     "with_head": {
                                         "type": "boolean",
-                                        "default": true
+                                        "default": false
                                     }
                                 }
                             }
@@ -593,11 +594,7 @@
                                         "type": "boolean",
                                         "default": true
                                     },
-                                    "padding_idx": {
-                                        "type": "number",
-                                        "default": -1
-                                    },
-                                    "use_cache": {
+                                    "enable_cache": {
                                         "type": "boolean",
                                         "default": false
                                     }
@@ -800,6 +797,41 @@
                                     "unk_id": {
                                         "type": "number",
                                         "default": 1
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "PretrainedTransformer"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "kwargs": {
+                                "type": "object",
+                                "properties": {
+                                    "T_model": {
+                                        "type": "string"
+                                    },
+                                    "T_config": {
+                                        "type": "string"
+                                    },
+                                    "model": {
+                                        "type": "string"
+                                    },
+                                    "with_head": {
+                                        "type": "boolean",
+                                        "default": true
+                                    },
+                                    "enable_cache": {
+                                        "type": "boolean",
+                                        "default": false
                                     }
                                 }
                             }

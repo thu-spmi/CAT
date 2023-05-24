@@ -7,7 +7,8 @@
         ],
         "packing-text-lm": {
             "nj": 4,
-            "truncate": 64
+            "truncate": 64,
+            "prune_shorter": 4
         }
     },
     "tokenizer": {
@@ -28,8 +29,7 @@
             "amp": true,
             "batching_mode": "batch",
             "batch_size": 64,
-            "check-freq": 500,
-            "debug": true
+            "check-freq": 500
         },
         "this-is-an-example-of-bucket-batching": {
             "amp": true,
@@ -40,8 +40,8 @@
     },
     "inference": {
         "avgmodel": {
-            "mode": "last",
-            "num": 2
+            "mode": "best",
+            "num": 1
         }
     }
 }

@@ -6,6 +6,7 @@
 
 from . import layer as clayer
 import kenlm
+import transformers
 from typing import *
 
 import torch
@@ -35,7 +36,7 @@ class AbsDecoder(nn.Module):
         dim_hidden: int = -1,
         padding_idx: int = -1,
         tied: bool = False,
-        with_head: bool = True,
+        with_head: bool = False,
     ) -> None:
         super().__init__()
         if num_classes == -1:
@@ -373,45 +374,32 @@ class EmbConv1D(AbsDecoder):
         return AbsStates(None, EmbConv1D)
 
 
-class CausalTransformer(AbsDecoder):
+class PretrainedTransformer(AbsDecoder):
+    """
+    This class is used for loading pretrained Transformer language model
+    """
+
     def __init__(
         self,
-        num_classes: int,
-        dim_hid: int,
-        num_head: int,
-        num_layers: int,
-        attn_dropout: float = 0.1,
+        T_model: str,
+        T_config: str,
+        model: str,
         with_head: bool = True,
-        padding_idx: int = -1,
-        use_cache: bool = False,
+        enable_cache: bool = False,
     ) -> None:
-        super().__init__(
-            num_classes=num_classes,
-            dim_emb=dim_hid,
-            padding_idx=padding_idx,
-            with_head=with_head,
-        )
-        cfg = GPT2Config(
-            vocab_size=num_classes,
-            n_embd=dim_hid,
-            n_layer=num_layers,
-            n_head=num_head,
-            attn_pdrop=attn_dropout,
-        )
-        self.trans = GPT2Model(cfg)
-        # FIXME (huahun):
-        # hacked fix of the issue related to Huggingface,
-        # ... see https://github.com/huggingface/transformers/issues/14859
-        for name, buffer in self.trans.named_buffers():
-            if ".masked_bias" in name:
-                buffer.data = torch.tensor(float("-inf"))
+        super().__init__()
+        for t in [T_model, T_config]:
+            assert isinstance(t, str)
+            assert t.isidentifier()
 
-        # use my own token embedding layer
-        self.trans.wte = None
-        self.n_head = num_head
-        self.n_layers = num_layers
-        self.d_head = dim_hid // num_head
-        self.use_cache = use_cache
+        self.enable_cache = enable_cache
+        self.clm = getattr(transformers, T_model).from_pretrained(model)
+        self.config = getattr(transformers, T_config).from_pretrained(model)
+
+        if with_head:
+            self.classifier = nn.Linear(self.config.n_embd, self.config.vocab_size)
+        else:
+            self.classifier = None
 
     def forward(
         self,
@@ -421,10 +409,7 @@ class CausalTransformer(AbsDecoder):
         *args,
         **kwargs,
     ):
-        # (N, S) -> (N, S, D])
-        use_cache = self.use_cache or (not self.training)
-        embed_x = self.embedding(src_ids)
-
+        enable_cache = self.enable_cache or (not self.training)
         if input_lengths is None:
             padding_mask = None
         else:
@@ -438,17 +423,50 @@ class CausalTransformer(AbsDecoder):
         if "hidden" in kwargs and cache is None:
             cache = kwargs["hidden"]
 
-        clm_out = self.trans(
-            inputs_embeds=embed_x,
-            attention_mask=padding_mask,
+        clm_out = self.clm(
+            input_ids=src_ids,
             past_key_values=cache,
-            use_cache=use_cache,
+            use_cache=enable_cache,
+            attention_mask=padding_mask,
         )
-        logits = self.classifier(clm_out["last_hidden_state"])
-        if use_cache:
+        if self.classifier is None:
+            logits = clm_out["logits"]
+        else:
+            logits = self.classifier(clm_out["last_hidden_state"])
+
+        if enable_cache:
             return logits, clm_out["past_key_values"]
         else:
             return logits, None
+
+
+class CausalTransformer(PretrainedTransformer):
+    def __init__(
+        self,
+        num_classes: int,
+        dim_hid: int,
+        num_head: int,
+        num_layers: int,
+        attn_dropout: float = 0.1,
+        with_head: bool = True,
+        enable_cache: bool = False,
+    ) -> None:
+        super(PretrainedTransformer, self).__init__()
+
+        self.enable_cache = enable_cache
+        self.config = GPT2Config(
+            vocab_size=num_classes,
+            n_embd=dim_hid,
+            n_layer=num_layers,
+            n_head=num_head,
+            attn_pdrop=attn_dropout,
+        )
+        self.clm = GPT2Model(self.config)
+
+        if with_head:
+            self.classifier = nn.Linear(self.config.n_embd, self.config.vocab_size)
+        else:
+            self.classifier = None
 
     @staticmethod
     def batching_states(states: List[AbsStates]) -> AbsStates:

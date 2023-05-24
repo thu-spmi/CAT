@@ -4,6 +4,7 @@
 
 """Implementation of tokenizers
 """
+from typing import Dict
 from ..shared.coreutils import randstr
 from typing import *
 from collections import OrderedDict
@@ -13,6 +14,7 @@ import io
 import re
 import sys
 import pickle
+import transformers
 import sentencepiece as sp
 import jieba
 
@@ -128,6 +130,12 @@ class AbsTokenizer:
             else:
                 raise KeyError(f"Quering key {chr} not in the vocabulary.")
         return self.r_vocab[chr]
+
+    def get_bos_id(self) -> int:
+        return self.get_index("<s>", True)
+
+    def get_eos_id(self) -> int:
+        return self.get_index("</s>", True)
 
     def _vocab_to_dict(self) -> Dict[int, str]:
         raise NotImplementedError
@@ -608,6 +616,50 @@ class SentencePieceTokenizer(AbsTokenizer):
             train_extremely_large_corpus=train_extremely_large_corpus,
             **options,
         )
+
+
+class PretrainedTokenizer(AbsTokenizer):
+    """Pretrained tokenizer from huggingface.
+
+    https://huggingface.co/models
+    """
+
+    def __init__(self, T_cls: str, pretrained_model: str) -> None:
+        """
+        T_cls (str) : type of tokenizer class, e.g. 'BertTokenizer'
+        pretrained_model (str) : name of pretrained model (available from huggingface)
+        """
+        super().__init__()
+
+        assert isinstance(T_cls, str) and T_cls.isidentifier()
+        self.tokenizer = getattr(transformers, T_cls).from_pretrained(pretrained_model)
+
+    @property
+    def vocab_size(self) -> int:
+        return len(self.tokenizer)
+
+    def get_bos_id(self) -> int:
+        return self.tokenizer.SPECIAL_TOKENS_ATTRIBUTES("bos_token")
+
+    def get_eos_id(self) -> int:
+        return self.tokenizer.convert_tokens_to_ids("eos_token")
+
+    def state_dict(self) -> OrderedDict:
+        x = pickle.dumps(self.tokenizer)
+        return OrderedDict({"tokenizer": pickle.dumps(self.tokenizer)})
+
+    def load_state_dict(self, state: OrderedDict):
+        self.tokenizer = pickle.loads(state["tokenizer"])
+
+    def encode(
+        self, strings: Union[str, Iterable[str]]
+    ) -> Union[List[int], List[List[int]]]:
+        return self.tokenizer.encode(strings)
+
+    def decode(
+        self, indices: Union[Iterable[int], Iterable[Iterable[int]]]
+    ) -> Union[str, Iterable[str]]:
+        return self.tokenizer.decode(indices)
 
 
 def initialize(cfg: Dict) -> AbsTokenizer:

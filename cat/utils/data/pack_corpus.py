@@ -32,23 +32,19 @@ import os
 import uuid
 import numpy as np
 from multiprocessing import Pool
-from typing import Union, Tuple, List
+from typing import *
 
 
-def chunk(X: List[int], chunk_size: int, drop_res: bool = True, Y: List[int] = None):
-    lx = len(X)
-    if drop_res:
-        assert lx >= chunk_size
-        res_size = lx % chunk_size
-    else:
-        res_size = 0
+def chunk(chunk_size: int):
+    def _chunk(
+        X: Iterable[List[int]],
+    ) -> Iterator[List[int]]:
+        for x in X:
+            for bound in range(0, len(x), chunk_size):
+                yield x[bound : bound + chunk_size]
+        return
 
-    if Y is None:
-        for bound in range(0, lx - res_size, chunk_size):
-            yield X[bound : bound + chunk_size]
-    else:
-        for bound in range(0, lx - res_size, chunk_size):
-            yield X[bound : bound + chunk_size], Y[bound : bound + chunk_size]
+    return _chunk
 
 
 def text2bin(arguments: Tuple[argparse.Namespace, str, int, int]):
@@ -58,27 +54,25 @@ def text2bin(arguments: Tuple[argparse.Namespace, str, int, int]):
 
     tokenizer = tknz.load(args.tokenizer)
     processor = tokenizer.encode
-    if args.bos_id == -1:
-        bos = tokenizer.get_index("<s>", skip_error=True)
+    if args.skip_control_sym:
+        bos, eos = [], []
     else:
-        bos = args.bos_id
+        if args.bos_id == -1:
+            bos = tokenizer.get_bos_id()
+        else:
+            bos = args.bos_id
 
-    if args.eos_id == -1:
-        eos = tokenizer.get_index("</s>", skip_error=True)
-    else:
-        eos = args.eos_id
+        if args.eos_id == -1:
+            eos = tokenizer.get_eos_id()
+        else:
+            eos = args.eos_id
 
-    if eos == -1:
-        eos = bos
+        if eos == -1:
+            eos = bos
 
-    bos, eos = [bos], [eos]
+        bos, eos = [bos], [eos]
 
-    if args.concat > 1 and (eos != bos):
-        raise RuntimeError(
-            f"--concat > 1 requires <bos> = <eos>, instead {bos} != {eos}"
-        )
-
-    def file_reader():
+    def file_reader() -> Iterator[List[int]]:
         with open(args.intext, "r") as fi:
             for i, line in enumerate(fi):
                 if i < idx_beg:
@@ -88,43 +82,37 @@ def text2bin(arguments: Tuple[argparse.Namespace, str, int, int]):
                 yield bos + processor(line.strip()) + eos
         return
 
-    with open(binfile, "wb") as fo:
-        # mode = 0
-        if args.truncate != -1:
-            # mode = 1
-            chunksize = args.truncate
-            for indices in file_reader():
-                for x, y in chunk(
-                    indices[:-1], chunksize, drop_res=False, Y=indices[1:]
-                ):
-                    pickle.dump((x, y), fo)
-        elif args.concat != -1:
-            chunksize = args.concat
-            for indices in file_reader():
-                for x in chunk(indices, chunksize, drop_res=True):
-                    pickle.dump(x, fo)
-        else:
-            for indices in file_reader():
-                pickle.dump(indices, fo)
-        # terminated flag
-        pickle.dump(None, fo)
+    if args.truncate == -1:
+        reader = file_reader()
+    else:
+        reader = chunk(args.truncate)(file_reader())
 
-    return
+    _seeks = []
+    _lens = []
+    with open(binfile, "wb") as fo:
+        for indices in reader:
+            if len(indices) < args.prune_shorter:
+                continue
+            _seeks.append(fo.tell())
+            pickle.dump(indices, fo)
+            _lens.append(len(indices))
+
+    return (
+        binfile,
+        np.asarray(_seeks, dtype=np.int64),
+        np.asarray(_lens, dtype=np.int64),
+    )
 
 
 def main(args: argparse.Namespace):
-    assert (
-        args.truncate == -1 or args.concat == -1
-    ), "--concat is conflict with --truncate"
-
     num_threads = args.nj
     if num_threads < 1:
-        raise ValueError(f"# threads must be >= 1, instead: {num_threads}")
+        raise ValueError(f"#threads must be >= 1, instead: {num_threads}")
 
     if not os.path.isfile(args.intext):
         raise FileNotFoundError(f"{args.intext} does not exist!")
 
-    fmt = os.path.join("/tmp", str(uuid.uuid4()) + ".{}.tmp")
+    fmt = args.output + ".{}.bin"
     if num_threads == 1:
         pool_args = [(args, fmt.format(0), 0, -1)]
     else:
@@ -140,29 +128,20 @@ def main(args: argparse.Namespace):
         ]
 
     with Pool(processes=num_threads) as pool:
-        pool.map(text2bin, pool_args)
-
-    if not args.quiet:
-        print("> Sub-process done. Begin merging...")
-
-    f_data = "{}.bin".format(args.output)
-    _seeks = []
-    with open(f_data, "wb") as fo:
-        for i in range(num_threads):
-            with open(fmt.format(i), "rb") as fi:
-                while (data := pickle.load(fi)) != None:
-                    _seeks.append(fo.tell())
-                    pickle.dump(data, fo)
-            os.remove(fmt.format(i))
+        collect_seeks = pool.map(
+            text2bin, pool_args
+        )  # type: List[Tuple[str, np.ndarray, np.ndarray]]
 
     with open(args.output, "wb") as fo:
         # save the file name of binary file
-        pickle.dump(os.path.basename(f_data), fo)
-        # save the location information
-        pickle.dump(np.asarray(_seeks, dtype=np.int64), fo)
+        pickle.dump([os.path.basename(x) for x, _, _ in collect_seeks], fo)
+        # save the seq length information
+        pickle.dump(np.concatenate([l for _, _, l in collect_seeks], axis=0), fo)
+        # save the file seeking information
+        pickle.dump([s for _, s, _ in collect_seeks], fo)
 
     if not args.quiet:
-        print("> Merged: Index {} --> binary {}".format(args.output, f_data))
+        print("> Corpus packed: {}".format(args.output))
 
 
 def _parser():
@@ -180,31 +159,36 @@ def _parser():
         "--nj", type=int, default=8, help="Number of threads. Default: 8"
     )
     parser.add_argument(
-        "--concat",
+        "--skip-control-sym",
+        action="store_true",
+        help="Disable adding extra <s> and </s> to data.",
+    )
+    parser.add_argument(
+        "--prune-shorter",
         type=int,
         default=-1,
-        help="Use concat mode instead valid mode with given length. Default: -1 (disable)",
+        help="Eliminate sequences shorter than given length (after padding <s> and </s>). Default: -1 (disable)",
     )
     parser.add_argument(
         "--truncate",
         type=int,
         default=-1,
         metavar="trunc",
-        help="Truncate the seq longer than trunc and take res of it as new seq. Default: -1 (disable)",
+        help="Truncate the seq longer than trunc size (after padding <s> and </s>) and take res of it as new seq. Default: -1 (disable)",
     )
     parser.add_argument(
         "--bos_id",
         type=int,
         default=-1,
-        help="Begin of sequence index, used when concat > 1. Default: -1 (get from tokenizer)",
+        help="Index of control symbol: <s> (begin of sequences). Default: -1 (get from tokenizer)",
     )
     parser.add_argument(
         "--eos_id",
         type=int,
         default=-1,
-        help="End of sequence index, used when concat > 1. Default: -1 (see --bos_id)",
+        help="Index of control symbol: </s> (end of sequences). Default: -1 (see --bos_id)",
     )
-    parser.add_argument("--quiet", action="store_true", help="Supress hint messages")
+    parser.add_argument("--quiet", action="store_true", help="Supress output messages.")
     return parser
 
 

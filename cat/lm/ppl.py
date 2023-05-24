@@ -162,13 +162,9 @@ def evaluate_nnlm(
     output = []  # type: List[Tuple[float, int]]
     for f_data in testsets:
         testdata = CorpusDataset(f_data)
-        # slice the dataset to avoid duplicated
-        testdata.offsets = testdata.offsets[
-            pid * (len(testdata) // wsize) : (pid + 1) * (len(testdata) // wsize)
-        ]
         testloader = DataLoader(
             testdata,
-            batch_size=32,
+            batch_sampler=DispatchSampler(testdata, 32, pid, wsize),
             num_workers=1,
             collate_fn=sortedPadCollateLM(flatten_target=False),
         )
@@ -181,7 +177,7 @@ def evaluate_nnlm(
 
             tot_log_probs += model.score(in_tokens, targets, in_lens).sum(dim=0)
             n_tokens += in_lens.sum(dim=0)
-        output.append((tot_log_probs.item(), n_tokens))
+        output.append((float(tot_log_probs), int(n_tokens)))
 
     q.put(output, block=True)
     time.sleep(2.0)
@@ -219,6 +215,31 @@ def text2corpusbin(f_text: str, f_bin: str, tokenizer):
 def isNGram(args):
     configures = coreutils.readjson(args.config)
     return configures["decoder"]["type"] == "NGram"
+
+
+class DispatchSampler:
+    def __init__(
+        self, dataset: CorpusDataset, batch_size: int, rank: int = 0, wsize: int = 1
+    ) -> None:
+        assert rank >= 0
+        assert wsize >= 1
+        self.rank = rank
+        self.wsize = wsize
+        self.bs = batch_size
+        self._len = (len(dataset) + batch_size - 1) // batch_size
+        self._local_size = len(dataset) // wsize
+        self._full_size = len(dataset)
+        assert self._len > 0
+
+    def __len__(self) -> int:
+        return self._len
+
+    def __iter__(self) -> Iterator[List[int]]:
+        for i in range(
+            self.rank * self._local_size, (self.rank + 1) * self._local_size, self.bs
+        ):
+            yield list(range(i, min(self._full_size, i + self.bs)))
+        return
 
 
 def build_model(args: argparse.Namespace, device, verbose: bool = True):

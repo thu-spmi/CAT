@@ -11,12 +11,11 @@
 * template experiment training a Transformer LM.
 
 ### Result
-
 ```
 data: data/local-lm/libri-part.dev
-ppl:   400.60  |
+ppl:   437.87  |
 ```
 
 |     training process    |
 |:-----------------------:|
-|![monitor](./monitor.png)|
+|![tb-plot](./monitor.png)|

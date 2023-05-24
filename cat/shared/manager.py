@@ -335,7 +335,7 @@ class Manager(object):
         # Initialize the tensorboard
         if args.rank == 0:
             print(
-                "> run following command to monitor training:\n"
+                "> use following command to monitor training:\n"
                 f"  tensorboard --logdir {args._logdir}"
             )
             self.writer = SummaryWriter(
