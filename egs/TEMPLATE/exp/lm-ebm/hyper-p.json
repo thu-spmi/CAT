@@ -1,0 +1,34 @@
+{
+    "data": {
+        "train": "data/local-lm/libri-part.train",
+        "dev": "data/local-lm/libri-part.dev",
+        "test": [
+            "data/local-lm/libri-part.dev"
+        ],
+        "packing-text-lm": {
+            "nj": 8,
+            "truncate": 128,
+            "prune_shorter": 4
+        }
+    },
+    "tokenizer": {
+        "type": "SentencePieceTokenizer",
+        "option-train": {
+            "model_type": "bpe",
+            "vocab_size": 4000,
+            "model_prefix": "sentencepiece/temp-bpe4000/spm"
+        }
+    },
+    "env": {
+        "CUDA_VISIBLE_DEVICES": "0"
+    },
+    "train": {
+        "bin": "cat.lm.trf.train",
+        "option": {
+            "amp": true,
+            "batch_size": 16,
+            "check-freq": 100,
+            "grad-norm": 5.0
+        }
+    }
+}
