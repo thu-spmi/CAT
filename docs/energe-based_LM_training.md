@@ -16,8 +16,8 @@ We explore energy-based language models (ELMs) with different architectures and 
 | AISHELL-1   | GN-ELM       | MLE             | [exp2](../egs/aishell/exp/ebm-lm/GN-ELM-ML/readme.md)   |
 | AISHELL-1   | GN-ELM       | NCE             | [exp3](../egs/aishell/exp/ebm-lm/GN-ELM-NCE/readme.md)  |
 | AISHELL-1   | TRF-LM       | DNCE            | [exp4](../egs/aishell/exp/ebm-lm/TRF-LM-DNCE/readme.md) |
-| WenetSpeech | GN-ELM       | DNCE            | [exp5](../egs/wenetspeech/exp/lm/GN-ELM-DNCE/readme.md) |
-| WenetSpeech | TRF-LM       | DNCE            | [exp6](../egs/wenetspeech/exp/lm/TRF-LM-DNCE/readme.md) |
+| WenetSpeech | GN-ELM       | DNCE            | [exp5](../egs/wenetspeech/exp/ebm-lm/GN-ELM-DNCE/readme.md) |
+| WenetSpeech | TRF-LM       | DNCE            | [exp6](../egs/wenetspeech/exp/ebm-lm/TRF-LM-DNCE/readme.md) |
 
 ### Notes
 
