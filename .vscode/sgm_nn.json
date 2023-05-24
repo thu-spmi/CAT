@@ -822,9 +822,10 @@
                                     "T_config": {
                                         "type": "string"
                                     },
-                                    "model": {
+                                    "pretrained": {
                                         "type": "string"
                                     },
+                                    "head_exist": {},
                                     "with_head": {
                                         "type": "boolean",
                                         "default": true

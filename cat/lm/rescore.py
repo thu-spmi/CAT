@@ -71,7 +71,7 @@ def main(args: argparse.Namespace = None):
     consumer.start()
 
     if args.cpu:
-        model = build_lm(args.config, args.resume, "cpu")
+        model = build_lm(args, "cpu")
         model.share_memory()
         mp.spawn(main_worker, nprocs=world_size, args=(args, q_data, q_out, model))
     else:
@@ -156,7 +156,7 @@ def main_worker(
         torch.cuda.set_device(device)
 
     if model is None:
-        model = build_lm(args.config, args.resume, device)
+        model = build_lm(args, device)
 
     lm_nbest = {}  # type: Dict[str, Dict[int, Tuple[float, str]]]
     # rescoring
@@ -201,17 +201,24 @@ def main_worker(
     q_out.put(None, block=True)
 
 
-def build_lm(f_config: str, f_check: str, device="cuda") -> AbsDecoder:
+def build_lm(args: argparse.Namespace, device="cuda") -> AbsDecoder:
     if isinstance(device, int):
         device = f"cuda:{device}"
 
-    model = lm_builder(coreutils.readjson(f_config), dist=False)
-    if f_check is None:
+    import importlib
+
+    interface = importlib.import_module(args.built_model_by)
+
+    cfg = coreutils.readjson(args.config)
+    model = interface.build_model(cfg, dist=False)
+
+    model = model.to(device)
+    if args.resume is None:
         sys.stderr.write(
             "WARNING: checkpoint is not configured. This MIGHT be OK if the LM is N-gram liked.\n"
         )
     else:
-        model = coreutils.load_checkpoint(model.to(device), f_check)
+        model = coreutils.load_checkpoint(model, args.resume)
     model = model.lm
     model.eval()
     return model
@@ -244,6 +251,12 @@ def _parser():
     )
     parser.add_argument(
         "--save-lm-nbest", type=str, help="Path to save the LM N-best scores."
+    )
+    parser.add_argument(
+        "--built-model-by",
+        type=str,
+        default="cat.lm.train",
+        help="Tell where to import build_model() function. defautl: cat.lm.train",
     )
 
     parser.add_argument("--nj", type=int, default=-1)

@@ -29,7 +29,6 @@ class EBM(nn.Module):
         config_ebm_model: str = None,  # TRF model configuration file path
         check_ebm_model: str = None,  # load energy model from this checkpoint if its not None
         check_noise_model: str = None,  # load noise model from this checkpoint if its not None
-        linear_scale: float = 1,  # only used for hidden2scalar energy function, we need a scale to match the energy and log pn
         noise_score: bool = False,
         zeta_factor: float = 0,
         greedy_sampling: bool = False,
@@ -44,7 +43,6 @@ class EBM(nn.Module):
         self.tokenizer = tknz.load(tokenizer_path) if tokenizer_path else None
         self.bert_tokenizer = bert_tokenizer
         self.method = method
-        self.linear_scale = linear_scale
         self.zeta_factor = zeta_factor
         self.greedy_sampling = greedy_sampling
         self.noise_score = noise_score
@@ -77,17 +75,7 @@ class EBM(nn.Module):
             self.noise_model = None
         else:
             self.noise_module = [self.noise_model]
-        if self.energy_func != "sumtargetlogit":
-            # the trf model must be an encoder or pretrained bert if energy function is not sum-target-logit
-            assert self.nn_type == "encoder" or "Bert" in self.ebm_config[self.nn_type][
-                "kwargs"
-            ].get(
-                "model_name", ""
-            ), "Currently the TRF model must be Bert for other energy funciton"
-        else:
-            assert (
-                self.nn_type == "decoder"
-            ), "The TRF model must be a decoder if using the sum-target-logit energy function"
+
         if "hidden2scalar" in self.energy_func:
             hidden_size = (
                 self.udlying_nn.config.hidden_size
@@ -95,13 +83,8 @@ class EBM(nn.Module):
                 else self.udlying_nn.dim_hid
             )
             self.energy_lin = nn.Linear(in_features=hidden_size, out_features=1)
-            with torch.no_grad():
-                for params in self.energy_lin.parameters():
-                    params *= self.linear_scale
-            if (
-                self.energy_func == "hidden2scalar-sum"
-                and hasattr(self.udlying_nn, "model")
-                and hasattr(self.udlying_nn.model, "pooler")
+            if hasattr(self.udlying_nn, "model") and hasattr(
+                self.udlying_nn.model, "pooler"
             ):
                 self.udlying_nn.model.pooler = None
 
@@ -264,8 +247,6 @@ class EBM(nn.Module):
             if targets.dim() == 2:
                 targets = targets.unsqueeze(2)
 
-            # print(input_lengths.tolist())
-            # print(inputs.tolist())
             nn_logits, _ = self.udlying_nn(inputs, input_lengths=input_lengths)
             features = self.get_logit_feat(inputs, nn_logits, targets, input_lengths)
             padding_mask = (
@@ -277,35 +258,28 @@ class EBM(nn.Module):
         elif "hidden2scalar" in self.energy_func:
             # elif self.energy_func=='hidden2scalar':
             # TODO: add input length
-            if self.energy_func == "hidden2scalar-sum":
-                outputs = self.udlying_nn(inputs, input_lengths=input_lengths)
-                assert (
-                    "last_hidden_state" in outputs
-                ), "The outputs has no attribute last_hidden_state"
-                hiddens = outputs.last_hidden_state  # (B, T, H)
-                padding_mask = torch.arange(inputs.size(1), device=inputs.device)[
-                    None, :
-                ] < input_lengths[:, None].to(inputs.device)
-                energy = self.energy_lin(hiddens).squeeze(-1)  # (B, T)
-                energy = (energy * padding_mask).sum(-1)  # (B, )
+            # if self.energy_func=='hidden2scalar-sum':
+            hiddens, _ = self.udlying_nn(inputs, input_lengths=input_lengths)
+            padding_mask = torch.arange(inputs.size(1), device=inputs.device)[
+                None, :
+            ] < input_lengths[:, None].to(inputs.device)
+            energy = self.energy_lin(hiddens).squeeze(-1)  # (B, T)
+            energy = (energy * padding_mask).sum(-1)  # (B, )
 
-            else:  # default: use the hidden state of [CLS] to represent the sentence hidden
-                outputs = self.udlying_nn(inputs, input_lengths=input_lengths)
-                assert (
-                    "pooler_output" in outputs
-                ), "The outputs has no attribute pooler_output"
-                hidden = outputs.pooler_output  # (B,H)
-                energy = self.energy_lin(hidden).squeeze(-1)  # (B,)
+            # else: # default: use the hidden state of [CLS] to represent the sentence hidden
+            #     pass
+            # outputs = self.udlying_nn(inputs, input_lengths=input_lengths)
+            # assert 'pooler_output' in outputs, 'The outputs has no attribute pooler_output'
+            # hidden = outputs.pooler_output # (B,H)
+            # energy = self.energy_lin(hidden).squeeze(-1) # (B,)
 
         elif self.energy_func == "logsumexplogit":
-            outputs = self.udlying_nn(inputs, input_lengths=input_lengths)
-            assert "logits" in outputs, "The output has no attribute logits"
-            logit = outputs.logits[:, 0, :]  # (B, Classes)
+            logits, _ = self.udlying_nn(inputs, input_lengths=input_lengths)
+            logit = logits[:, 0, :]  # (B, Classes)
             energy = -torch.logsumexp(logit, dim=-1)
         elif self.energy_func == "maxlogit":
-            outputs = self.udlying_nn(inputs, input_lengths=input_lengths)
-            assert "logits" in outputs, "The output has no attribute logits"
-            logit = outputs.logits[:, 0, :]  # (B, Classes)
+            logits, _ = self.udlying_nn(inputs, input_lengths=input_lengths)
+            logit = logits[:, 0, :]  # (B, Classes)
             energy = -torch.max(logit, dim=-1)
         elif self.energy_func == "summasklogit":
             # mask each token and obtain its logit on the original token
@@ -317,9 +291,8 @@ class EBM(nn.Module):
                 masked_inputs[:, t] = 103 * torch.ones(
                     [inputs.shape[0]], device=inputs.device, dtype=torch.long
                 )
-                outputs = self.udlying_nn(masked_inputs, input_lengths=input_lengths)
-                assert "logits" in outputs, "The output has no attribute logits"
-                logit = outputs.logits[:, t, :]  # (B, V)
+                logits, _ = self.udlying_nn(masked_inputs, input_lengths=input_lengths)
+                logit = logits[:, t, :]  # (B, V)
                 energy[:, t] = -logit.gather(
                     index=inputs[:, t].unsqueeze(1), dim=-1
                 ).squeeze()  # (B,)
@@ -329,9 +302,7 @@ class EBM(nn.Module):
             ] < input_lengths[:, None].to(inputs.device)
             energy = (energy * padding_mask).sum(-1)  # (B,)
         elif self.energy_func == "sumtokenlogit":
-            outputs = self.udlying_nn(inputs, input_lengths=input_lengths)
-            assert "logits" in outputs, "The output has no attribute logits"
-            logits = outputs.logits  # (B, T, V)
+            logits, _ = self.udlying_nn(inputs, input_lengths=input_lengths)
             energy = -logits.gather(
                 index=inputs.unsqueeze(-1), dim=-1
             ).squeeze()  # (B, T)

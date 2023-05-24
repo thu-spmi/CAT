@@ -260,7 +260,7 @@
                                     "T_cls": {
                                         "type": "string"
                                     },
-                                    "pretrained_model": {
+                                    "pretrained": {
                                         "type": "string"
                                     }
                                 },
@@ -1444,6 +1444,11 @@
                                             "save_lm_nbest": {
                                                 "type": "string",
                                                 "description": "Path to save the LM N-best scores."
+                                            },
+                                            "built_model_by": {
+                                                "type": "string",
+                                                "description": "Tell where to import build_model() function. defautl: cat.lm.train",
+                                                "default": "cat.lm.train"
                                             },
                                             "nj": {
                                                 "type": "number",
