@@ -1,6 +1,6 @@
 # Energy-based language model training
 
-This is the official code for the paper "Exploring Energy-based Language Models with Different Architectures and Training Methods for Speech Recognition".
+This is the official code for the paper ["Exploring Energy-based Language Models with Different Architectures and Training Methods for Speech Recognition"](https://arxiv.org/abs/2305.12676).
 
 ## Installation
 
@@ -21,12 +21,32 @@ We explore energy-based language models (ELMs) with different architectures and 
 
 ### Notes
 
-* The specific meanings of the terms in the table are explained in our paper.
-* The neural architecture of the ELM can be choosen from 3 different types.
-
-  - `SumTargetLogit`: set `config_ebm['decoder']['kwargs']['model_name']=GPT2LMHeadModel` and `config['decoder']['kwargs']['energy_func']='sumtargetlogit'`;
-  -  `Hidden2Scalar`: set `config_ebm['decoder']['kwargs']['model_name']=BertModel` and `config['decoder']['kwargs']['energy_func']='hidden2scalar-sum'`;
-  -  `SumTokenLogit`: set `config_ebm['decoder']['kwargs']['model_name']=BertLMHeadModel` and `config['decoder']['kwargs']['energy_func']='sumtokenlogit'`;
+* The specific meanings of the terms in the table are explained in [our paper](https://arxiv.org/abs/2305.12676).
+* The neural architecture of the ELM can be choosen from 3 different types, which can be achieved by changing the following configuration.
+   - In `config.json`
+   ```
+   {
+    "decoder": {
+        "type": "EBM",
+        "kwargs": {
+            "energy_func": "sumtargetlogit",// you can choose from 'sumtargetlogit', 'hidden2scalar' and 'sumtokenlogit'
+        }
+    }
+   }
+   ```
+   - In `config_ebm.json`
+   ```
+   {
+    "decoder": {
+        "type": "PretrainedTransformer",
+        "kwargs": {
+            "model_name": "BertModel", // GPT2LMHeadModel for sumtargetlogit, BertModel for hidden2scalar, BertLMHeadModel for sumtokenlogit
+            "config_name": "BertConfig", // BertConfig or GPT2Config
+            "path": "bert-base-chinese", // the url or file path of pretrained model. We use bert-base-chinese for bert and uer/gpt2-chinese-cluecorpussmall for gpt2
+        }
+    }
+    }
+   ```
 
 ### Significance Test
 
