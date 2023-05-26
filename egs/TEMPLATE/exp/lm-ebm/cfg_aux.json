@@ -1,0 +1,12 @@
+{
+    "decoder": {
+        "type": "CausalTransformer",
+        "kwargs": {
+            "attn_dropout": 0.1,
+            "dim_hid": 320,
+            "num_classes": 4000,
+            "num_head": 8,
+            "num_layers": 6
+        }
+    }
+}

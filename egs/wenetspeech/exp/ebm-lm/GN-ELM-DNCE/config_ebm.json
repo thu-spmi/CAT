@@ -1,0 +1,11 @@
+{
+    "decoder": {
+        "type": "PretrainedTransformer",
+        "kwargs": {
+            "T_model": "BertLMHeadModel",
+            "T_config": "BertConfig",
+            "pretrained": "bert-base-chinese",
+            "with_head": false
+        }
+    }
+}

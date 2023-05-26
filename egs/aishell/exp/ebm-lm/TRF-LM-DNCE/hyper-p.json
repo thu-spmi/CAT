@@ -1,0 +1,48 @@
+{
+    "data": {
+        "train": "train",
+        "dev": "dev",
+        "test": [
+            "test"
+        ],
+        "packing-text-lm": {
+            "nj": 4,
+            "prune_shorter": 4,
+            "truncate": 32,
+            "skip_control_sym": true
+        }
+    },
+    "tokenizer": {
+        "type": "PretrainedTokenizer",
+        "option-init": {
+            "T_cls": "BertTokenizer",
+            "pretrained": "uer/gpt2-chinese-cluecorpussmall"
+        }
+    },
+    "train": {
+        "bin": "cat.lm.trf.train",
+        "option": {
+            "amp": true,
+            "batch_size": 256,
+            "check-freq": 100,
+            "grad-norm": 5.0
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "best",
+            "num": 3
+        },
+        "infer": {
+            "bin": "cat.lm.rescore",
+            "option": {
+                "built_model_by": "cat.lm.trf.train",
+                "output": "/path/to/output/text",
+                "nbestlist": "/path/to/nbestlist",
+                "alpha": 0.625,
+                "beta": 1.0,
+                "verbose": true
+            }
+        }
+    }
+}

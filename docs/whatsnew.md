@@ -1,5 +1,5 @@
 # What's New
-
+- 2023.5: Release the code for Exploring Energy-based Language Models with Different Architectures and Training Methods for Speech Recognition. [Readme](./energy-based_LM_training.md) | [Paper](https://arxiv.org/abs/2305.12676)
 - 2022.11: Release of v3, including:
     - [RNN-Transducer training and decoding implementation](../egs/TEMPLATE/exp/asr-rnnt) (Huahuan Zheng).
     - [Language model (NN and n-gram) training and inference support](../egs/TEMPLATE/README.md#language-model) (Huahuan Zheng).

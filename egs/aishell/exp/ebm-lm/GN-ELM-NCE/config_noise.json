@@ -1,0 +1,11 @@
+{
+    "decoder": {
+        "type": "PretrainedTransformer",
+        "kwargs": {
+            "T_model": "GPT2LMHeadModel",
+            "T_config": "GPT2Config",
+            "pretrained": "uer/gpt2-chinese-cluecorpussmall",
+            "with_head": false
+        }
+    }
+}

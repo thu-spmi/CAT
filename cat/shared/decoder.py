@@ -383,7 +383,10 @@ class PretrainedTransformer(AbsDecoder):
         self,
         T_model: str,
         T_config: str,
-        model: str,
+        pretrained: str,
+        # tell whether there is a linear head on transformer or not
+        head_exist: Optional[bool] = None,
+        # whether adding an extra linear head on transformer or not
         with_head: bool = True,
         enable_cache: bool = False,
     ) -> None:
@@ -393,13 +396,24 @@ class PretrainedTransformer(AbsDecoder):
             assert t.isidentifier()
 
         self.enable_cache = enable_cache
-        self.clm = getattr(transformers, T_model).from_pretrained(model)
-        self.config = getattr(transformers, T_config).from_pretrained(model)
+        self.clm = getattr(transformers, T_model).from_pretrained(pretrained)
+        self.config = getattr(transformers, T_config).from_pretrained(pretrained)
 
-        if with_head:
+        if T_model == "BertModel":
+            self.clm.pooler = None
+
+        if head_exist is None:
+            head_exist = "LMHead" in T_model
+
+        self.classifier = None
+        if head_exist:
+            assert (
+                not with_head
+            ), f"{self.__class__.__name__}: you cannot use two linear heads on transformers."
+        elif with_head:
             self.classifier = nn.Linear(self.config.n_embd, self.config.vocab_size)
         else:
-            self.classifier = None
+            self.classifier = nn.Identity()
 
     def forward(
         self,
@@ -434,7 +448,7 @@ class PretrainedTransformer(AbsDecoder):
         else:
             logits = self.classifier(clm_out["last_hidden_state"])
 
-        if enable_cache:
+        if enable_cache and "past_key_values" in clm_out:
             return logits, clm_out["past_key_values"]
         else:
             return logits, None
@@ -466,7 +480,7 @@ class CausalTransformer(PretrainedTransformer):
         if with_head:
             self.classifier = nn.Linear(self.config.n_embd, self.config.vocab_size)
         else:
-            self.classifier = None
+            self.classifier = nn.Identity()
 
     @staticmethod
     def batching_states(states: List[AbsStates]) -> AbsStates:

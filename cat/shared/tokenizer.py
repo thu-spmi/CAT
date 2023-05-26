@@ -624,7 +624,7 @@ class PretrainedTokenizer(AbsTokenizer):
     https://huggingface.co/models
     """
 
-    def __init__(self, T_cls: str, pretrained_model: str) -> None:
+    def __init__(self, T_cls: str, pretrained: str) -> None:
         """
         T_cls (str) : type of tokenizer class, e.g. 'BertTokenizer'
         pretrained_model (str) : name of pretrained model (available from huggingface)
@@ -632,7 +632,7 @@ class PretrainedTokenizer(AbsTokenizer):
         super().__init__()
 
         assert isinstance(T_cls, str) and T_cls.isidentifier()
-        self.tokenizer = getattr(transformers, T_cls).from_pretrained(pretrained_model)
+        self.tokenizer = getattr(transformers, T_cls).from_pretrained(pretrained)
 
     @property
     def vocab_size(self) -> int:
