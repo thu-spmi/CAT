@@ -446,7 +446,7 @@ class LexiconTokenizer(AbsTokenizer):
 
         raw_units = set().union(*(lexicon.values()))
         if self.sort_units:
-            raw_units = set(sorted(raw_units))
+            raw_units = sorted(raw_units)
         lu = len(units)
         units.update({_unit: id + lu for id, _unit in enumerate(raw_units)})
         for word, utt in lexicon.items():

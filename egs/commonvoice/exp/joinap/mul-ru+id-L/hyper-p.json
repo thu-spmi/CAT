@@ -19,7 +19,8 @@
     "tokenizer": {
         "type": "LexiconTokenizer",
         "option-init": {
-            "lexicon": "data/lang-mul/lexicon"
+            "lexicon": "data/lang-mul/lexicon",
+            "sort_units": true
         }
     },
     "train": {

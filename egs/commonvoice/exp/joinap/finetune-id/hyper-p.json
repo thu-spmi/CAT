@@ -13,7 +13,8 @@
     "tokenizer": {
         "type": "LexiconTokenizer",
         "option-init": {
-            "lexicon": "data/lang-id/lexicon"
+            "lexicon": "data/lang-id/lexicon",
+            "sort_units": true
         }
     },
     "train": {
