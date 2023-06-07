@@ -87,10 +87,18 @@ class ReadProcessor(Processor):
 
 
 class NormalizeProcessor(Processor):
+    """Normalize integer waveform to float in range (-1, 1)
+
+    If the waveform is float type, return itself.
+    """
+
     def _process_fn(self, wave: torch.Tensor):
         dtype = wave.dtype
-        wave = wave.float() / torch.iinfo(dtype).max
-        return wave
+        if dtype.is_floating_point:
+            return wave
+        else:
+            wave = wave.float() / torch.iinfo(dtype).max
+            return wave
 
 
 class SpeedPerturbationProcessor(Processor):

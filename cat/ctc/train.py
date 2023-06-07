@@ -222,6 +222,9 @@ def custom_evaluate(testloader, args: argparse.Namespace, manager: Manager) -> f
     ):
         feats, ilens, labels, olens = minibatch[:4]
         feats = feats.cuda(args.gpu, non_blocking=True)
+        ilens = ilens.cuda(args.gpu, non_blocking=True)
+        labels = labels.cuda(args.gpu, non_blocking=True)
+        olens = olens.cuda(args.gpu, non_blocking=True)
 
         part_cnt_err, part_cnt_sum = model.module.get_wer(feats, labels, ilens, olens)
         cnt_err += part_cnt_err

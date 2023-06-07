@@ -539,7 +539,7 @@ def train(
             if isinstance(loss, tuple):
                 loss = loss[0]
 
-            raw_loss = loss.detach()
+            raw_loss = loss.detach().clone()
             # divide loss with fold since we want the gradients to be divided by fold
             loss /= fold
 

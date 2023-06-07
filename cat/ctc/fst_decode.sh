@@ -53,7 +53,7 @@ log_dir="$out_dir/log"
 hyps_dir="$out_dir/hyp"
 lat_dir="$out_dir/lat"
 symtab="$graph/r_words.txt"
-f_out=$out_dir/trans_$(basename $graph)_ac${acwt}_lm${lmwt}_wip${wip}.hyp
+f_out=$out_dir/ac${acwt}_lm${lmwt}_wip${wip}.hyp
 if [[ ! -f $f_out || $force == "True" ]]; then
     mkdir -p $log_dir
     mkdir -p $hyps_dir

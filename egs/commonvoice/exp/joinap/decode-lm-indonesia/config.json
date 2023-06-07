@@ -1,0 +1,10 @@
+{
+    "decoder": {
+        "type": "NGram",
+        "kwargs": {
+            "num_classes": 12673,
+            "f_binlm": "exp/joinap/decode-lm-indonesia/3gram.arpa",
+            "gram_order": 3
+        }
+    }
+}

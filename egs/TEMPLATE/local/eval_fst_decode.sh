@@ -38,7 +38,7 @@ for set in $data; do
         --wip $wip --nbest $nbest \
         $dir/decode/$set/ark $graph $dir/decode/$set)
 
-    echo -en "$(basename $fout)\t"
+    echo -en "${set}_$(basename $fout)\t"
     python utils/wer.py $opt_er \
         data/src/$set/text $fout
 

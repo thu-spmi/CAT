@@ -222,6 +222,7 @@ def worker(
     q_out.put(None, block=True)
 
 
+@torch.no_grad()
 def build_model(args: argparse.Namespace):
     assert (
         args.resume is not None

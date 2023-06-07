@@ -1,0 +1,23 @@
+{
+    "data": {
+        "train": "ru-excluded_train",
+        "dev": [
+            "ru-dev"
+        ],
+        "test": [
+            "ru-dev",
+            "ru-test"
+        ],
+        "packing-text-lm": {
+            "nj": 4,
+            "prune_shorter": 5
+        }
+    },
+    "tokenizer": {
+        "type": "SimpleTokenizer",
+        "option-init": {
+            "dmap": "data/lang-ru/lexicon"
+        }
+    },
+    "inference": {}
+}

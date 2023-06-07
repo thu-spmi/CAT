@@ -241,6 +241,7 @@ def main_worker(
     q_nbest.put(None, block=True)
 
 
+@torch.no_grad()
 def build_model(args, device) -> Tuple[torch.nn.Module, Union[torch.nn.Module, None]]:
     import importlib
 

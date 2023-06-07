@@ -1,0 +1,10 @@
+{
+    "decoder": {
+        "type": "NGram",
+        "kwargs": {
+            "num_classes": 50171,
+            "f_binlm": "exp/joinap/decode-lm-russian/3gram.arpa",
+            "gram_order": 3
+        }
+    }
+}

@@ -17,6 +17,8 @@
                         "ConformerLSTM",
                         "ConformerNet",
                         "EmbeddingEncoder",
+                        "JoinAPLinearEncoder",
+                        "JoinAPNonLinearEncoder",
                         "LSTM",
                         "LSTMrowCONV",
                         "TDNN_LSTM",
@@ -246,6 +248,60 @@
                                     "enc_head_type": {
                                         "type": "string",
                                         "default": "ConformerNet"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "JoinAPLinearEncoder"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "kwargs": {
+                                "type": "object",
+                                "properties": {
+                                    "pv_path": {
+                                        "type": "string"
+                                    },
+                                    "enc_head_type": {
+                                        "type": "string",
+                                        "default": "LSTM"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "JoinAPNonLinearEncoder"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "kwargs": {
+                                "type": "object",
+                                "properties": {
+                                    "pv_path": {
+                                        "type": "string"
+                                    },
+                                    "ap_hdim": {
+                                        "type": "number",
+                                        "default": 512
+                                    },
+                                    "enc_head_type": {
+                                        "type": "string",
+                                        "default": "LSTM"
                                     }
                                 }
                             }

@@ -1,0 +1,23 @@
+{
+    "data": {
+        "train": "id-excluded_train",
+        "dev": [
+            "id-dev"
+        ],
+        "test": [
+            "id-dev",
+            "id-test"
+        ],
+        "packing-text-lm": {
+            "nj": 4,
+            "prune_shorter": 5
+        }
+    },
+    "tokenizer": {
+        "type": "SimpleTokenizer",
+        "option-init": {
+            "dmap": "data/lang-id/lexicon"
+        }
+    },
+    "inference": {}
+}
