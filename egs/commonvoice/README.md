@@ -10,7 +10,7 @@ Then prepare data with:
 
 ```
 # Any version of Common Voice data is OK. Here CV-11.0 is used by default
-bash local/data.sh /path/to/data
+bash local/data.sh /path/to/data -lang xx
 ```
 
 ### Result

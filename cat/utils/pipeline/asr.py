@@ -98,6 +98,7 @@ def pack_data(
         mat = kaldiio.load_mat(ark, fd_dict=f_opened)  # type:np.ndarray
         if mat.shape[0] < l_min or mat.shape[0] > l_max:
             continue
+
         lb = np.asarray(tokenizer.encode(lb), dtype=np.int64)
         if lb.shape[0] == 0:
             continue
@@ -111,6 +112,10 @@ def pack_data(
 
     for f in f_opened.values():
         f.close()
+
+    if cnt == 0:
+        sys.stderr.write(sfmt.error("no qualified seq found.\n", pack_data))
+        sys.exit(1)
 
     # in order to store labels in a ndarray,
     # first I pad all labels to the max length with -1 (this won't take many memory since labels are short compared to frames)

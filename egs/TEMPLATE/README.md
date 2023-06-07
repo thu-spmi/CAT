@@ -41,6 +41,8 @@ bash local/data.sh
    bash exp/asr-ctc-crf/run.sh 
    ```
 
+- For join-AP examples, please refer to this [doc](../commonvoice/exp/joinap/readme.md).
+
 ### Language model
 
 Prepare text data (a small subset from librispeech):

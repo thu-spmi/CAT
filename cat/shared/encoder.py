@@ -435,12 +435,14 @@ class Wav2Vec2Encoder(AbsEncoder):
             assert issubclass(T_enc, AbsEncoder)
             self._enc_head = T_enc(**enc_head_kwargs)  # type: AbsEncoder
 
-        wav2vec2_one = import_huggingface_model(
+        # import huggingface model to torch built-in model
+        wav2vec2 = import_huggingface_model(
             Wav2Vec2ForCTC.from_pretrained(pretrained_model)
         )
-        self._wav2vec2_feat_extractor = wav2vec2_one.feature_extractor
+
+        self._wav2vec2_feat_extractor = wav2vec2.feature_extractor
         if use_wav2vec2_encoder:
-            self._wav2vec2_encoder = wav2vec2_one.encoder
+            self._wav2vec2_encoder = wav2vec2.encoder
         else:
             self._wav2vec2_encoder = None
 
@@ -453,7 +455,11 @@ class Wav2Vec2Encoder(AbsEncoder):
         x, xlens = self._wav2vec2_feat_extractor(x.squeeze(2), xlens)
         if self._wav2vec2_encoder is not None:
             x = self._wav2vec2_encoder(x, xlens)
-        return self._enc_head(x, xlens)
+
+        if isinstance(self._enc_head, nn.Linear):
+            return self._enc_head(x), xlens
+        else:
+            return self._enc_head(x, xlens)
 
 
 class EmbeddingEncoder(AbsEncoder):
@@ -487,3 +493,87 @@ class EmbeddingEncoder(AbsEncoder):
     def forward(self, x: torch.Tensor, xlens: torch.Tensor):
         x_emb = self.embedding(x)
         return self._enc_head(x_emb, xlens)
+
+
+class JoinAPLinearEncoder(AbsEncoder):
+    def __init__(
+        self, pv_path: str, enc_head_type: str = "LSTM", **enc_head_kwargs
+    ) -> None:
+        """
+        pv_path(str): the path of pv
+        enc_head_type(str): any of the AbsEncoder class
+        enc_head_kwargs : options passed to enc_head_type()
+
+        Param:
+            P: phonological vector matrix
+            A: phoneme transformation matrix with size [phonological_dim, phoneme_dim]
+
+        Please refer to Equation (2) of Sec. 3.2 in the paper.
+        """
+        super().__init__(False)
+        if enc_head_type == "LSTM" and enc_head_kwargs["bidirectional"] == True:
+            _hdim = enc_head_kwargs["hdim"] * 2
+        else:
+            _hdim = enc_head_kwargs["hdim"]
+
+        # (Np, Dp), Np: num of phones + special tokens, Dp: Dim of IPA features
+        self.register_buffer(
+            "P", torch.tensor(np.load(pv_path), dtype=torch.float), persistent=False
+        )
+        self.A = nn.Linear(self.P.shape[1], _hdim)
+
+        assert (
+            enc_head_type.isidentifier()
+        ), f"'{enc_head_type}' is not a class of Encoder."
+        T_enc = eval(enc_head_type)
+        assert issubclass(T_enc, AbsEncoder)
+        self._enc_head = T_enc(**enc_head_kwargs, with_head=False)
+
+    @property
+    def AP(self) -> torch.Tensor:
+        # (Np, Dp) -> (Np, H)
+        return self.A(self.P)
+
+    def forward(self, x: torch.Tensor, xlens: torch.Tensor):
+        # enc_out: (N, T, H)
+        enc_out, ls = self._enc_head(x, xlens)
+        # out: (N, T, Np)
+        out = enc_out @ self.AP.T
+        return out, ls
+
+
+class JoinAPNonLinearEncoder(JoinAPLinearEncoder):
+    def __init__(
+        self,
+        pv_path: str,
+        ap_hdim: int = 512,
+        enc_head_type: str = "LSTM",
+        **enc_head_kwargs,
+    ) -> None:
+        """
+        pv_path(str): the path of pv
+        enc_head_type (str): any of the AbsEncoder class, or 'Linear'
+        enc_head_kwargs : options passed to enc_head_type()
+        Params:
+            P   : phonological vector matrix
+            A1  : linear transformation matrix with size [phonological_dim, hdim1]
+            A2  : linear transformation matrix with size [hdim1, hdim2]
+        Please refer to Equation (3) in Sec. 3.2 in the paper.
+        """
+        super().__init__(
+            pv_path=pv_path,
+            enc_head_type=enc_head_type,
+            **enc_head_kwargs,
+        )
+
+        hdim = self.A.out_features
+        delattr(self, "A")
+
+        self.A1 = nn.Linear(self.P.shape[1], ap_hdim)
+        self.A2 = nn.Linear(ap_hdim, hdim)
+        self.sig = nn.Sigmoid()
+
+    @property
+    def AP(self) -> torch.Tensor:
+        # (Np, Dp) -> (Np, H_ap) -> (Np, H)
+        return self.A2(self.sig(self.A1(self.P)))

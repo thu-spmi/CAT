@@ -1,0 +1,42 @@
+{
+    "data": {
+        "train": "id-excluded_train",
+        "dev": [
+            "id-dev"
+        ],
+        "test": [
+            "id-dev",
+            "id-test"
+        ],
+        "filter": "10:2000"
+    },
+    "tokenizer": {
+        "type": "LexiconTokenizer",
+        "option-init": {
+            "lexicon": "data/lang-id/lexicon"
+        }
+    },
+    "train": {
+        "bin": "cat.ctc.train",
+        "option": {
+            "amp": true,
+            "batching_mode": "bucket",
+            "bucket_size": 92160,
+            "batching_uneven": true,
+            "check_freq": 1000,
+            "eval_error_rate": true
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "best",
+            "num": 3
+        },
+        "infer": {
+            "bin": "cat.ctc.cal_logit",
+            "option": {
+                "nj": 48
+            }
+        }
+    }
+}

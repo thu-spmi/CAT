@@ -18,7 +18,8 @@
 set -e
 <<"PARSER"
 ("package", type=str, default='cat', nargs='*',
-    choices=['all', 'cat', 'ctcdecode', 'kenlm', 'ctc-crf', 'fst-decoder'],
+    choices=['all', 'cat', 'ctcdecode', 'kenlm', 'ctc-crf', 'fst-decoder',
+    'g2p-tool'],
     help="Select modules to be installed/uninstalled. Default: cat.")
 ('-r', "--remove", action='store_true', default=False,
     help="Remove modules instead of installing.")
@@ -134,6 +135,15 @@ function exc_install() {
             cd src/bin/ && ln -snf ../fst-decoder/latgen-faster ./
             cd - >/dev/null
         }
+        ;;&
+    g2p-tool | all)
+        # install the Phonetisaurus G2P tool
+        export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:\$LD_LIBRARY_PATH
+        [[ $force == "False" && $(check_py_package phonetisaurus) -eq 0 ]] || {
+            cd src/g2p-tool
+            ./build.sh
+            cd - >/dev/null
+        }
         ;;
     *) ;;
     esac
@@ -176,10 +186,14 @@ function exc_rm() {
         cd src/ctc_crf
         make clean
         cd - >/dev/null
-        ;;
-    fst-decoder)
+        ;;&
+    fst-decoder | all)
         rm -if src/bin/latgen-faster
         rm -rf src/fst-decoder/latgen-faster
+        ;;&
+    g2p-tool | all)
+        python -m pip uninstall -y phonetisaurus
+        rm -if ls src/bin/phonetisaurus-*
         ;;
     *) ;;
     esac

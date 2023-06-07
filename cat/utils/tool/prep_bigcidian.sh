@@ -2,7 +2,7 @@
 # Copyright 2023 Tsinghua University
 # Apache 2.0.
 # Author: Huahuan Zheng (maxwellzh@outlook.com)
-# 
+#
 # Get bigcidian for segmentation or phone-based training
 
 set -e
@@ -14,6 +14,7 @@ PARSER
 eval $(python utils/parseopt.py $0 $*)
 
 mkdir -p $dir_dict
+export LC_ALL=C.UTF-8
 [ ! -f $dir_dict/lexicon.txt ] && (
     [ ! -f $dir_dict/run.sh ] && (
         # git clone https://github.com/speechio/BigCiDian.git $dir_dict
@@ -27,7 +28,8 @@ mkdir -p $dir_dict
     sh run.sh >>prep.log
     cd - >/dev/null
 
-    cat $dir_dict/EN/EN.txt $dir_dict/CN/CN.txt | sort -u >$dir_dict/lexicon.txt
+    cat $dir_dict/EN/EN.txt $dir_dict/CN/CN.txt |
+        sort -u -s >$dir_dict/lexicon.txt
 )
 
 [ ! -f $dir_dict/dict.txt ] && (

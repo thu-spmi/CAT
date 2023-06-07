@@ -1,6 +1,7 @@
 #!/bin/bash
 # Author: Huahuan Zheng (maxwellzh@outlook.com)
 # This script prepare commonvoice data by torchaudio
+# ... the wav.scp file is not in standard kaldi format.
 set -e -u
 
 [ ! $(command -v python) ] && (
@@ -12,16 +13,21 @@ set -e -u
 ("src", type=str, help="Source data folder containing the audios and transcripts.")
 ("-sp", type=float, nargs='*', default=None,
     help="Speed perturbation factor(s). Default: None.")
+("-lang", type=str, default='', help="Identifier for language, e.g., en, zh, ...")
 PARSER
 eval $(python utils/parseopt.py $0 $*)
+
+dst_dir="data/src"
 
 opt_sp="1.0"
 [ "$sp" != "None" ] && export opt_sp=$sp
 
+[ ! -z $lang ] && export lang="$lang-"
+
 # Extract meta info
-mkdir -p data/src
+mkdir -p $dst_dir
 for s in dev test train validated; do
-    d_set="data/src/$s"
+    d_set="$dst_dir/$lang$s"
     mkdir -p $d_set
     file="$src/$s.tsv"
     [ ! -f $file ] && {
@@ -38,15 +44,15 @@ done
 
 # By default, I use validated+train as the real training data
 # ... but we must exclude the dev & test from the validated one.
-d_train="data/src/excluded_train"
+d_train="$dst_dir/${lang}excluded_train"
 mkdir -p $d_train
 for file in wav.scp text; do
-    cat data/src/{validated,train}/$file |
+    cat $dst_dir/${lang}{validated,train}/$file |
         sort -k 1,1 -u >$d_train/$file.tmp
     for exc_set in dev test; do
         python utils/data/exclude_corpus.py \
             $d_train/$file.tmp \
-            --exclude data/src/$exc_set/$file \
+            --exclude $dst_dir/$lang$exc_set/$file \
             >$d_train/$file.tmp.tmp
         mv $d_train/$file.tmp.tmp $d_train/$file.tmp
     done
@@ -54,8 +60,8 @@ for file in wav.scp text; do
 done
 
 # Extract 80-dim FBank features
-python local/make_fbank.py data/src \
-    --subset dev test excluded_train \
+python local/make_fbank.py $dst_dir \
+    --subset $(printf "$lang%s " dev test excluded_train) \
     --speed-perturbation $opt_sp ||
     exit 1
 
