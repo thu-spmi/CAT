@@ -685,19 +685,29 @@ def model_average(
     avg_check_name = os.path.join(checkdir, suffix_avgmodel)
     checkpoint = avg_check_name + ".pt"
     if os.path.isfile(checkpoint) and returnifexist:
-        checkpoints = select_checkpoint(checkdir, avg_num, avg_mode)
-        mtime = os.path.getmtime(checkpoint)
-        for c in checkpoints:
-            if not os.path.isfile(c):
-                continue
-            if mtime < os.path.getmtime(c):
-                sys.stderr.write(
-                    sfmt.warn(
-                        f"averaged checkpoint {sfmt.udl(checkpoint)} exist. "
-                        "But it seems that is outdated."
+        try:
+            checkpoints = select_checkpoint(checkdir, avg_num, avg_mode)
+            mtime = os.path.getmtime(checkpoint)
+            for c in checkpoints:
+                if not os.path.isfile(c):
+                    continue
+                if mtime < os.path.getmtime(c):
+                    sys.stderr.write(
+                        sfmt.warn(
+                            f"averaged checkpoint {sfmt.udl(checkpoint)} exist. "
+                            "But it seems that is outdated."
+                        )
+                        + f" Internal msg: {str(e)}\n"
                     )
-                    + "\n"
+        except Exception as e:
+            sys.stderr.write(
+                sfmt.warn(
+                    f"found averaged model {sfmt.udl(checkpoint)}, "
+                    "but cannot stat its time, skip.",
+                    model_average,
                 )
+                + "\n"
+            )
 
         return checkpoint, suffix_avgmodel
     i = 1
