@@ -255,9 +255,10 @@ def pack_data_audio(
     ):
         assert uidt == uidm, f"uid mismatch: {uidt} != {uidm}"
 
+        # webdataset not allowing period '.' in __key__
         writer.write(
             {
-                "__key__": uidt,
+                "__key__": uidt.replace(".", "-"),
                 "npy": mat,
                 "txt": trans,
             },
@@ -290,7 +291,7 @@ def pack_data_ark(
         mat = kaldiio.load_mat(_ark, fd_dict=f_opened)  # type:np.ndarray
         writer.write(
             {
-                "__key__": uidt,
+                "__key__": uidt.replace(".", "-"),
                 "npy": mat,
                 "txt": trans,
             },
