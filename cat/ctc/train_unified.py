@@ -301,7 +301,7 @@ def build_model(
     cfg: refer to UnifiedAMTrainer.__init__()
     """
     assert "trainer" in cfg, f"missing 'trainer' in field:"
-    cfg["trainer"]["am"] = am_builder(cfg, args, dist=False, wrapper=False)
+    cfg["trainer"]["encoder"] = am_builder(cfg, args, dist=False, wrapper=False)
     model = UnifiedAMTrainer(**cfg["trainer"])
     if not dist:
         return model
