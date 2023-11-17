@@ -409,7 +409,7 @@ if __name__ == "__main__":
                             )
                         )
                     )
-            elif intfname in ["cat.ctc.decode", "cat.rnnt.decode"]:
+            elif intfname in ["cat.ctc.decode", "cat.rnnt.decode","cat.ctc.decode_me2e"]:
                 if "input_scp" in infr_option:
                     ignore_field_data = True
                 if "output_prefix" not in infr_option:
@@ -480,7 +480,7 @@ if __name__ == "__main__":
                                 fmt.format(f"{_set}: " + sfmt.set(k, running_option[k]))
                             )
                     running_option["input_scp"] = scp
-                    if intfname in ["cat.ctc.decode", "cat.rnnt.decode"]:
+                    if intfname in ["cat.ctc.decode", "cat.rnnt.decode","cat.ctc.decode_me2e"]:
                         if os.path.isfile(running_option["output_prefix"]):
                             sys.stderr.write(
                                 sfmt.warn(
