@@ -1,0 +1,64 @@
+{
+    "data": {
+        "train": [
+            "train_raw"
+        ],
+        "dev": "dev_raw",
+        "test": [
+            "dev_raw",
+            "test_raw"
+        ],
+        "filter": "10000:400000"
+    },
+    "env": {
+        "CUDA_VISIBLE_DEVICES": "2,3"
+    },
+    "tokenizer": {
+        "type": "SentencePieceTokenizer",
+        "option-train": {
+            "model_type": "char",
+            "vocab_size": 4232,
+            "add_dummy_prefix": false,
+            "use_all_vocab": true,
+            "model_prefix": "sentencepiece/aishell4_char/spm"
+        },
+        "|V|": 3038,
+        "file": "exp/ctc-e2e-chunk-simu/tokenizer.tknz"
+    },
+    "train": {
+        "bin": "cat.ctc.train_me2e_chunk",
+        "option": {
+            "amp": false,
+            "batch_size": 2,
+            "grad_norm": 2.0,
+            "check_freq": 472,
+            "seed": 0,
+            "grad_accum_fold": 36,
+            
+            "batching_uneven":false
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "best",
+            "num": 10
+        },
+        "infer": {
+            "bin": "cat.ctc.decode_me2e",
+            "option": {
+                "beam_size": 32,
+                "nj": 2,
+                "built_model_by":"cat.ctc.train_me2e_chunk",
+                "n_fft": 512,
+                "win_length": 400,
+                "hop_length": 160,
+                "gpu": false,
+                "streaming": true
+            }
+        },
+        "er": {
+            "cer": true
+        }
+    },
+    "commit": "618a15f70780200cdc42eed3f69f6ce1d61a4e61"
+}
