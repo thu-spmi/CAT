@@ -63,19 +63,19 @@
     $$\hat{x}(t, f)=\sum_{c=1}^c h(f, c) \times x(t, f, c)$$
     其中 $x(t, f, c)$ 是第 $c$ 个麦克风接收信号的短时傅立叶变换在时刻 $t$ 和频点 $f$ 处的取值, $\hat{x}(t, f)$ 是增强后的信号在时刻 $t$ 和频点 $f$ 处的取值, $x(t, f, c)$ 和 $\hat{x}(t, f)$ 的取值均为复数, $\mathrm{C}$ 是麦克风个数。 $h(f, c)$ 是对应第 $\mathrm{c}$ 个麦克风的时不变（time invariant）滤波器系数在频点 $f$ 处的取值。MVDR 通过求解最小方差无失真响应(minimum variance distortionless response) 得到波束成形滤波器系数 $\mathbf{h}(f)=\{h(f, c)\}_{c=1}^C \in \mathbb{C}^C$ :
 
-    <div align="center">
-      <img src="MVDR.png" alt="MVDR Beamforming">
-    </div>
+  <div align="center">
+    <img src="MVDR.png" alt="MVDR Beamforming">
+  </div>
 
-    其中:
+  其中:
 
-    $\boldsymbol{\Phi}_{\mathrm{SS}}(f)$ 是信号的跨通道功率谱密度矩阵,
+  $\boldsymbol{\Phi}_{\mathrm{SS}}(f)$ 是信号的跨通道功率谱密度矩阵,
 
-    $\boldsymbol{\Phi}_{\mathrm{NN}}(f)$ 是噪声的跨通道功率谱密度矩阵,
+  $\boldsymbol{\Phi}_{\mathrm{NN}}(f)$ 是噪声的跨通道功率谱密度矩阵,
 
-    $\mathbf{u}$ 是参考麦克风的 one-hot 向量，本方法默认选取第一个麦克风作为参考麦克风，
-    
-    $\mathrm{tr}$ 是矩阵求迹的操作。
+  $\mathbf{u}$ 是参考麦克风的 one-hot 向量，本方法默认选取第一个麦克风作为参考麦克风，
+  
+  $\mathrm{tr}$ 是矩阵求迹的操作。
 
 
 **2、特征转换**：将语谱图特征转换为Fbank特征
