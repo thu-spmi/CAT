@@ -43,15 +43,11 @@
     $$\mathbf{m}_{\text{N}}(c) = \text{BLSTM}\left( \lvert \mathbf{X}(c) \rvert \right) $$
 
   + 跨通道功率谱密度估计:
-  
 
-    $$
-    \boldsymbol{\Phi}_{\mathrm{NN}}(f)
-    $$
+
+    $$\boldsymbol{\Phi}_{\mathrm{NN}}(f)$$
     
-    $$
-    \frac{1}{\sum_{t=1}^T m_N(t, f)}
-    $$
+    $$\frac{1}{\sum_{t=1}^T m_N(t, f)}$$
 
     $$\sum_{t=1}^T m_N(t, f)\mathbf{x}(t, f)\mathbf{x}^{\dagger}(t, f)$$
     
