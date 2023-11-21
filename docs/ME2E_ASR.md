@@ -42,11 +42,13 @@
 
     $$\mathbf{m}_{\text{N}}(c) = \text{BLSTM}\left( \lvert \mathbf{X}(c) \rvert \right) $$
 
+    $$\mathbf{x}^{\dagger}(t, f)$$
+
   + 跨通道功率谱密度估计
 
     $$\boldsymbol{\Phi}_{\mathrm{SS}}(f) =\frac{1}{\sum_{t=1}^T m_S(t, f)} \sum_{t=1}^T m_S(t, f) \mathbf{x}(t, f) \mathbf{x}^{\dagger}(t, f) $$
 
-    $$\boldsymbol{\Phi}_{\mathrm{NN}}(f) =\frac{1}{\sum_{t=1}^T m_N(t, f)} \sum_{t=1}^T m_N(t, f) \mathbf{x}(t, f) \mathbf{x}^{\dagger}(t, f) $$
+    $$\boldsymbol{\Phi}_{\mathrm{NN}}(f) = \frac{1}{\sum_{t=1}^T m_N(t, f)} \sum_{t=1}^T m_N(t, f) \mathbf{x}(t, f) \mathbf{x}^{\dagger}(t, f)$$
     
     其中 $\mathbf{x}(t, f)=\{x(t, f, c)\}_{c=1}^C \in \mathbb{C}^C, \mathrm{~T}$ 是输入特征的长度, $m_S(t, f) \in[0,1]$ 是语音信号的时频掩模 (time-frequency mask) , $m_N(t, f) \in[0,1]$ 是噪声信号的时频掩模, 通过如下方式得到，其中 $m_S(t, f)$ 和 $m_N(t, f)$ 是分别估计得到的, 两者的加和并不一定等于1:
 
@@ -61,7 +63,7 @@
     $$\hat{x}(t, f)=\sum_{c=1}^c h(f, c) \times x(t, f, c)$$
     其中 $x(t, f, c)$ 是第 $c$ 个麦克风接收信号的短时傅立叶变换在时刻 $t$ 和频点 $f$ 处的取值, $\hat{x}(t, f)$ 是增强后的信号在时刻 $t$ 和频点 $f$ 处的取值, $x(t, f, c)$ 和 $\hat{x}(t, f)$ 的取值均为复数, $\mathrm{C}$ 是麦克风个数。 $h(f, c)$ 是对应第 $\mathrm{c}$ 个麦克风的时不变（time invariant）滤波器系数在频点 $f$ 处的取值。MVDR 通过求解最小方差无失真响应(minimum variance distortionless response) 得到波束成形滤波器系数 $\mathbf{h}(f)=\{h(f, c)\}_{c=1}^C \in \mathbb{C}^C$ :
 
-    $$ \mathbf{h}(f)=\frac{\boldsymbol{\Phi}_{\mathrm{NN}}^{-1}(f) \boldsymbol{\Phi}_{\mathrm{SS}}(f)}{\operatorname{tr}\left\{\boldsymbol{\Phi}_{\mathrm{NN}}^{-1}(f) \boldsymbol{\Phi}_{\mathrm{SS}}(f)\right\}} \mathbf{u} $$ 
+    $$ \mathbf{h}(f)=\frac{\boldsymbol{\Phi}_{\mathrm{NN}}^{-1}(f) \boldsymbol{\Phi}_{\mathrm{SS}}(f)}{\mathrm{tr}\left\{\boldsymbol{\Phi}_{\mathrm{NN}}^{-1}(f) \boldsymbol{\Phi}_{\mathrm{SS}}(f)\right\}} \mathbf{u} $$ 
 
     其中:
 
@@ -71,7 +73,7 @@
 
     $\mathbf{u}$ 是参考麦克风的 one-hot 向量，本方法默认选取第一个麦克风作为参考麦克风，
     
-    $\operatorname{tr}$ 是矩阵求迹的操作。
+    $\mathrm{tr}$ 是矩阵求迹的操作。
 
 
 **2、特征转换**：将语谱图特征转换为Fbank特征
