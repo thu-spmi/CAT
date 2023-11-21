@@ -44,13 +44,20 @@
 
   + 跨通道功率谱密度估计
 
+
     $$
-    \boldsymbol{\Phi}_{\mathrm{SS}}(f) = \frac{1}{\sum_{t=1}^T m_S(t, f)} \sum_{t=1}^T m_S(t, f) \mathbf{x}(t, f) \mathbf{x}^{\dagger}(t, f)
+    \boldsymbol{\Phi}_{\mathrm{SS}}(f)=\frac{1}{\sum_{t=1}^T m_S(t, f)}\sum_{t=1}^T m_S(t, f)\mathbf{x}(t, f)\mathbf{x}^{\dagger}(t, f)$$
+
+
+    $$
+    \boldsymbol{\Phi}_{\mathrm{NN}}(f)=
+    $$
+    
+    $$
+    \frac{1}{\sum_{t=1}^T m_N(t, f)}
     $$
 
-    <p align="center">
-      <img src="https://latex.codecogs.com/svg.latex?\boldsymbol{\Phi}_{\mathrm{NN}}(f) = \frac{1}{\sum_{t=1}^T m_N(t, f)} \sum_{t=1}^T m_N(t, f) \mathbf{x}(t, f) \mathbf{x}^{\dagger}(t, f)" alt="Math Image">
-    </p>
+    $$\sum_{t=1}^T m_N(t, f)\mathbf{x}(t, f)\mathbf{x}^{\dagger}(t, f)$$
     
     其中 $\mathbf{x}(t, f)=\{x(t, f, c)\}_{c=1}^C \in \mathbb{C}^C, \mathrm{~T}$ 是输入特征的长度, $m_S(t, f) \in[0,1]$ 是语音信号的时频掩模 (time-frequency mask) , $m_N(t, f) \in[0,1]$ 是噪声信号的时频掩模, 通过如下方式得到，其中 $m_S(t, f)$ 和 $m_N(t, f)$ 是分别估计得到的, 两者的加和并不一定等于1:
 
