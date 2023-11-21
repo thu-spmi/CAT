@@ -37,36 +37,46 @@
   + T-F掩码估计：
 
     通过两个神经网络估计信号和噪声的掩码，其中Xc是(B,T,F,C)的矩阵，分别代表(batch size, time, frequency, channels)
-    $$ \mathbf{m}_{\text{S}}(c) = \text{BLSTM}\left( \lvert \mathbf{X}(c) \rvert \right) $$
-    $$ \mathbf{m}_{\text{N}}(c) = \text{BLSTM}\left( \lvert \mathbf{X}(c) \rvert \right) $$
+    
+<p align="center">
+  <img src="https://latex.codecogs.com/svg.latex?\mathbf{m}_{\text{S}}(c)=\text{BLSTM}\left(\lvert\mathbf{X}(c)\rvert\right)" alt="Math Image">
+</p>
+
+<p align="center">
+  <img src="https://latex.codecogs.com/svg.latex?\mathbf{m}_{\text{N}}(c)=\text{BLSTM}\left(\lvert\mathbf{X}(c)\rvert\right)" alt="Math Image">
+</p>
+
   + 跨通道功率谱密度估计
-    $$
-    \begin{aligned}
-    \boldsymbol{\Phi}_{\mathrm{SS}}(f) & =\frac{1}{\sum_{t=1}^T m_S(t, f)} \sum_{t=1}^T m_S(t, f) \mathbf{x}(t, f) \mathbf{x}^{\dagger}(t, f) \\
-    \boldsymbol{\Phi}_{\mathrm{NN}}(f) & =\frac{1}{\sum_{t=1}^T m_N(t, f)} \sum_{t=1}^T m_N(t, f) \mathbf{x}(t, f) \mathbf{x}^{\dagger}(t, f)
-    \end{aligned}$$
-    其中 $\mathbf{x}(t, f)=\{x(t, f, c)\}_{c=1}^C \in \mathbb{C}^C, \mathrm{~T}$ 是输入特征的长度, $m_S(t, f) \in[0,1]$ 是语音信号的时频掩模 (time-frequency mask) , $m_N(t, f) \in[0,1]$ 是噪声信号的时频掩模, 通过如下方式得到，其中 $m_S(t, f)$和 $m_N(t, f)$ 是分别估计得到的, 两者的加和并不一定等于1。:
-  $$
-  \begin{align*}
-  m_S(t, f) &= \frac{1}{C} \sum_{c=1}^C m_S(t, f, c) \\
-  m_N(t, f) &= \frac{1}{C} \sum_{c=1}^C m_N(t, f, c)
-  \end{align*}
-  $$
+<div align="center">
+  <img src="https://latex.codecogs.com/svg.latex?\boldsymbol{\Phi}_{\mathrm{SS}}(f)=\frac{1}{\sum_{t=1}^T m_S(t, f)} \sum_{t=1}^T m_S(t, f) \mathbf{x}(t, f) \mathbf{x}^{\dagger}(t, f)" alt="Math Image">
+</div>
+
+<div align="center">
+  <img src="https://latex.codecogs.com/svg.latex?\boldsymbol{\Phi}_{\mathrm{NN}}(f)=\frac{1}{\sum_{t=1}^T m_N(t, f)} \sum_{t=1}^T m_N(t, f) \mathbf{x}(t, f) \mathbf{x}^{\dagger}(t, f)" alt="Math Image">
+</div>
+
+其中 $\mathbf{x}(t, f)=\{x(t, f, c)\}_{c=1}^C \in \mathbb{C}^C, \mathrm{~T}$ 是输入特征的长度, $m_S(t, f) \in[0,1]$ 是语音信号的时频掩模 (time-frequency mask) , $m_N(t, f) \in[0,1]$ 是噪声信号的时频掩模, 通过如下方式得到，其中 $m_S(t, f)$和 $m_N(t, f)$ 是分别估计得到的, 两者的加和并不一定等于1.
+
+<div align="center">
+  <img src="https://latex.codecogs.com/svg.latex?\begin{align*}m_S(t, f) &= \frac{1}{C} \sum_{c=1}^C m_S(t, f, c) \\ m_N(t, f) &= \frac{1}{C} \sum_{c=1}^C m_N(t, f, c)\end{align*}" alt="Math Image">
+</div>
+
    
 
   + MVDR波束成形
 
     MVDR 通过对多阵列接收信号应用线性滤波器来降低噪声干扰并恢复信号分量:
-    $$
-    \hat{x}(t, f)=\sum_{c=1}^c h(f, c) \times x(t, f, c)
-    $$
 
-    其中 $x(t, f, c)$ 是第 $c$ 个麦克风接收信号的短时傅立叶变换在时刻 $t$ 和频点 $f$ 处的取值, $\hat{x}(t, f)$ 是增强后的信号在时刻 $t$ 和频点 $f$ 处的取值, $x(t, f, c)$ 和 $\hat{x}(t, f)$ 的取值均为复数, $\mathrm{C}$ 是麦克风个数。 $h(f, c)$ 是对应第 $\mathrm{c}$ 个麦克风的时不变（time invariant）滤波器系数在频点 $f$ 处的取值。MVDR 通过求解最小方差无失真响应(minimum variance distortionless response) 得到波束成形滤波器系数 $\mathbf{h}(f)=\{h(f, c)\}_{c=1}^C \in \mathbb{C}^C$ :
-    $$
-    \mathbf{h}(f)=\frac{\boldsymbol{\Phi}_{\mathrm{NN}}^{-1}(f) \boldsymbol{\Phi}_{\mathrm{SS}}(f)}{\operatorname{tr}\left\{\boldsymbol{\Phi}_{\mathrm{NN}}^{-1}(f) \boldsymbol{\Phi}_{\mathrm{SS}}(f)\right\}} \mathbf{u}
-    $$
+<div align="center">
+  <img src="https://latex.codecogs.com/svg.latex?\hat{x}(t, f)=\sum_{c=1}^c h(f, c) \times x(t, f, c)" alt="Math Image">
+</div>
 
-    其中 $\boldsymbol{\Phi}_{\mathrm{SS}}(f)$ 是信号的跨通道功率谱密度矩阵, $\boldsymbol{\Phi}_{\mathrm{NN}}(f)$ 是噪声的跨通道功率谱密度矩阵, 其计算方法将在下一节详细论述。 $\mathbf{u}$ 是参考麦克风的 one-hot 向量，本方法默认选取第一个麦克风作为参考麦克风，$\operatorname{tr}$ 是矩阵求迹的操作。
+其中 $x(t, f, c)$ 是第 $c$ 个麦克风接收信号的短时傅立叶变换在时刻 $t$ 和频点 $f$ 处的取值, $\hat{x}(t, f)$ 是增强后的信号在时刻 $t$ 和频点 $f$ 处的取值, $x(t, f, c)$ 和 $\hat{x}(t, f)$ 的取值均为复数, $\mathrm{C}$ 是麦克风个数。 $h(f, c)$ 是对应第 $\mathrm{c}$ 个麦克风的时不变（time invariant）滤波器系数在频点 $f$ 处的取值。MVDR 通过求解最小方差无失真响应(minimum variance distortionless response) 得到波束成形滤波器系数 $\mathbf{h}(f)=\{h(f, c)\}_{c=1}^C \in \mathbb{C}^C$ :
+<div align="center">
+  <img src="https://latex.codecogs.com/svg.latex?\mathbf{h}(f)=\frac{\boldsymbol{\Phi}_{\mathrm{NN}}^{-1}(f) \boldsymbol{\Phi}_{\mathrm{SS}}(f)}{\operatorname{tr}\left\{\boldsymbol{\Phi}_{\mathrm{NN}}^{-1}(f) \boldsymbol{\Phi}_{\mathrm{SS}}(f)\right\}} \mathbf{u}" alt="Math Image">
+</div>
+
+其中 $\boldsymbol{\Phi}_{\mathrm{SS}}(f)$ 是信号的跨通道功率谱密度矩阵, $\boldsymbol{\Phi}_{\mathrm{NN}}(f)$ 是噪声的跨通道功率谱密度矩阵, 其计算方法将在下一节详细论述。 $\mathbf{u}$ 是参考麦克风的 one-hot 向量，本方法默认选取第一个麦克风作为参考麦克风，$\operatorname{tr}$ 是矩阵求迹的操作。
 
 
 **2、特征转换**：将语谱图特征转换为Fbank特征
@@ -115,7 +125,9 @@ bash local/audio2ark_multi.sh -h
 
 参考cuside的训练方法，流式模型和非流式模型进行参数共享和联合训练。对于每一条样本，会分别按流式方式和非流式方式进行识别并计算对应的loss，框架结构如下所示：
 
-![ME2E](ME2E.png)
+  <div align="center">
+    <img src="ME2E.png" alt="ME2E">
+  </div>
 
 多通道的语音波形首先进行STFT变换，得到语谱图特征，进行分块处理后，送入到波束形成网络，得到单通道的分块语谱图，接着将单通道的分块语谱图拼接，得到单通道的整句语谱图，分别计算Fbank特征后，得到整句的loss，在计算分块loss前，可以进行模拟未来操作，然后送入到ASR网络，计算得到分块loss
 
