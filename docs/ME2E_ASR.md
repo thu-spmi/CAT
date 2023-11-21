@@ -44,10 +44,9 @@
 
   + 跨通道功率谱密度估计:
 
-
     $$\boldsymbol{\Phi}_{\mathrm{NN}}(f)$$
     
-    $$\frac{1}{\sum_{t=1}^T m_N(t, f)}$$
+    $$ \dfrac{1}{\sum_{t=1}^T m_N(t, f)} $$
 
     $$\sum_{t=1}^T m_N(t, f)\mathbf{x}(t, f)\mathbf{x}^{\dagger}(t, f)$$
     
