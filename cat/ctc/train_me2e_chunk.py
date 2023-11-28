@@ -1,6 +1,6 @@
 # Copyright 2022 Tsinghua University
 # Apache 2.0.
-# Author: Keyu An, Huahuan Zheng
+# Author: Xiangzhu Kong
 
 __all__ = ["UnifiedAMTrainer", "build_model", "_parser", "main"]
 

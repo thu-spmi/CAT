@@ -88,13 +88,35 @@
 
 核心代码位于```cat/ctc/train_me2e.py```与```cat/ctc/train_me2e_chunk.py```，关于流式的参数设置可参考[cuside_ch.md](https://github.com/thu-spmi/CAT/blob/master/docs/cuside_ch.md)，现主要介绍下有关前端和特征转换的参数配置：
 
-+ n_fft：进行STFT变换时的点数
-+ win_length：进行STFT变换时的窗长
-+ hop_length：进行STFT变换时的跳长
-+ idim：梅尔滤波器组的数量
-+ beamforming：使用的滤波器类型，默认为"mvdr"
-+ wpe：是否使用去混响
-+ ref_ch：进行波束形成时的参考信道，默认使用第一个通道，当为"-1"时，使用注意力机制去选择参考信道
++ n_fft：进行STFT变换时的点数, 默认为512
++ win_length：进行STFT变换时的窗长, 默认为None, 窗类型为hann
++ hop_length：进行STFT变换时的跳长, 默认128
++ idim：梅尔滤波器组的数量, 默认80
++ beamforming：使用的滤波器类型, 可以选择"mpdr"、"mvdr"、"gev"、"wpd", 默认为"mvdr"
++ wpe：是否使用去混响, 默认为False
++ ref_ch：进行波束形成时的参考信道，默认使用第一个通道0，当为"-1"时，使用注意力机制去选择参考信道
+
+多通道语音增强的相关代码位于```cat/front/```下，下面进行简要的说明：
+
++ stft.py：STFT变换模块。pytorch中，torch.stft()函数无法直接对多通道的语音进行STFT变换，在此模块中，将输入(Batch, Nsample, Channels)变为(Batch * Channels, Nsample)，然后进行STFT变换，得到(Batch * Channel, Frames, Freq, 2=real_imag)，然后将其转换为 -> (Batch, Frame, Channel, Freq, 2=real_imag)
+
++ nets_utils.py：网络相关的一些功能性函数，如to_device()、pad_list()等等
+
++ multi2mono.py：若不使用增强网络，则使用该程序，选择多通道中的指定某通道，作为单通道的波形输出, 或可直接使用model.wave2fbank()，来获取默认第一个通道的fbank特征
+
++ log_mel.py：用于计算单通道的fbank特征，输入为单通道的语谱图特征(B, T, F)，输出为(B, T, D)，其中D指的是Mel频段的维度
+
++ beamformer_net.py：波束形成网络配置入口，可以选择是否使用去混响滤波器wpe，可以选择使用神经网络的方式：1、直接估计波束形成滤波器系数；2、估计各通道的掩码，在通道轴上进行平均得到滤波器系数，进而估计滤波器系数，根据约束条件不同，可以选择波束形成滤波器的类型有：mpdr、mvdr、gev、wpd
+
++ dnn_wpe_new.py：WPE滤波器的实现
+
++ dnn_beamformer.py：基于掩码的mpdr、mvdr、gev波束形成滤波器的实现
+
++ conv_beamformer.py：基于掩码的wpd波束形成滤波器的实现
+
++ filter_net.py：直接估计波束形成滤波器系数方法的实现
+
++ mask_estimator.py：基于掩码的方法中，掩码的估计网络，对每个通道计算其掩码
 
 ## 数据准备
 

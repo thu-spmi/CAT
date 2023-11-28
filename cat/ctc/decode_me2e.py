@@ -1,6 +1,6 @@
 # Copyright 2023 Tsinghua University
 # Apache 2.0.
-# Author: Huahuan Zheng (maxwellzh@outlook.com)
+# Author: Xiangzhu Kong
 
 """CTC decode module
 
