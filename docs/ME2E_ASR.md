@@ -107,7 +107,6 @@
 多通道的语音波形首先进行STFT变换，得到语谱图特征，进行分块处理后，送入到波束形成网络，得到单通道的分块语谱图，接着将单通道的分块语谱图拼接，得到单通道的整句语谱图，分别计算Fbank特征后，得到整句的loss，在计算分块loss前，可以进行模拟未来操作，然后送入到ASR网络，计算得到分块loss，
 最终将分块loss与整句loss，以及simu loss(如果有)进行加和，得到总的loss
 
-
 多通道语音增强的相关代码位于```cat/front/```下，下面进行简要的说明：
 
 + stft.py：STFT变换模块。pytorch中，torch.stft()函数无法直接对多通道的语音进行STFT变换，在此模块中，将输入(Batch, Nsample, Channels)变为(Batch * Channels, Nsample)，然后进行STFT变换，得到(Batch * Channel, Frames, Freq, 2=real_imag)，然后将其转换为 -> (Batch, Frame, Channel, Freq, 2=real_imag)
@@ -156,13 +155,67 @@ bash local/audio2ark_multi.sh -h
 
 ## 训练与测试
 
-参考cuside的训练方法，流式模型和非流式模型进行参数共享和联合训练。
+参考cuside的训练方法，流式模型和非流式模型进行参数共享和联合训练。该代码位于```cat/ctc/train_me2e_chunk.py```下
 
-该代码位于```cat/ctc/train_me2e_chunk.py```下
+配置好config.json与hyper-p.json文件后，使用指令(以/ctc-e2e-chunk为例)
+```bash 
+python utils/pipeline/asr exp/ctc-e2e-chunk --sta 1 --sto 3
+```
+来进行训练。
+
+输入指令前请确保当前目录位于./CAT-ME2E/egs/aishell4, 并有足够的储存空间与计算资源
+
+可以通过指令：
+```bash
+tensorboard --logdir=exp/ctc-e2e-chunk/log --port 6006
+```
+来查看训练进度
 
 在进行测试时：
 
-+ 非流式过程使用```model.beamforming()```与```model.encoder()```来进行识别
-+ 流式过程使用```model.bf_chunk_infer()```来进行流式的识别
+使用指令(以/ctc-e2e-chunk为例)
+```bash 
+python utils/pipeline/asr exp/ctc-e2e-chunk --sta 4 
+```
+来进行测试
 
-流式的训练和测试的过程与cuside中的区别相同
++ 非流式过程依次使用```model.beamforming()```与```model.encoder()```来进行识别。其中model.beamforming()的作用是进行多通道的增强，得到单通道的语音，计算fbank特征并返回；model.encoder()的作用是将
++ 流式过程使用```model.bf_chunk_infer()```来进行流式的识别，具体的框架结构与流程参考上文[代码说明](#代码说明)
+
+流式的训练和测试的区别与cuside中相同，训练时使用的chunk size jitter和使用随机的未来信息（未来信息随机从a.模拟的未来帧；b.不使用未来帧；c.真实的未来帧三种情况中选择），而测试时使用固定的chunk size，不使用随机未来信息，而是根据设置固定选择三种情况之一
+
+关于chunk的划分方法，举例如下：
+
+假设是一个二维张量，形状为 (batch*N_chunks, chunk_size)，其中batch =3, N_chunks = 2, chunk_size = 2, 设置left_context_size = 2, right_context_size = 2
+
+Original Samples:
++ tensor([[ 1,  2],
+      [ 3,  4],
+      [ 5,  6],
+      [ 7,  8],
+      [ 9, 10],
+      [11, 12]])
+
+Left Context:
++ tensor([[ 0.,  0.],
+        [ 1.,  2.],
+        [ 3.,  4.],
+        [ 0.,  0.],
+        [ 7.,  8.],
+        [ 9., 10.]])
+
+Right Context:
++ tensor([[ 3.,  4.],
+        [ 5.,  6.],
+        [ 0.,  0.],
+        [ 9., 10.],
+        [11., 12.],
+        [ 0.,  0.]])
+
+Samples with Context:
++ tensor([[ 0.,  0.,  1.,  2.,  3.,  4.],
+        [ 1.,  2.,  3.,  4.,  5.,  6.],
+        [ 3.,  4.,  5.,  6.,  0.,  0.],
+        [ 0.,  0.,  7.,  8.,  9., 10.],
+        [ 7.,  8.,  9., 10., 11., 12.],
+        [ 9., 10., 11., 12.,  0.,  0.]])
