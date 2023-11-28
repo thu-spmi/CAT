@@ -96,6 +96,18 @@
 + wpe：是否使用去混响, 默认为False
 + ref_ch：进行波束形成时的参考信道，默认使用第一个通道0，当为"-1"时，使用注意力机制去选择参考信道
 
+```cat/ctc/train_me2e.py```主要实现的是前端与后端进行联合训练的框架，输入的多通道信号首先经过self.beamforming(), 来进行多通道的增强，得到单通道的语音，计算fbank特征并返回；接着送入到后端ASR网络self.encoder()中进行识别，并计算得到整句的loss
+
+```cat/ctc/train_me2e_chunk.py```主要实现的是流式的端到端语音识别框架，对于每一条样本，会分别按流式方式和非流式方式进行识别并计算对应的loss，框架结构如下所示：
+
+  <div align="center">
+    <img src="ME2E.png" alt="ME2E">
+  </div>
+
+多通道的语音波形首先进行STFT变换，得到语谱图特征，进行分块处理后，送入到波束形成网络，得到单通道的分块语谱图，接着将单通道的分块语谱图拼接，得到单通道的整句语谱图，分别计算Fbank特征后，得到整句的loss，在计算分块loss前，可以进行模拟未来操作，然后送入到ASR网络，计算得到分块loss，
+最终将分块loss与整句loss，以及simu loss(如果有)进行加和，得到总的loss
+
+
 多通道语音增强的相关代码位于```cat/front/```下，下面进行简要的说明：
 
 + stft.py：STFT变换模块。pytorch中，torch.stft()函数无法直接对多通道的语音进行STFT变换，在此模块中，将输入(Batch, Nsample, Channels)变为(Batch * Channels, Nsample)，然后进行STFT变换，得到(Batch * Channel, Frames, Freq, 2=real_imag)，然后将其转换为 -> (Batch, Frame, Channel, Freq, 2=real_imag)
@@ -144,13 +156,7 @@ bash local/audio2ark_multi.sh -h
 
 ## 训练与测试
 
-参考cuside的训练方法，流式模型和非流式模型进行参数共享和联合训练。对于每一条样本，会分别按流式方式和非流式方式进行识别并计算对应的loss，框架结构如下所示：
-
-  <div align="center">
-    <img src="ME2E.png" alt="ME2E">
-  </div>
-
-多通道的语音波形首先进行STFT变换，得到语谱图特征，进行分块处理后，送入到波束形成网络，得到单通道的分块语谱图，接着将单通道的分块语谱图拼接，得到单通道的整句语谱图，分别计算Fbank特征后，得到整句的loss，在计算分块loss前，可以进行模拟未来操作，然后送入到ASR网络，计算得到分块loss
+参考cuside的训练方法，流式模型和非流式模型进行参数共享和联合训练。
 
 该代码位于```cat/ctc/train_me2e_chunk.py```下
 
