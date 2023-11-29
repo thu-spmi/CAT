@@ -112,7 +112,8 @@ def adjust_matrix_dimension(matrix, target_size, target_dimension):
 
     if size_diff > 0:
         # If the size is greater, crop the matrix
-        start_idx = size_diff // 2
+        # start_idx = size_diff // 2  # 两边进行剪裁
+        start_idx = 0 
         end_idx = start_idx + target_size
         slices = [slice(None)] * len(shape)
         slices[target_dimension] = slice(start_idx, end_idx)
