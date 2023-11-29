@@ -12,8 +12,9 @@ import pyroomacoustics as pra
 import random
 import os
 import math
-import torch
-import torchaudio
+import soundfile as sf
+# import torch
+# import torchaudio
 import json
 eps = np.finfo(np.float32).eps
 
@@ -309,12 +310,9 @@ def main(speech_dir, noise_dir, output_dir):
                 adjust_noise = snr_mix(rev_speech, total_noise, snr)
                 mix = rev_speech + adjust_noise
                 
-                signal = torch.tensor(mix).float()
+                #signal = torch.tensor(mix).float()
                 
                 ################## 存储波形 ########################
-                # 归一化信号
-                normalized_signal = signal / torch.max(torch.abs(signal))
-                
                 # 使用下划线连接所有噪声文件名称
                 all_noise_names = '_'.join(selected_noise_names)
                 all_speech_names = '_'.join(selected_speech_names)
@@ -335,10 +333,21 @@ def main(speech_dir, noise_dir, output_dir):
                 }
                 all_samples_info.append(sample_info)
                 
+                # # 归一化信号
+                # normalized_signal = signal / torch.max(torch.abs(signal))
+                # # 保存归一化后的信号
+                # audio_file_path = os.path.join(output_dir, f"{speech_idx}_{all_speech_names}_{all_noise_names}_{x:.2f}_{y:.2f}_{z:.2f}_{snr:.3f}_{mic_type}.wav")
+                # torchaudio.save(audio_file_path, normalized_signal, sample_rate=fs)
                 
-                # 保存归一化后的信号
+                # 归一化麦克风信号
+                normalized_signal_np = mix / np.max(np.abs(mix))
+                # 映射归一化后的信号到整数范围
+                int_signal = np.round(normalized_signal_np * np.iinfo(np.int16).max).astype(np.int16)
+
+                # 保存归一化后的音频数据
                 audio_file_path = os.path.join(output_dir, f"{speech_idx}_{all_speech_names}_{all_noise_names}_{x:.2f}_{y:.2f}_{z:.2f}_{snr:.3f}_{mic_type}.wav")
-                torchaudio.save(audio_file_path, normalized_signal, sample_rate=fs)
+                sf.write(audio_file_path, int_signal.T, fs, subtype='PCM_16')
+                
                 # 将 wav.scp 的条目添加到列表中
                 wav_scp_entries.append(f"{all_speech_names} {audio_file_path}")
                 
