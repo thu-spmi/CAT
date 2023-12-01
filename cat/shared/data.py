@@ -642,12 +642,20 @@ class BucketGrouper(Grouper):
         cur_batch = []
         cumsum = 0
         for i in indices:
-            cur_batch.append(i)
-            cumsum += self.linfo[i]
-            if cumsum >= self.max_bucket_size and len(cur_batch) >= self.num_procs:
+            sample_size = self.linfo[i]  # 读取当前样本的大小
+            if cumsum + sample_size > self.max_bucket_size and len(cur_batch) >= self.num_procs:
+                # 如果添加当前样本会导致超过 max_bucket_size 或者当前bucket溢出，
+                # 则返回当前bucket，并将当前样本放入下一个bucket
                 yield self._call_group(cur_batch)
                 cur_batch.clear()
                 cumsum = 0
+            cur_batch.append(i)
+            cumsum += sample_size
+
+        # 处理剩余的数据，如果有的话
+        if cur_batch:
+            yield self._call_group(cur_batch)
+        
         return
 
 
