@@ -153,6 +153,82 @@ bash local/audio2ark_multi.sh -h
 
 来获取其使用方法
 
+### 模拟数据生成
+
+如果多通道数据不足的话，还提供了```egs/aishell4/local/mix_gen.py```来进行多通道数据生成
+
+该程序参考了ConferencingSpeech2021比赛中的生成设置，使用pyroomacoustics，采用图像法模拟RIR。房间大小从3∗3∗3 m3到8∗8∗3 m3。麦克风阵列随机放置在高度为1.0 ~ 1.5 m的房间内。声源包括语音和噪声，声源来自房间内的任何位置，高度范围为1.2 ~ 1.9 m。两个声源之间的夹角大于20°。声源与麦克风阵列之间的距离为0.5 ~ 5.0 m。目前可以选择的麦克风阵列类型有线性麦克风阵列与圆形麦克风阵列，麦克风数量为8。信噪比随机范围[-5, 10 )
+
+使用方法如下：
+
+运行前可以对程序```egs/aishell4/local/mix_gen.py```中的配置进行修改：
+
++ mic_type：麦克风类型，可选择circular 或 linear
++ channels：麦克风通道数
++ noise_num：噪声数量
++ num_room：房间数
++ utt_per_room：同一个房间最多生成几条混合语音
++ snr_range：SNR范围
+
+使用指令运行：
+
+```bash
+python egs/aishell4/local/mix_gen.py /
+  --speech_dir /Path/to/the/speech/directory /
+  --noise_dir /Path/to/the/noise/directory /
+  --output_dir /Path/to/the/output/directory
+```
+
+运行成功后，会在output_dir生成混合的.wav文件，命名为uid_speech-name_noise-names_room-size_snr_mic_type.wav
+
+除此之外还会生成wav.scp与all_samples_info.json文件，其中all_samples_info.json内容如下：
+
+```json
+[
+    {
+        "idx": 0, //混合语音的id
+        "simu_file": "0_F031-001_noise3_33.61:36.19_noise1_101.28:103.86_5.74_6.58_3.00_7.666_circular.wav",  //混合语音的文件名
+        "all_speech_names": "F031-001", //干净语音的文件名
+        "noise_names": [
+            "noise3_33.61:36.19", //噪声的文件名与段落位置
+            "noise1_101.28:103.86"
+        ],
+        "room_size": { // 房间尺寸
+            "x": 5.744067519636624,
+            "y": 6.5759468318620975,
+            "z": 3
+        },
+        "snr": 7.6663277728757215, // 信噪比
+        "mic_type": "circular", // 麦克风类型
+        "speech_source": [ // 语音源位置
+            3.462313530519645,
+            3.5831228409633793,
+            1.4965583595372332
+        ],
+        "noise_sources": [ // 噪声源位置
+            [
+                3.7100593959906845,
+                2.877550235566273,
+                1.824241100547456
+            ],
+            [
+                5.535343962477329,
+                2.521491040926764,
+                1.7542075266578652
+            ]
+        ],
+        "noise_interal": [ // 噪声取样的起始点与结束点
+            "537813:579114",
+            "1620409:1661710"
+        ],
+        "channels": 8 // 麦克风通道数量
+    },
+
+.....
+]
+
+```
+
 ## 训练与测试
 
 参考cuside的训练方法，流式模型和非流式模型进行参数共享和联合训练。该代码位于```cat/ctc/train_me2e_chunk.py```下
