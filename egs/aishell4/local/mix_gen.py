@@ -18,6 +18,8 @@ import soundfile as sf
 import json
 eps = np.finfo(np.float32).eps
 
+from tqdm import tqdm
+
 seed = 0
 # 设置伪随机数生成器的种子
 random.seed(seed)
@@ -26,22 +28,33 @@ np.random.seed(seed)
 
 c = 340
 fs=16000 # Sampling frequency [Hz]
-num_room = 10000
+num_room = 999999
 utt_per_room = 5
 room_x = 8
 room_y = 8
 room_z = 3
 
-mic_type = "circular" # circular or linear
+save_interval = 100  # 每处理100个语音文件后保存一次进度
+
+# 定义可能的麦克风类型
+mic_types = ["circular", "linear","square"]
 channels = 8
 phase = 0
 fs = 16000
 
-noise_num = 2
+# 假设的最大噪声源数量
+total_noise_num = 2
 speech_num = 1
 
 # 定义SNR范围[-5, 10 )
 snr_range = (-5, 10)
+
+# 定义非线性阵列麦克风间的相对距离（以米为单位）
+#relative_distances_m = np.array([0.15, 0.1, 0.05, 0.2, 0.05, 0.1, 0.15])
+offsets_m = [-0.4, -0.25, -0.15, -0.1, 0.1, 0.15, 0.25, 0.41]  # 偏移量
+
+
+
 
 def check_conditions(speech_source, noise_sources, mic_middle_point):
     """
@@ -178,16 +191,38 @@ def get_one_spk_noise(clean, noise, snr, scale):
     noisy = noisy.T
     return noisy, clean #noisy_scale
 
+# 检查麦克风位置是否在房间内
+def is_mic_inside_room(mic_array, room_x, room_y):
+    for mic in mic_array.T:  # 遍历每个麦克风
+        x, y = mic[:2]  # 获取麦克风的 x 和 y 坐标
+        if x < 0 or x > room_x or y < 0 or y > room_y:
+            return False  # 如果麦克风不在房间内，返回 False
+    return True  # 所有麦克风都在房间内，返回 True
+
 def get_speech_reverb(room, speech_source,speech_path):
     fs, audio = wavfile.read(speech_path)
     audio_len = len(audio)
     # 更新声源
     room.sources = []
-    room.add_source(speech_source, signal=audio)
-    room.simulate()
-    mic_signals = room.mic_array.signals
+    try:
+        speech_source_array = np.array([speech_source], dtype=np.float32)
+        room.add_source(speech_source_array.T, signal=audio)
+        room.simulate()
+        mic_signals = room.mic_array.signals
     
-    return mic_signals, audio_len
+        return mic_signals, audio_len, False
+    except:
+        bbox = room.get_bbox()
+        room_size = bbox[:, 1] - bbox[:, 0]
+        mic_positions = room.mic_array.R
+        print("房间坐标：", bbox)
+        print("房间尺寸(x, y, z): ", room_size)
+        print("源坐标",speech_source)
+        print("麦克风位置：",mic_positions)
+        #raise ValueError("The source must be added inside the room.")
+        return False, False, True
+        
+    
  
 def get_noise_reverb(room, noise_source,noise_path,speech_len):
     fs, audio = wavfile.read(noise_path)
@@ -195,32 +230,112 @@ def get_noise_reverb(room, noise_source,noise_path,speech_len):
     if audio_len > speech_len:
         # 随机选择audio的起始位置
         start_position = np.random.randint(0, audio_len - speech_len + 1)
+        end_position = start_position + speech_len
         # 选择长度为speech_len的片段
-        audio = audio[start_position:start_position + speech_len]
-    elif audio_len < speech_len:
+        audio = audio[start_position:end_position]
+    else :
         # 补零以达到speech_len
         zero_padding = np.zeros(speech_len - audio_len)
         audio = np.concatenate([audio, zero_padding])
+        start_position = 0
+        end_position = start_position + audio_len
     # 更新声源
     room.sources = []
-    room.add_source(noise_source, signal=audio)
-    room.simulate()
-    mic_signals = room.mic_array.signals
+    try:
+        noise_source_array = np.array([noise_source], dtype=np.float32)
+        room.add_source(noise_source_array.T, signal=audio)
+        room.simulate()
+        mic_signals = room.mic_array.signals
+        
+        return mic_signals, start_position, end_position, False
+    except:
+        bbox = room.get_bbox()
+        room_size = bbox[:, 1] - bbox[:, 0]
+        mic_positions = room.mic_array.R
+        print("房间坐标：", bbox)
+        print("房间尺寸(x, y, z): ", room_size)
+        print("noise源坐标",noise_source)
+        print("麦克风位置：",mic_positions)
+        #raise ValueError("The source must be added inside the room.")
+        return True, True, True, True
+        
     
-    return mic_signals, start_position, start_position + speech_len
 
-def main(speech_dir, noise_dir, output_dir): 
+# 定义非均匀线性麦克风阵列的函数
+def non_uniform_linear_array(center, offsets_m):
+    """
+    根据提供的偏移量在中心点附近创建非均匀线性麦克风阵列。
+
+    Parameters:
+    center: list or array, 阵列中心点的坐标[x, y, z]。
+    offsets_m: list or array, 每个麦克风点相对于中心点的水平偏移量。
+
+    Returns:
+    numpy.ndarray: 麦克风阵列的坐标数组，形状为(3, M)。
+    """
+    # 计算每个麦克风的x坐标
+    mic_positions_x_m = center[0] + np.array(offsets_m)
+    # 所有麦克风的y和z坐标与中心点相同
+    mic_positions_y_m = np.full_like(mic_positions_x_m, center[1])
+    mic_positions_z_m = np.full_like(mic_positions_x_m, center[2])
+
+    return np.vstack((mic_positions_x_m, mic_positions_y_m, mic_positions_z_m))
+
+def is_inside_room(room_x, room_y, source):
+    """检查声源是否在房间内"""
+    x, y, _ = source
+    return 0 < x < room_x and 0 < y < room_y
+
+
+def save_progress(progress_file, wav_scp_entries, all_samples_info, progress):
+    with open(progress_file, 'w') as f:
+        json.dump({
+            'wav_scp_entries': wav_scp_entries,
+            'all_samples_info': all_samples_info,
+            'progress': progress
+        }, f)
+
+def load_progress(progress_file):
+    try:
+        with open(progress_file, 'r') as f:
+            data = json.load(f)
+            return data['wav_scp_entries'], data['all_samples_info'], data['progress']
+    except FileNotFoundError:
+        return [], [], None
+
+
+def main(speech_dir, noise_dirs, output_dir): 
 
     # Output directory for generated WAV files
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     
     # Paths to speech and noise directories
-    speech_path = [os.path.join(speech_dir, file) for file in sorted(os.listdir(speech_dir)) if file.endswith(".wav")]
-    noise_paths = [os.path.join(noise_dir, file) for file in os.listdir(noise_dir) if file.endswith(".wav")]
+    #speech_path = sorted([os.path.join(root, file) for root, dirs, files in os.walk(speech_dir) for file in files if file.endswith(".wav")])
+    #noise_paths = sorted([os.path.join(root, file) for root, dirs, files in os.walk(noise_dir) for file in files if file.endswith(".wav")])
+    
+    speech_path = []
+    wav_scp_path = os.path.join(speech_dir, "wav.scp")
+    with open(wav_scp_path, 'r') as file:
+        for line in file:
+            # 通常每行包含一个标识符和一个路径
+            path = line.strip().split()[-1]
+            speech_path.append(path)
+    # 处理噪声文件，遍历所有噪声目录
+    noise_paths = []
+    for noise_dir in noise_dirs:
+        noise_paths.extend(sorted([
+            os.path.join(root, file) 
+            for root, dirs, files in os.walk(noise_dir) 
+            for file in files if file.endswith(".wav")
+        ]))
+    
+    # 总迭代次数为所有语音文件的数量
+    total_iterations = len(speech_path)
     
     # JSON file name
     json_file_name = os.path.join(output_dir, "all_samples_info.json")
+    #pbar = tqdm(total=total_iterations, desc="Processing", unit="file")
     
     # 读取现有的 JSON 文件内容，如果存在的话
     all_samples_info = []
@@ -241,7 +356,21 @@ def main(speech_dir, noise_dir, output_dir):
     # 开始生成
     speech_idx = 0
     
-    for i in range(num_room):
+    progress_file = os.path.join(output_dir, 'progress.json')  # 进度文件的路径
+
+    # 尝试加载现有进度
+    wav_scp_entries, all_samples_info, progress = load_progress(progress_file)
+    if progress is not None:
+        start_room_idx = progress['room_idx']
+        speech_idx = progress['speech_idx']
+    else:
+        start_room_idx = 0
+        speech_idx = 0
+    
+    # 创建进度条对象，设置初始值为已处理的语音文件数
+    pbar = tqdm(total=total_iterations, initial=speech_idx, desc="Processing", unit="file")
+    
+    for i in range(start_room_idx, num_room):
         x = np.random.uniform(3, room_x)
         y = np.random.uniform(3, room_y)
         z = room_z
@@ -250,30 +379,72 @@ def main(speech_dir, noise_dir, output_dir):
         room.extrude(z, materials=pra.Material(0.2, 0.15)) #天花板也要设置反射系数，否则会有很长的拖尾
         room.set_ray_tracing(receiver_radius=0.5, n_rays=10000, energy_thres=1e-5)
         for j in range(utt_per_room):
+            skip_room = False  # 设置标志变量
             # 从范围内随机选择一个SNR值
             snr = random.uniform(snr_range[0], snr_range[1])
-            speech_source = [np.random.uniform(0, x),np.random.uniform(0, y),np.random.uniform(1.2, 1.9)]
+            speech_source = [np.random.uniform(0.1, x-0.1),np.random.uniform(0.1, y-0.1),np.random.uniform(1.2, 1.9)]
+            if not is_inside_room(x, y, speech_source):
+                continue  # 如果声源不在房间内，则跳过当前循环
+            noise_num = random.randint(1, total_noise_num)
             noise_sources = [None] * noise_num
             for k in range(noise_num):
-                noise_sources[k] = [np.random.uniform(0, x),np.random.uniform(0, y),np.random.uniform(1.2, 1.9)]
+                noise_sources[k] = [np.random.uniform(0.1, x-0.1),np.random.uniform(0.1, y-0.1),np.random.uniform(1.2, 1.9)]
+                if not is_inside_room(x, y, noise_sources[k]):
+                    skip_room = True  # 如果噪声源不在房间内，设置标志为 True
+                    break  # 跳出 k 循环
+            if skip_room:
+                continue  # 如果标志为 True，跳出 j 循环，进入下一个 j 循环
             
-            mic_distance = 0.05 #麦克风阵列的半径或者间距
+            # 随机选择一个麦克风类型
+            mic_type = random.choice(mic_types)
             
+            # 计算麦克风阵列的坐标
             if mic_type == "circular":
-                mic_func = pra.circular_2D_array
-                mic_middle_point = [np.random.uniform(mic_distance*2+x/4, x-mic_distance*2-x/4),
-                                    np.random.uniform(mic_distance*2+y/4, y-mic_distance*2-y/4),
-                                    np.random.uniform(1.0, 1.5)]
-                
+                mic_distance = 0.05 #麦克风阵列的半径或者间距
+                mic_middle_point = [
+                    np.random.uniform(mic_distance * 2 + x / 4, x - mic_distance * 2 - x / 4),
+                    np.random.uniform(mic_distance * 2 + y / 4, y - mic_distance * 2 - y / 4),
+                    np.random.uniform(1.0, 1.5)
+                ]
+                # 这里应该定义圆形阵列的具体计算方式
+                mic_array = pra.circular_2D_array(mic_middle_point[:2], channels, phase, mic_distance)
+                mic_array = np.pad(mic_array, ((0, 1), (0, 0)), 'constant', constant_values=mic_middle_point[2])
+
             elif mic_type == "linear":
-                mic_func = pra.linear_2D_array
-                mic_middle_point = [np.random.uniform(mic_distance*4+x/4, x-mic_distance*4-x/4),
-                                    np.random.uniform(mic_distance+y/4, y-mic_distance-y/4),
-                                    np.random.uniform(1.0, 1.5)]
+                mic_distance = 0.011 #麦克风阵列的半径或者间距
+                mic_middle_point = [
+                    np.random.uniform(mic_distance * 4 + x / 4, x - mic_distance * 4 - x / 4),
+                    np.random.uniform(mic_distance + y / 4, y - mic_distance - y / 4),
+                    np.random.uniform(1.0, 1.5)
+                ]
+                # 这里应该定义线性阵列的具体计算方式
+                mic_array = pra.linear_2D_array(mic_middle_point[:2], channels, phase, mic_distance)
+                mic_array = np.pad(mic_array, ((0, 1), (0, 0)), 'constant', constant_values=mic_middle_point[2])
+
+            elif mic_type == "non_uniform_linear":
+                # 生成随机中心点，确保麦克风阵列不会超出房间边界
+                mic_middle_x = np.random.uniform(0.4, x - 0.4)
+                mic_middle_y = np.random.uniform(0.4, y - 0.4)
+                mic_middle_z = np.random.uniform(1.0, 1.5)  # 假设麦克风阵列高度在1.0到1.5米之间
+
+                mic_middle_point = [mic_middle_x, mic_middle_y, mic_middle_z]
+
+                # 直接使用中心点和相对距离计算非均匀线性阵列的坐标
+                mic_array = non_uniform_linear_array(mic_middle_point, offsets_m)
+
+            elif mic_type == "square":
+                mic_distance = 0.011 #麦克风阵列的半径或者间距
+                mic_middle_point = [
+                    np.random.uniform(mic_distance * 4 + x / 4, x - mic_distance * 4 - x / 4),
+                    np.random.uniform(mic_distance + y / 4, y - mic_distance - y / 4),
+                    np.random.uniform(1.0, 1.5)
+                ]
+                # 这里应该定义矩形阵列的具体计算方式
+                mic_array = pra.square_2D_array(mic_middle_point[:2], 2, 4, phase, mic_distance)
+                mic_array = np.pad(mic_array, ((0, 1), (0, 0)), 'constant', constant_values=mic_middle_point[2])
             
-            
-            mic_array = mic_func(mic_middle_point[:2], channels, phase, mic_distance)
-            mic_array = np.pad(mic_array, ((0, 1), (0, 0)), constant_values=mic_middle_point[2])
+            if not is_mic_inside_room(mic_array, room_x, room_y):
+                continue  # 如果有麦克风不在房间内，跳过当前循环，进入下一个循环
             
             room.mic_array = None
             room.add_microphone_array(pra.MicrophoneArray(mic_array, fs))
@@ -282,7 +453,10 @@ def main(speech_dir, noise_dir, output_dir):
                 selected_noise_names = []  # 用于存储所选噪声文件的名称（去掉前缀和后缀）
                 noise_interval = []
                 selected_speech_names = [] # 储存语音文件的名称
-                rev_speech, ori_length = get_speech_reverb(room, speech_source, speech_path[speech_idx])
+                rev_speech, ori_length,skip_room = get_speech_reverb(room, speech_source, speech_path[speech_idx])
+                if skip_room:
+                    continue  # 如果标志为 True，跳出 j 循环，进入下一个 j 循环
+                
                 # 提取文件名（去掉前缀和后缀）
                 speech_name = os.path.splitext(os.path.basename(speech_path[speech_idx]))[0]
                 selected_speech_names.append(speech_name)  # 将语音文件名称添加到列表中
@@ -294,12 +468,17 @@ def main(speech_dir, noise_dir, output_dir):
                     # 提取文件名（去掉前缀和后缀）
                     noise_name = os.path.splitext(os.path.basename(selected_noise_path))[0]
 
-                    rev_noise_source, noise_start, noise_end = get_noise_reverb(room, noise_sources[m], selected_noise_path,ori_length)
+                    rev_noise_source, noise_start, noise_end,skip_room = get_noise_reverb(room, noise_sources[m], selected_noise_path,ori_length)
                     rev_noise_source = adjust_matrix_dimension(rev_noise_source, ori_length, 1)
                     rev_noise.append(rev_noise_source)
                     
                     selected_noise_names.append(noise_name+'_'+f"{(noise_start/16000):.2f}:{(noise_end/16000):.2f}" )  # 将选择的噪声文件名称添加到列表中
                     noise_interval.append(f"{noise_start}:{noise_end}")
+                    if skip_room:
+                        break  # 如果标志为 True，跳出 m 循环
+                
+                if skip_room:
+                    continue  # 如果标志为 True，跳出 j 循环，进入下一个 j 循环
                     
                 # 创建一个用于存储所有噪声信号总和的数组
                 total_noise = np.zeros_like(rev_noise[0])
@@ -320,8 +499,8 @@ def main(speech_dir, noise_dir, output_dir):
                 
                 # 将当前语音信息添加到列表中
                 sample_info = {
-                    'idx': speech_idx,
-                    'simu_file': f"{speech_idx}_{all_speech_names}_{all_noise_names}_{x:.2f}_{y:.2f}_{z:.2f}_{snr:.3f}_{mic_type}.wav",
+                    'idx': speech_idx+1,
+                    'simu_file': f"{speech_idx+1}_{all_speech_names}_{all_noise_names}_{x:.2f}_{y:.2f}_{z:.2f}_{snr:.3f}_{mic_type}.wav",
                     'all_speech_names': all_speech_names,
                     'noise_names': selected_noise_names,
                     'room_size': {'x': x, 'y': y, 'z': z},
@@ -346,11 +525,11 @@ def main(speech_dir, noise_dir, output_dir):
                 int_signal = np.round(normalized_signal_np * np.iinfo(np.int16).max).astype(np.int16)
 
                 # 保存归一化后的音频数据
-                audio_file_path = os.path.join(output_dir, f"{speech_idx}_{all_speech_names}_{all_noise_names}_{x:.2f}_{y:.2f}_{z:.2f}_{snr:.3f}_{mic_type}.wav")
+                audio_file_path = os.path.join(output_dir, f"{speech_idx+1}_{all_speech_names}_{all_noise_names}_{x:.2f}_{y:.2f}_{z:.2f}_{snr:.3f}_{mic_type}.wav")
                 sf.write(audio_file_path, int_signal.T, fs, subtype='PCM_16')
                 
                 # 将 wav.scp 的条目添加到列表中
-                wav_scp_entries.append(f"{all_speech_names} {audio_file_path}")
+                wav_scp_entries.append(f"{all_speech_names}\t{audio_file_path}")
                 
                 speech_idx += 1
                 
@@ -360,16 +539,27 @@ def main(speech_dir, noise_dir, output_dir):
                         json.dump(all_samples_info, json_file, indent=4)
                     # 将 wav.scp 的内容写入文件
                     with open(wav_scp_file_path, 'w') as wav_scp_file:
-                        wav_scp_file.write('\n'.join(wav_scp_entries))    
+                        wav_scp_file.write('\n'.join(wav_scp_entries))  
                     
-                    print(f"Progress: 100%")
-                    print("Completed!")
+                    # 完成处理后删除进度文件
+                    if os.path.exists(progress_file):
+                        os.remove(progress_file)  
+                    
+                    #print(f"Progress: 100%")
+                    #print("Completed!")
+                    
+                    pbar.close()
                     return 
                 # 手动显示进度
-                progress = (speech_idx) / len(speech_path) * 100
-                print(f"Progress: {progress:.2f}%")
-                
-                
+                #progress = (speech_idx) / len(speech_path) * 100
+                #print(f"Progress: {progress:.2f}%")
+                # 更新进度、wav_scp_entries 和 all_samples_info 并保存
+                if speech_idx % save_interval == 0:
+                    progress = {'room_idx': i, 'speech_idx': speech_idx}
+                    save_progress(progress_file, wav_scp_entries, all_samples_info, progress)
+                pbar.update(1)
+
+                               
             else :
                 #print("The generated room does not meet the criteria! ")
                 continue
@@ -378,12 +568,14 @@ def main(speech_dir, noise_dir, output_dir):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate room and save WAV files")
+    # 读取语音目录下的wac.scp文件，其格式为uid + path
     parser.add_argument("--speech_dir", type=str, required=True, help="Path to the speech directory")
-    parser.add_argument("--noise_dir", type=str, required=True, help="Path to the noise directory")
+    # 读取所有噪声目录下的所有wav文件
+    parser.add_argument("--noise_dir", type=str, nargs='+', required=True, help="Paths to the noise directories")
+    # 输出文件夹
     parser.add_argument("--output_dir", type=str, required=True, help="Path to the output directory")
 
     args = parser.parse_args()
-    
 
     main(args.speech_dir, args.noise_dir, args.output_dir)
 

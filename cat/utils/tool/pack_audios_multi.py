@@ -44,6 +44,7 @@ if __name__ == "__main__":
 
     if args.skip_normalize:
         processor = None
+        print("Skip Normalize in process")
     else:
         processor = NormalizeProcessor()
 

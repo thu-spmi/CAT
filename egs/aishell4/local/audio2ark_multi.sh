@@ -1,31 +1,43 @@
 #!/bin/bash
-# Author: Huahuan Zheng (maxwellzh@outlook.com)
+# Author: Xiangzhu Kong (maxwellzh@outlook.com)
 # This script directly save raw audios into kaldi ark (for experiment reading raw audios)
-# Run local/data.sh to obtain wav.scp and text before this script.
+# Run local/data_multi.sh to obtain wav.scp and text before this script.
 
 set -e -u
 
 <<"PARSER"
 ("datasets", type=str, nargs='+', help="Dataset(s) to be processed.")
-("--resampling", type=int, default=0,
-    help="Resampling rate. Default: none.")
+("--resampling", type=int, default=0,help="Resampling rate. Default: none.")
+("--normalize", type=int, default=1,help="Normalization waveform to [0., 1]. Default: 1, meaning use normalize.")
 PARSER
 eval $(python utils/parseopt.py $0 $*)
 
+#exit 0
 src="./data/src"
 
 if [ $resampling -eq 0 ]; then
     opt_resampling=""
 else
     opt_resampling="--resample $resampling"
+    echo resample to $resampling
 fi
 
+if  [ $normalize -eq 1 ]; then
+    opt_normalize=""
+    ori=""
+else
+    opt_normalize="--skip-normalize"
+    ori="ori"
+    echo Skip Normalize
+fi
+
+#exit 0
 for set in $datasets; do
     [ ! -d $src/$set ] && {
         echo "'$src/$set' not found." >&2
         exit 1
     }
-    d_data=$src/${set}_raw
+    d_data=$src/${set}_raw_${ori}
     mkdir -p $d_data
     cp $src/$set/text $d_data
     [[ -f $d_data/feats.scp && $(wc -l <$d_data/feats.scp) -eq $(wc -l <$d_data/text) ]] && {
@@ -45,8 +57,10 @@ for set in $datasets; do
         fi
     fi
 
+    echo "python utils/tool/pack_audios_multi.py $opt_resampling $opt_normalize $f_wav ark,scp:$d_data/audio.ark,$d_data/feats.scp "
+    #exit 0
     python utils/tool/pack_audios_multi.py \
-        $opt_resampling $f_wav \
+        $opt_resampling $opt_normalize $f_wav \
         ark,scp:$d_data/audio.ark,$d_data/feats.scp ||
         exit 1
 done
