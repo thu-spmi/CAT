@@ -37,7 +37,7 @@ room_z = 3
 save_interval = 100  # 每处理100个语音文件后保存一次进度
 
 # 定义可能的麦克风类型
-mic_types = ["circular", "linear","square"]
+mic_types = ["circular", "linear","square"] # "non_uniform_linear"
 channels = 8
 phase = 0
 fs = 16000
