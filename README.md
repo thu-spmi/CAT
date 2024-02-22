@@ -66,10 +66,10 @@ To get started with this project, please refer to [TEMPLATE](egs/TEMPLATE/README
 ## Further reading
 
 - [What's New](docs/whatsnew.md)
-- [Guideline for configuring settings](docs/configure_guide.md)
-- Tutorial for [CUSIDE](https://arxiv.org/abs/2203.16758) based streaming ASR: [English](docs/cuside.md) | [中文](docs/cuside_ch.md)
 - [Some tips about the usage of third party tools](docs/guide_for_third_party_tools.md)
-- Guide to train models on more than 1500 hours of speech data: [English](docs/how_to_prepare_large_dataset.md) | [中文](docs/how_to_prepare_large_dataset_ch.md)
+- [Tutorial on building your first CAT-v2 project (yesno)](yesno_tutorial_ch.md)
+- [Step-by-step workflow for CAT-v2](cat_workflow.md)
+
 
 ## Citation
 
