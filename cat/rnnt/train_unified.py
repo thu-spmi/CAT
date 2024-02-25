@@ -287,7 +287,7 @@ class UnifiedTTrainer(TransducerTrainer):
         if self.simu:
             loss_simu *= self.simu_loss_weight
         else:
-            loss_simu = loss_simu
+            loss_simu = 0.0
 
         loss_utt = rnnt_loss(
             joinout,
