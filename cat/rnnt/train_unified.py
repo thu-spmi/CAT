@@ -284,7 +284,10 @@ class UnifiedTTrainer(TransducerTrainer):
         chunk_enc_out, loss_simu = self.chunk_forward(x, lx)
         chunk_enc_out = chunk_enc_out[:, : enc_out.size(1), :]
         chunk_joinout = self.compute_join(chunk_enc_out, pred_out, y, lsub, ly)[0]
-        loss_simu *= self.simu_loss_weight
+        if self.simu:
+            loss_simu *= self.simu_loss_weight
+        else:
+            loss_simu = 0.0
 
         loss_utt = rnnt_loss(
             joinout,

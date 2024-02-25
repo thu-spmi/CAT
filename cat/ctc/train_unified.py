@@ -276,8 +276,10 @@ class UnifiedAMTrainer(AMTrainer):
             chunk_loss = self.criterion(
                 chunk_logits, labels.to(torch.int), lx.to(torch.int), ly.to(torch.int)
             )
-
-        loss_simu *= self.simu_loss_weight
+        if self.simu:
+            loss_simu *= self.simu_loss_weight
+        else:
+            loss_simu = 0.0
 
         return loss + chunk_loss + loss_simu
 
