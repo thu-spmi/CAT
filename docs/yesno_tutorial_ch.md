@@ -1,6 +1,6 @@
 # CAT（yesno）项目搭建流程
 
-! This tutorial is mainly for CAT v2, but may be helpful for readers to go inside of CAT. To be updated.
+! This tutorial is mainly for CAT v2, but has been updated for CAT v3.
 
 **目录**
 * [项目目录结构](#项目目录结构)
@@ -101,7 +101,7 @@ http://www.openslr.org/1.
 
      配置全局的环境变量，分别配置CAT、kaldi、Data（数据集的环境变量），代码来源为`egs\wsj`项目下的同名文件。
      
-     CAT toolkit: 一般无需修改默认路径即可
+     CAT toolkit: 此处ctc_crf文件夹中的path_weight方法仅在[CAT-v2](https://github.com/thu-spmi/CAT/tree/v2)中存在,可以下载CAT-v2中的[ctc_crf](https://github.com/thu-spmi/CAT/tree/v2/src/ctc_crf)文件夹，在文件夹中执行make命令，再在path.sh中配置相应的地址
      
      Kaldi: 路径需要修改到下载好的kaldi根目录下
      
@@ -131,6 +131,8 @@ http://www.openslr.org/1.
    # path steps from kaldi
    ln -s $KALDI_ROOT/egs/wsj/s5/steps steps
    ```
+
+  此时使用的[ctc-crf](https://github.com/thu-spmi/CAT/tree/v2/scripts/ctc-crf)工具包仅在CAT-v2中存在并使用,需要读者自行下载。
 
 4. 创建local目录，存放本项目专用数据集，训练，切分，打分等脚本编写
 
@@ -213,6 +215,7 @@ fi
    
    . ./path.sh
    
+   H=`pwd`
    data=${H}/data
    local=${H}/local 
    mkdir -p ${data}/local
@@ -359,6 +362,8 @@ fi
 4. 将数据转移到data/dev, data/train, data/test下，并生成utt2spk, spk2utt
 
    ```shell
+   cd ${data}
+
    for x in train dev test; do
      # sort wave lists and create utt2spk, spk2utt
      mkdir -p $x
@@ -483,7 +488,7 @@ fi
 
 声学单元（unit）的选择有多种，可以是音素（phone）、英文字母（character）、汉字、片段（wordpiece）等。词典（lexicon）的作用是，将待识别的词汇表（vocabulary）中的词分解为**声学单元**的序列。本文档例子中以音素作为声学单元。
 
-1. 词典保存在input/lexicon.txt中
+1. 在input目录下创建lexicon.txt，词典保存在input/lexicon.txt中
 
    ```
    <SIL> SIL #静音silence
@@ -499,6 +504,7 @@ fi
    # This script prepares the phoneme-based lexicon. It also generates the list of lexicon units
    # and represents the lexicon using the indices of the units. 
    
+   H=`pwd`
    dir=${H}/data/dict
    mkdir -p $dir
    srcdict=input/lexicon.txt
@@ -719,6 +725,7 @@ Y 3
 
 . ./path.sh
 
+H=`pwd`
 text=$1
 lexicon=$2
 dir=$3
@@ -776,6 +783,77 @@ ngram-count -text $sdir/train -order 1 -limit-vocab -vocab $sdir/wordlist -unk \
   -map-unk "<UNK>" -interpolate -lm $sdir/srilm.o1g.kn.gz
 # -kndiscount
 ngram -lm $sdir/srilm.o1g.kn.gz -ppl $sdir/heldout 
+```
+
+编写local/get_word_map.pl
+
+**get_word_map.pl**
+```shell
+#!/usr/bin/perl
+
+
+# This program reads in a file with one word
+# on each line, and outputs a "translation file" of the form:
+# word short-form-of-word
+# on each line, 
+# where short-form-of-word is a kind of abbreviation of the word.
+#
+# It uses the letters a-z and A-Z, plus the characters from 
+# 128 to 255.  The first words in the file have the shortest representation.
+#
+# For convenience, it makes sure to give <s>, </s> and <UNK>
+# a consistent labeling, as A, B and C respectively.
+
+
+# set up character table and some variables.
+@C = ();
+foreach $x (ord('A')...ord('Z')) { push @C, chr($x); }
+foreach $x (ord('a')...ord('z')) {  push @C, chr($x); }
+foreach $x(128...254) { push @C, chr($x); } # 255 is space so don't include it.
+
+@index = ( 3 ); # array of indexes into @C... count up to [dim of C -1]
+   # then add another index onto this.  Set it to 3, since 0, 1 and 2 are
+   # reserved for <s>, </s> and <UNK> respectively.
+
+if (@ARGV != 3 && @ARGV != 4) {
+  die "Usage: get_word_map.pl bos-symbol eos-symbol unk-symbol [words-in-order]\n";
+}
+
+$bos = shift @ARGV;
+$eos = shift @ARGV;
+$unk = shift @ARGV;
+print "$bos $C[0]\n";
+print "$eos $C[1]\n";
+print "$unk $C[2]\n";
+
+sub get_short_form();
+
+while(<>) {
+  chop;
+  $word = $_;
+  $word =~ m:^\S+$: || die "Bad word $word";
+  if($seen{$word}) { die "Word $word repeated"; }
+  $seen{$word}++;
+  if ($word ne $bos && $word ne $eos && $word ne $unk) {
+    $short_form = get_short_form();
+    print "$word $short_form\n";
+  }
+}
+
+sub get_short_form() {
+  $ans = "";
+  foreach $i (@index) { $ans = $C[$i] . $ans; } # 
+  # Now increment the index.
+  $index[0]++;
+  $cur_idx = 0;
+  while ($index[$cur_idx] == @C) { # E.g. if the least significant digit
+    # is out of the valid range... carry one.
+    $index[$cur_idx] = 0;
+    $cur_idx++;
+    $index[$cur_idx]++; # This will extend the array if necessary.
+  }
+  return $ans;
+}
 ```
 
 取3句用SRILM工具计算困惑度，运行结果如下：
@@ -1044,6 +1122,8 @@ if [ $stage -le 3 ] && [ $stop_stage -ge 3 ]; then
 fi
 ```
 
+此处可能需要将`ctc-crf/prep_ctc_trans.py`文件中`#!/usr/bin/env python`一行改为`#!/usr/bin/env python3`，使文件能够使用python3执行。
+
 ## 4. 神经网络训练准备
 
 Step 4: [Neural network training preparation](https://github.com/thu-spmi/CAT/blob/master/toolkitworkflow.md#Neural-network-training-preparation)
@@ -1189,7 +1269,21 @@ fi
 
 Step 6: [Decoding](https://github.com/thu-spmi/CAT/blob/master/toolkitworkflow.md#Decoding)
 
-计算测试集中每句话每帧的logits并解码。
+编写打分脚本local/score.sh
+
+**score.sh**
+```shell
+#!/usr/bin/env bash
+
+set -e -o pipefail
+set -x
+steps/score_kaldi.sh "$@"
+steps/scoring/score_kaldi_cer.sh --stage 2 "$@"
+
+echo "$0: Done"
+```
+
+计算测试集中每句话每帧的logits并解码。关于在解码过程中使用的latgen-faster函数，可以参照[CAT-v2安装介绍](https://github.com/thu-spmi/CAT/blob/v2/install_ch.md)中CAT安装的第三步，将补丁文件[latgen-faster.cc](https://github.com/thu-spmi/CAT/blob/v2/src/kaldi-patch/latgen-faster.cc)打包到Kaldi中，修改`Makefile`文件后进行编译来解决。
 
 ```shell
 nj=1
