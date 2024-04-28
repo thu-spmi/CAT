@@ -102,7 +102,7 @@ http://www.openslr.org/1.
 
      配置全局的环境变量，分别配置CAT、kaldi、Data（数据集的环境变量），代码来源为`egs\wsj`项目下的同名文件。
      
-     CAT toolkit: 此处ctc_crf文件夹中的path_weight方法仅在[CAT-v2](https://github.com/thu-spmi/CAT/tree/v2)中存在，可以下载CAT-v2中的[ctc_crf](https://github.com/thu-spmi/CAT/tree/v2/src/ctc_crf)文件夹，在文件夹中执行make命令，再在path.sh中配置相应的地址
+     CAT toolkit: 此处ctc_crf文件夹中的path_weight方法仅在[CAT-v2](https://github.com/thu-spmi/CAT/tree/v2)中存在，需要下载CAT-v2中的[ctc_crf](https://github.com/thu-spmi/CAT/tree/v2/src/ctc_crf)文件夹，在文件夹中执行make命令，再在path.sh中配置相应的地址
      
      Kaldi: 路径需要修改到下载好的kaldi根目录下
      
