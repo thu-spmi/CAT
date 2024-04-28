@@ -67,7 +67,7 @@ To get started with this project, please refer to [TEMPLATE](egs/TEMPLATE/README
 
 - [What's New](docs/whatsnew.md)
 - [Some tips about the usage of third party tools](docs/guide_for_third_party_tools.md)
-- [Tutorial on building your first CAT-v2 project (yesno)](docs/yesno_tutorial_ch.md)
+- [Tutorial on building your first CAT project (yesno)](docs/yesno_tutorial_ch.md)
 - [Step-by-step workflow for CAT-v2](docs/toolkitworkflow.md)
 
 
