@@ -1,6 +1,7 @@
 # CAT（yesno）项目搭建流程
 
-! This tutorial is mainly for CAT v2, but has been updated for CAT v3.
+! This tutorial is originally for CAT v2, which is helpful for readers to go inside of CAT. 
+- 2024/4 updated for CAT v3
 
 **目录**
 * [项目目录结构](#项目目录结构)
@@ -101,7 +102,7 @@ http://www.openslr.org/1.
 
      配置全局的环境变量，分别配置CAT、kaldi、Data（数据集的环境变量），代码来源为`egs\wsj`项目下的同名文件。
      
-     CAT toolkit: 此处ctc_crf文件夹中的path_weight方法仅在[CAT-v2](https://github.com/thu-spmi/CAT/tree/v2)中存在,可以下载CAT-v2中的[ctc_crf](https://github.com/thu-spmi/CAT/tree/v2/src/ctc_crf)文件夹，在文件夹中执行make命令，再在path.sh中配置相应的地址
+     CAT toolkit: 此处ctc_crf文件夹中的path_weight方法仅在[CAT-v2](https://github.com/thu-spmi/CAT/tree/v2)中存在，可以下载CAT-v2中的[ctc_crf](https://github.com/thu-spmi/CAT/tree/v2/src/ctc_crf)文件夹，在文件夹中执行make命令，再在path.sh中配置相应的地址
      
      Kaldi: 路径需要修改到下载好的kaldi根目录下
      
@@ -132,11 +133,11 @@ http://www.openslr.org/1.
    ln -s $KALDI_ROOT/egs/wsj/s5/steps steps
    ```
 
-  此时使用的[ctc-crf](https://github.com/thu-spmi/CAT/tree/v2/scripts/ctc-crf)工具包仅在CAT-v2中存在并使用,需要读者自行下载。
+   本实验使用的[ctc-crf](https://github.com/thu-spmi/CAT/tree/v2/scripts/ctc-crf)工具包仅在CAT-v2中存在并使用，需要读者自行下载。
 
-4. 创建local目录，存放本项目专用数据集，训练，切分，打分等脚本编写
+4. 创建local目录，在该目录下存放用于进行数据处理、模型训练、模型评分等流程的相关脚本
 
-5. 创建**run.sh**，我们在run.sh完成整体编写
+5. 创建**run.sh**，在run.sh文件中编写代码，逐步实现yesno实验所需的各个步骤，完成实验的构建
 
    ```shell
    #!/bin/bash
