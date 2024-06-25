@@ -31,18 +31,18 @@ All of our ASR models are trained with the processed CV-lang10 data covering 12 
 ### Experiment setup
 We adapt the Conformer and CTC to train our models. Three training strategies were applied for comparison, which are monolingual, multilingual and cross-lingual training.
 
-#### [Monolingual](./exp/Monolingual/Monolingual.md)
+#### [Monolingual](./exp/Monolingual/readme.md)
 10 monolingual phoneme-based ASR models are trained on each language dataset seperately and then is evaluated on test dataset of corresponding language whitout fine-tuneing. For Indonesian and Polish, the training data is divided into three scales: 1 hour, 10 hours, and full. And the phoneme-based model and subword-based model are both trained with these scales data seperately.
-#### [Multilingual](./exp/Multilingual/Multilingual.md)
+#### [Multilingual](./exp/Multilingual/readme.md)
 3 phoneme-based models of different sizes are trained, including small(90 MB), medium(218 MB) and large(543 MB). And subword-based and wav2vec-based model of small size are also trained for comprison. The multilingual ASR model are trained on CV-lang10 data and then is evaluated on test dataset of corresponding language whitout fine-tuneing.
-#### [Crosslingual](./exp/Crosslingual/Crosslingual.md)
+#### [Crosslingual](./exp/Crosslingual/readme.md)
 To test different multilingual pre-trained models for crosslingual speech recognition, we conduct phoneme-based and subword-based crosslingual fine-tuning on unseen languages. All of the Crosslingual models are fine-tuned on the basis of the pretrained multilingual phoneme-based model of small size, subword-based model or wav2vec-based model with the same fine-tuning strategy. The performence of the fine-tuned models are evaluated on 2 unseen languages dataset.
 
 ### Results
 #### Phoneme based monolingial models and multilingual pretrained models (PER%) 
 | Model | Model size | en | es | fr | it | ky | nl | ru | sv-SE | tr | tt | Avg.
 | ------ | ------ | ------ | ------ | ------ | ------ | ------ | ------ | ------ | ------ | ------ | ------ | ------ |
-| [Monolingual phoneme](./exp/Monolingual/Monolingual.md) | 90 MB | 7.92 | 2.47 | 4.93 | 2.87 | 2.23 | 5.89 | 2.72 | 16.11 | 6.00 | 10.54 | 6.16 |
+| [Monolingual phoneme](./exp/Monolingual/readme.md) | 90 MB | 7.92 | 2.47 | 4.93 | 2.87 | 2.23 | 5.89 | 2.72 | 16.11 | 6.00 | 10.54 | 6.16 |
 | [Multilingual phoneme small](./exp/Multilingual/Multi._phoneme_S/readme.md) | 90 MB | 8.02 | 3.37 | 5.68 | 4.04 | 8.29 | 5.77 | 6.05 | 18.07 | 8.32 | 8.53 | 7.61 |
 | [Multilingual phoneme medium](./exp/Multilingual/Multi._phoneme_M/readme.md) | 218 MB | 6.70 | 2.63 | 4.53 | 3.12 | 5.95 | 3.95 | 4.61 | 14.81 | 6.04 | 8.47 | 6.08 |
 | [Multilingual phoneme large](./exp/Multilingual/Multi._phoneme_S/readme.md) | 543 MB | 5.42 | 1.96 | 3.52 | 2.25 | 4.06 | 2.64 | 2.97 | 11.33 | 4.04 | 5.97 | 4.43 |
@@ -50,7 +50,7 @@ To test different multilingual pre-trained models for crosslingual speech recogn
 #### Phoneme based monolingial models and multilingual pretrained models(WER%)
 | Model | Model size | en | es | fr | it | ky | nl | ru | sv-SE | tr | tt | Avg.
 | ------ | ------ | ------ | ------ | ------ | ------ | ------ | ------ | ------ | ------ | ------ | ------ | ------ |
-| [Monolingual phoneme](./exp/Monolingual/Monolingual.md) | 90 MB | 10.59 | 7.91 | 15.58 | 9.26 | 1.03 | 8.84 | 1.62 | 8.37 | 8.46 | 9.75 | 8.14 |
+| [Monolingual phoneme](./exp/Monolingual/readme.md) | 90 MB | 10.59 | 7.91 | 15.58 | 9.26 | 1.03 | 8.84 | 1.62 | 8.37 | 8.46 | 9.75 | 8.14 |
 | [Multilingual subword small](./exp/Multilingual/Multi._subword/readme.md) | 92 MB | 12.00 | 9.82 | 12.40 | 9.98 | 3.29 | 9.67 | 3.31 | 9.95 | 9.11 | 13.56 | 9.30 |
 | [Multilingual phoneme small](./exp/Multilingual/Multi._phoneme_S/readme.md) | 90 MB | 10.76 | 8.68 | 16.01 | 9.98 | 1.02 | 7.32 | 1.59 | 6.714 | 7.63 | 7.30 | 7.64 |
 | [Multilingual phoneme medium](./exp/Multilingual/Multi._phoneme_M/readme.md) | 218 MB | 9.83 | 7.82 | 14.94 | 9.04 | 0.91 | 6.57 | 1.65 | 5.65 | 7.27 | 7.37 | 7.10 |
