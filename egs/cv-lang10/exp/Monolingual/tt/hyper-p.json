@@ -1,0 +1,42 @@
+{
+    "data": {
+        "train": "train_tt",
+        "dev": "dev_tt",
+        "test": "test_tt",
+        "filter": "10:2000"
+    },
+    "tokenizer": {
+        "type": "LexiconTokenizer",
+        "option-init": {
+            "lexicon": "dict/tt/lexicon.txt"
+        },
+        "file": "dict/tt/tokenizer.tknz",
+        "|V|": 33
+    },
+    "train": {
+        "bin": "cat.ctc.train",
+        "option": {
+            "amp": true,
+            "batch_size": 300,
+            "check_freq": 67
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "best",
+            "num": 3
+        },
+        "infer": {
+            "bin": "cat.ctc.decode",
+            "option": {
+                "beam_size": 16,
+                "nj": 16,
+                "store_ark": true
+            }
+        },
+        "er": {
+            "per": true
+        }
+    },
+    "commit": "1b77bc21f7a5faac5e47f6bc4445f23ebf0e0633"
+}

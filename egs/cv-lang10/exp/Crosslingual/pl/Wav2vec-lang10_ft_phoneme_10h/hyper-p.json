@@ -1,0 +1,47 @@
+{
+    "data": {
+        "train": "train_pl_10h_raw",
+        "dev": "dev_pl_raw",
+        "test": "test_pl_raw",
+        "filter": "32000:250000"
+    },
+    "tokenizer": {
+        "type": "LexiconTokenizer",
+        "option-init": {
+            "lexicon": "data/dict_pl/lexicon_rmsymb.txt"
+        },
+        "file": "data/dict_pl/tokenizer_rmsymb.tknz",
+        "|V|": 37
+    },
+    "env": {
+        "CUDA_VISIBLE_DEVICES": "2,3"
+    },
+    "train": {
+        "bin": "cat.ctc.train",
+        "option": {
+            "amp": true,
+            "batch_size": 80,
+            "check_freq": 101,
+            "trset": "data/pl/pkl_raw/train_10h.pkl",
+            "devset": "data/pl/pkl_raw/dev.pkl"
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "best",
+            "num": 3
+        },
+        "infer": {
+            "bin": "cat.ctc.decode",
+            "option": {
+                "beam_size": 16,
+                "nj": 16,
+                "store_ark": true
+            }
+        },
+        "er": {
+            "per": true
+        }
+    },
+    "commit": "1b77bc21f7a5faac5e47f6bc4445f23ebf0e0633"
+}

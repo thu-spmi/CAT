@@ -1,0 +1,60 @@
+# Monolingual phoneme-based ASR model for English
+Author: Ma, Te (mate153125@gmail.com)
+### Basic info
+
+This model is built upon `Conformer` architecture and trained using the `CTC` (Connectionist Temporal Classification) approach. The training dataset consists of __2227 hours of `English`__ speech data sourced from the publicly available [`Common Voice`](https://commonvoice.mozilla.org/) 11.0.
+
+
+
+### Training process
+
+The script [`run.sh`](../../../run.sh) contains the overall model training process.
+
+#### Stage 0: Data preparation
+* Follow the steps [`data_prep.md`](../../../local/data_prep.md) and run [`data_prep.sh`](../../../local/data_prep.sh) to prepare the datset and pronunciation lexicon for a given language. The second and fourth stages of `data_prep.sh` involve language-specific special processing, which are detailed in the [`lang_process.md`](../../../lang-process/en/lang_process.md). 
+* The detailed model parameters are detailed in [`config.json`](config.json) and [`hyper-p.json`](hyper-p.json). Dataset paths should be added to the [`metainfo.json`](../../../data/metainfo.json) for efficient management of datasets. For large training dataset, we compress this data using the script [`prep_ld.py`](../../../local/tools/prep_ld.py) and configure the parameter `ld` in `hyper-p.json` to read the data.
+
+#### Stage 1 to 3: Model training
+* The training of this model utilized 10 NVIDIA GeForce RTX 3090 GPUs and took 27 hours.
+    * \# of parameters (million): 89.98
+    * GPU info
+        * NVIDIA GeForce RTX 3090
+        * \# of GPUs: 10
+        
+* To train the model:
+
+        `bash run.sh en exp/Monolingual/en --sta 1 --sto 3`
+* To plot the training curves:
+
+        `python utils/plot_tb.py exp/Monolingual/en/log/tensorboard/file -o exp/Monolingual/en/monitor.png`
+
+|     Monitor figure    |
+|:-----------------------:|
+|![tb-plot](./monitor.png)|
+
+#### Stage 4: CTC decoding
+* To decode with CTC and calculate the %PER:
+
+        `bash run.sh en exp/Monolingual/en --sta 4 --sto 4`
+
+    ##### %PER
+    ```
+    test_en %SER 55.88 | %PER 7.39 [ 47235 / 639098, 7484 ins, 13930 del, 25821 sub ]
+    ```
+
+#### Stage 5 to 7: FST decoding
+* For FST decoding, [`config.json`](./lm/config.json) and [`hyper-p.json`](./lm/hyper-p.json) are needed to train language model. Notice the distinction between the profiles for training the ASR model and the profiles for training the language model, which have the same name but are in different directories.
+* To decode with FST and calculate the %WER:
+
+        `bash run.sh en exp/Monolingual/en --sta 5`
+
+    ##### %WER
+    ```
+    test_en_ac1.0_lm0.9_wip0.0.hyp  %SER 40.80 | %WER 10.59 [ 16287 / 153739, 1410 ins, 3146 del, 11731 sub ]
+    ```
+### Resources
+* The files used to train this model and the trained model are available in the following table. 
+
+    | Pronunciation lexicon | Checkpoint model | Language model | Tensorboard log |
+    | ----------- | ----------- | ----------- | ----------- |
+    | [`lexicon_en.txt`](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/cat-multilingual/cv-lang10/dict/en/lexicon_en.txt) | [`Mono_en_best-3.pt`](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/cat-multilingual/cv-lang10/exp/en/Mono_en_best-3.pt) | [`lm_en_4gram.arpa`](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/cat-multilingual/cv-lang10/exp/en/lm_en_4gram.arpa) | [`tb_en`](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/cat-multilingual/cv-lang10/exp/en/tb_log_en.tar.gz) |

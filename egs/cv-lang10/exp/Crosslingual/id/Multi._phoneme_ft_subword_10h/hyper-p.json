@@ -1,0 +1,48 @@
+{
+    "data": {
+        "train": "train_10h_id",
+        "dev": "dev_id",
+        "test": "test_id",
+        "filter": "10:2000"
+    },
+    "tokenizer": {
+        "type": "SentencePieceTokenizer",
+        "option-train": {
+            "model_type": "bpe",
+            "vocab_size": 500,
+            "model_prefix": "sentencepiece/id/spm_bpe500"
+        },
+        "|V|": 500,
+        "file": "data/dict_id/tokenizer_bpe500.tknz"
+    },
+    "env": {
+        "CUDA_VISIBLE_DEVICES": "2,3"
+    },
+    "train": {
+        "bin": "cat.ctc.train",
+        "option": {
+            "amp": true,
+            "batch_size": 156,
+            "check_freq": 51,
+            "trset": "data/id/pkl/train_bpe500_10h.pkl",
+            "devset": "data/id/pkl/dev_bpe500.pkl",
+            "init_model": "multi_exp/02_M3_bpe500_ft_pl_10h/01_flatpn_mul10_best-3_bpe_id.pt"
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "best",
+            "num": 3
+        },
+        "infer": {
+            "bin": "cat.ctc.decode",
+            "option": {
+                "beam_size": 16,
+                "nj": 16,
+                "store_ark": true
+            }
+        },
+        "er": {}
+    },
+    "commit": "1b77bc21f7a5faac5e47f6bc4445f23ebf0e0633"
+}

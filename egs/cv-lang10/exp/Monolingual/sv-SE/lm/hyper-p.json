@@ -1,0 +1,26 @@
+{
+    "data": {
+        "train": [
+            "train_sv-SE"
+        ],
+        "dev": [
+            "dev_sv-SE"
+        ],
+        "test": [
+            "test_sv-SE"
+        ],
+        "packing-text-lm": {
+            "nj": 4,
+            "prune_shorter": 5
+        }
+    },
+    "tokenizer": {
+        "type": "SimpleTokenizer",
+        "option-init": {
+            "dmap": "dict/sv-SE/word_list"
+        },
+        "|V|": 18689,
+        "file": "dict/sv-SE/lm/tokenizer_lm.tknz"
+    },
+    "commit": "c102b404d8bbce612eecb7e5fa6cb7679609ec5c"
+}

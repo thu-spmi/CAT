@@ -1,0 +1,48 @@
+{
+    "data": {
+        "train": "train_id",
+        "dev": "dev_id",
+        "test": "test_id",
+        "filter": "10:2000"
+    },
+    "tokenizer": {
+        "type": "LexiconTokenizer",
+        "option-init": {
+            "lexicon": "data/dict_id/lexicon.txt"
+        },
+        "|V|": 37,
+        "file": "data/dict_id/tokenizer_phn.tknz"
+    },
+    "env": {
+        "CUDA_VISIBLE_DEVICES": "3"
+    },
+    "train": {
+        "bin": "cat.ctc.train",
+        "option": {
+            "amp": true,
+            "batch_size": 80,
+            "check_freq": 207,
+            "trset": "data/id/pkl/train_phn_20h.pkl",
+            "devset": "data/id/pkl/dev_phn.pkl",
+            "init_model": "multi_exp/19_M3_phone_ft_id_20h/flatpn_mul10_id_ft.pt"
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "best",
+            "num": 3
+        },
+        "infer": {
+            "bin": "cat.ctc.decode",
+            "option": {
+                "beam_size": 16,
+                "nj": 16,
+                "store_ark": true
+            }
+        },
+        "er": {
+            "per": true
+        }
+    },
+    "commit": "1b77bc21f7a5faac5e47f6bc4445f23ebf0e0633"
+}
