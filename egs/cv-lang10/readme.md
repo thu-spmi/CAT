@@ -7,7 +7,7 @@ models and data for the whole pipeline of Whistle and you can find them in their
 [`data`](./data/) contains the efficient data management file [metainfo.json](./data/metainfo.json).
 
 ## lang-process
-All of our ASR models are trained with the processed CV-lang10 data covering 12 languages(10 seen languages and 2 unseen languages), which are sourced from the publicly available [`Common Voice`](https://commonvoice.mozilla.org/) 11.0. The data processing for each language are detailed in [`lang-process.md`](./lang-process/lang-process.md). For convenience, we adopt ISO-639-1 code to represent language ID, and the 12 languages and training hours are as follow.
+All of our ASR models are trained with the processed CV-lang10 data covering 12 languages (10 seen languages and 2 unseen languages), which are sourced from the publicly available [`Common Voice`](https://commonvoice.mozilla.org/) 11.0. The data processing for each language are detailed in [`lang-process.md`](./lang-process/lang-process.md). For convenience, we adopt ISO-639-1 code to represent language ID, and the 12 languages and training hours are as follow.
 | Serial number | Language | Language ID | Training hours |
 | ----------- | ----------- | ----------- | ----------- |
 | 1 | `English` | `en` | 2227.3 |
@@ -32,9 +32,9 @@ All of our ASR models are trained with the processed CV-lang10 data covering 12 
 We adapt the Conformer and CTC to train our models. Three training strategies were applied for comparison, which are monolingual, multilingual and cross-lingual training.
 
 #### [Monolingual](./exp/Monolingual/readme.md)
-10 monolingual phoneme-based ASR models are trained on each language dataset seperately and then is evaluated on test dataset of corresponding language whitout fine-tuneing. For Indonesian and Polish, the training data is divided into three scales: 1 hour, 10 hours, and full. And the phoneme-based model and subword-based model are both trained with these scales data seperately.
+10 monolingual phoneme-based ASR models are trained on the training set of each language seperately and then is evaluated on the test set of the corresponding language without fine-tuneing. For Indonesian and Polish, the training data is divided into three scales: 1 hour, 10 hours, and full. Both phoneme-based model and subword-based model are trained with these scales of data seperately.
 #### [Multilingual](./exp/Multilingual/readme.md)
-3 phoneme-based models of different sizes are trained, including small(90 MB), medium(218 MB) and large(543 MB). And subword-based and wav2vec-based model of small size are also trained for comprison. The multilingual ASR model are trained on CV-lang10 data and then is evaluated on test dataset of corresponding language whitout fine-tuneing.
+3 phoneme-based models of different sizes are trained, including small (90 MB), medium (218 MB) and large (543 MB). And subword-based and wav2vec-based model of small size are also trained for comprison. The multilingual ASR model are trained on CV-lang10 data and then is evaluated on test dataset of corresponding language whitout fine-tuneing.
 #### [Crosslingual](./exp/Crosslingual/readme.md)
 To test different multilingual pre-trained models for crosslingual speech recognition, we conduct phoneme-based and subword-based crosslingual fine-tuning on unseen languages. All of the Crosslingual models are fine-tuned on the basis of the pretrained multilingual phoneme-based model of small size, subword-based model or wav2vec-based model with the same fine-tuning strategy. The performence of the fine-tuned models are evaluated on 2 unseen languages dataset.
 
@@ -47,7 +47,7 @@ To test different multilingual pre-trained models for crosslingual speech recogn
 | [Multilingual phoneme medium](./exp/Multilingual/Multi._phoneme_M/readme.md) | 218 MB | 6.70 | 2.63 | 4.53 | 3.12 | 5.95 | 3.95 | 4.61 | 14.81 | 6.04 | 8.47 | 6.08 |
 | [Multilingual phoneme large](./exp/Multilingual/Multi._phoneme_S/readme.md) | 543 MB | 5.42 | 1.96 | 3.52 | 2.25 | 4.06 | 2.64 | 2.97 | 11.33 | 4.04 | 5.97 | 4.43 |
 
-#### Phoneme based monolingial models and multilingual pretrained models(WER%)
+#### Phoneme based monolingial models and multilingual pretrained models (WER%)
 | Model | Model size | en | es | fr | it | ky | nl | ru | sv-SE | tr | tt | Avg.
 | ------ | ------ | ------ | ------ | ------ | ------ | ------ | ------ | ------ | ------ | ------ | ------ | ------ |
 | [Monolingual phoneme](./exp/Monolingual/readme.md) | 90 MB | 10.59 | 7.91 | 15.58 | 9.26 | 1.03 | 8.84 | 1.62 | 8.37 | 8.46 | 9.75 | 8.14 |

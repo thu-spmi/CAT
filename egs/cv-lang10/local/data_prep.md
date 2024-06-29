@@ -59,7 +59,7 @@ done
 
 The variable `language_list` in the code is the list of language IDs to be processed, `d_set` is the path where the processed data is stored, and `file` is the path of the original transcription text; This stage mainly realizes the generation of `text` and `wav.scp` based on audio data and paths.
 
-The data format in `text `is as follows:
+The data format in `text` is as follows:
 ```
 $ head -2 data/pl/dev/text
 common_voice_pl_100540	same way you did
@@ -182,7 +182,7 @@ if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ];then
 fi
 ```
 
-Since the G2P model used has a certain error rate, it may generate incorrect symbols. Therefore, after generating the lexicon, post-processing is required, such as removing extra symbols and splitting diphonemes into monophoneme. The specific processing for each language needs to refer to the corresponding LanguageNet symbol table in http://www.isle.illinois.edu/speech_web_lg/data/g2ps/.
+Since the G2P model used has a certain error rate, it may generate incorrect symbols. Therefore, after generating the lexicon, post-processing is required, such as removing extra symbols and splitting diphonemes into monophoneme. The specific processing for each language needs to refer to the corresponding LanguageNet symbol table in http://www.isle.illinois.edu/speech_web_lg/data/g2ps/
 
 ## Stage 5-6: Feature Extraction
 Extract fbank feature from audio data using kaldi toolkit.
