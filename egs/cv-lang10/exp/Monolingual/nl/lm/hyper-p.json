@@ -1,0 +1,26 @@
+{
+    "data": {
+        "train": [
+            "train_nl"
+        ],
+        "dev": [
+            "dev_nl"
+        ],
+        "test": [
+            "test_nl"
+        ],
+        "packing-text-lm": {
+            "nj": 4,
+            "prune_shorter": 5
+        }
+    },
+    "tokenizer": {
+        "type": "SimpleTokenizer",
+        "option-init": {
+            "dmap": "dict/nl/word_list"
+        },
+        "|V|": 24518,
+        "file": "dict/nl/lm/tokenizer_lm.tknz"
+    },
+    "commit": "c102b404d8bbce612eecb7e5fa6cb7679609ec5c"
+}

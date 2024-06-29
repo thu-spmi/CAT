@@ -1,0 +1,10 @@
+{
+    "decoder": {
+        "type": "NGram",
+        "kwargs": {
+            "f_binlm": "dict/ru/lm/4gram.arpa",
+            "gram_order": 4,
+            "num_classes": 45653
+        }
+    }
+}

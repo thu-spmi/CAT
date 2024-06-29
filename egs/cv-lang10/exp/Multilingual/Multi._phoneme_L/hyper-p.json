@@ -1,0 +1,70 @@
+{
+    "data": {
+        "dev": [
+            "dev_en_mul",
+            "dev_es_mul",
+            "dev_fr_mul",
+            "dev_it_mul",
+            "dev_ky_mul",
+            "dev_ru_mul",
+            "dev_nl_mul",
+            "dev_tt_mul",
+            "dev_tr_mul",
+            "dev_sv-SE_mul"
+        ],
+        "test": [
+            "test_en_mul",
+            "test_es_mul",
+            "test_fr_mul",
+            "test_it_mul",
+            "test_ky_mul",
+            "test_ru_mul",
+            "test_nl_mul",
+            "test_tt_mul",
+            "test_tr_mul",
+            "test_sv-SE_mul"
+        ],
+        "filter": "10:1200"
+    },
+    "tokenizer": {
+        "type": "LexiconTokenizer",
+        "option-init": {
+            "lexicon": "dict/ten/lexicon_mul10.txt"
+        },
+        "file": "dict/ten/tokenizer_mul10.tknz",
+        "|V|": 75
+    },
+    "env": {
+        "CUDA_VISIBLE_DEVICES": "8,9"
+    },
+    "train": {
+        "bin": "cat.ctc.train",
+        "option": {
+            "amp": true,
+            "batch_size": 128,
+            "grad_norm": 5.0,
+            "grad_accum_fold": 5,
+            "check_freq": 500,
+            "large-dataset": true,
+            "ld": "data/*/{11_1000,1001_1200}/*.tar",
+            "devset": "mul_exp/24_flatpn_mul10_220M/pkl/dev.pkl"
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "best",
+            "num": 3
+        },
+        "infer": {
+            "bin": "cat.ctc.decode",
+            "option": {
+                "beam_size": 16,
+                "nj": 16
+            }
+        },
+        "er": {
+            "per": true
+        }
+    },
+    "commit": "1b77bc21f7a5faac5e47f6bc4445f23ebf0e0633"
+}

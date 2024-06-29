@@ -1,0 +1,46 @@
+{
+    "data": {
+        "dev": "dev_en",
+        "test": "test_en",
+        "filter": "10:1200"
+    },
+    "tokenizer": {
+        "type": "LexiconTokenizer",
+        "option-init": {
+            "lexicon": "dict/en/lexicon.txt"
+        },
+        "file": "dict/en/tokenizer.tknz",
+        "|V|": 41
+    },
+    "env": {
+        "CUDA_VISIBLE_DEVICES": "0,1,2,3,4,5,6,7"
+    },
+    "train": {
+        "bin": "cat.ctc.train",
+        "option": {
+            "amp": true,
+            "batch_size": 512,
+            "check_freq": 500,
+            "large-dataset": true,
+            "ld": "data/en/{11_1000,1001_1200}/*.tar"
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "best",
+            "num": 3
+        },
+        "infer": {
+            "bin": "cat.ctc.decode",
+            "option": {
+                "beam_size": 16,
+                "nj": 16,
+                "store_ark": true
+            }
+        },
+        "er": {
+            "per": true
+        }
+    },
+    "commit": "1b77bc21f7a5faac5e47f6bc4445f23ebf0e0633"
+}

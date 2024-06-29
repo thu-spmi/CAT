@@ -1,0 +1,46 @@
+{
+    "data": {
+        "train": "train_pl_1h",
+        "dev": "dev_pl",
+        "test": "test_pl",
+        "filter": "10:1200"
+    },
+    "tokenizer": {
+        "type": "SentencePieceTokenizer",
+        "option-train": {
+            "model_type": "bpe",
+            "vocab_size": 500,
+            "model_prefix": "dict/pl/spm_bpe500"
+        },
+        "|V|": 500,
+        "file": "dict/pl/tokenizer_bpe500.tknz"
+    },
+    "env": {
+        "CUDA_VISIBLE_DEVICES": "2,3"
+    },
+    "train": {
+        "bin": "cat.ctc.train",
+        "option": {
+            "amp": true,
+            "batch_size": 128,
+            "check_freq": 7,
+            "init_model": "exp/Multilingual/mul10_bpe_small/bpe5000_mul10_bpe500_pl.pt"
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "best",
+            "num": 3
+        },
+        "infer": {
+            "bin": "cat.ctc.decode",
+            "option": {
+                "beam_size": 16,
+                "nj": 16,
+                "store_ark": true
+            }
+        },
+        "er": {}
+    },
+    "commit": "1b77bc21f7a5faac5e47f6bc4445f23ebf0e0633"
+}
