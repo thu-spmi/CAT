@@ -11,7 +11,7 @@
         "filter": "10000:400000"
     },
     "env": {
-        "CUDA_VISIBLE_DEVICES": "2,3"
+        "CUDA_VISIBLE_DEVICES": "0,1,6,7,8,9"
     },
     "tokenizer": {
         "type": "SentencePieceTokenizer",
@@ -23,17 +23,17 @@
             "model_prefix": "sentencepiece/aishell4_char/spm"
         },
         "|V|": 3038,
-        "file": "exp/ctc-e2e-chunk-simu/tokenizer.tknz"
+        "file": "exp/a12-ctc-e2e-chunk-simu/tokenizer.tknz"
     },
     "train": {
         "bin": "cat.ctc.train_me2e_chunk",
         "option": {
             "amp": false,
-            "batch_size": 2,
+            "batch_size": 6,
             "grad_norm": 2.0,
             "check_freq": 472,
             "seed": 0,
-            "grad_accum_fold": 36,
+            "grad_accum_fold": 12,
             
             "batching_uneven":false
         }

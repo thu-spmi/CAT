@@ -1,4 +1,5 @@
 # What's New
+- 2024.6: Release the code for Streaming multi-channel end-to-end (ME2E) ASR. [Readme](./cuside_array.md) | [Paper]()
 - 2024.6: Release the code for "Whistle: Data-Efficient Multilingual and Crosslingual Speech Recognition via Weakly Phonetic Supervision". [Readme](../egs/cv-lang10/readme.md) | [Paper](https://arxiv.org/abs/2406.02166)
 - 2023.5: Release the code for Exploring Energy-based Language Models with Different Architectures and Training Methods for Speech Recognition. [Readme](./energy-based_LM_training.md) | [Paper](https://arxiv.org/abs/2305.12676)
 - 2022.11: Release of v3, including:

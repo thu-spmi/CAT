@@ -25,12 +25,17 @@ bash local/audio2ark_multi.sh train dev test --res 16000
 
 ### Result
 ```
-流式：
-dev_raw        %SER 79.27 | %CER 23.62 [ 8176 / 34613, 907 ins, 1180 del, 6089 sub ]
-test_raw       %SER 90.35 | %CER 32.98 [ 43304 / 131298, 4983 ins, 4664 del, 33657 sub ]
-非流式：
-dev_raw        %SER 77.88 | %CER 21.13 [ 7315 / 34613, 831 ins, 1044 del, 5440 sub ]test_raw       %SER 88.51 | %CER 29.78 [ 39104 / 131298, 4404 ins, 4327 del, 30373 sub ] 
+Streaming：
+dev_raw         %SER 79.80 | %CER 22.60 [ 7822 / 34613, 905 ins, 1197 del, 5720 sub ]
+test_raw        %SER 90.48 | %CER 32.18 [ 42248 / 131298, 4703 ins, 5034 del, 32511 sub ]
+Non-streaming：
+dev_raw         %SER 76.13 | %CER 19.74 [ 6832 / 34613, 768 ins, 1064 del, 5000 sub ]
+test_raw        %SER 88.13 | %CER 28.70 [ 37684 / 131298, 4070 ins, 4662 del, 28952 sub ]
 ```
+
+|     training process    |
+|:-----------------------:|
+|![monitor](./monitor.png)|
 
 |     real right context   |
 |:-----------------------:|

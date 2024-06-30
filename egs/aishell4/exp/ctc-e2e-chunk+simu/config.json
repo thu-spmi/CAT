@@ -7,7 +7,7 @@
         "context_size_left": 80,
         "context_size_right": 40,
         "jitter_range": 5,
-        "simu_loss_weight": 0.1,
+        "simu_loss_weight": 0.975,
 
         "n_fft": 512,
         "win_length": 400,

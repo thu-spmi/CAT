@@ -26,15 +26,15 @@ bash local/audio2ark_multi.sh train dev test --res 16000
 ```
 
 ### Result
+best-10
 ```
-流式：
-dev_raw        %SER 75.56 | %CER 20.96 [ 7017 / 33474, 764 ins, 1081 del, 5172 sub ]                        
-test_raw       %SER 88.64 | %CER 30.73 [ 40350 / 131298, 4646 ins, 4370 del, 31334 sub ]    
+Streaming: 
+dev_raw         %SER 81.18 | %CER 24.12 [ 8348 / 34613, 879 ins, 1344 del, 6125 sub ]
+test_raw        %SER 91.19 | %CER 34.14 [ 44828 / 131298, 4699 ins, 5654 del, 34475 sub ]   
 
-非流式：
-Time = 517.67 s | RTF = 0.78                                                                       
-dev_raw        %SER 75.66 | %CER 20.22 [ 6770 / 33474, 727 ins, 996 del, 5047 sub ]
-test_raw       %SER 88.51 | %CER 29.65 [ 38933 / 131298, 4629 ins, 4141 del, 30163 sub ]
+Non-streaming:
+dev_raw         %SER 76.40 | %CER 19.26 [ 6666 / 34613, 833 ins, 1007 del, 4826 sub ]
+test_raw        %SER 88.12 | %CER 28.27 [ 37113 / 131298, 4136 ins, 4405 del, 28572 sub ]
 ```
 |     training process    |
 |:-----------------------:|

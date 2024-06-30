@@ -8,15 +8,14 @@
 
 ### Notes
 
-* "bf": null, 用于加载前端模型
-  "am": null, 用于加载后端模型
-  "unfreeze": null, 部分训练中，用于选择需要梯度的模块，null情况下不使用
+* 
+- "bf": null, 用于加载前端模型
+- "am": null, 用于加载后端模型
+- "unfreeze": null, 部分训练中，用于选择需要梯度的模块，null情况下不使用
 
 ### Result
 ```
-
+- 流式：36.68
+- 非流式：31.21
 ```
 
-|     training process    |
-|:-----------------------:|
-|![tb-plot](./monitor.png)|
