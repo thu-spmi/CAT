@@ -422,7 +422,10 @@ if __name__ == "__main__":
                     if checkpoint is None:
                         suffix_model = "none"
                     else:
-                        suffix_model = os.path.basename(checkpoint).removesuffix(".pt")
+                        try:
+                            suffix_model = os.path.basename(checkpoint).removesuffix(".pt")
+                        except:
+                            suffix_model,file_extension = os.path.splitext(os.path.basename(checkpoint))
                     prefix = (
                         f"{topo}_bs{infr_option.get('beam_size', 'dft')}_{suffix_model}"
                     )

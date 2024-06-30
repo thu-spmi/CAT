@@ -1,0 +1,44 @@
+{
+    "data": {
+        "dev": "dev_fr",
+        "test": "test_fr",
+        "filter": "10:1500"
+    },
+    "tokenizer": {
+        "type": "LexiconTokenizer",
+        "option-init": {
+            "lexicon": "dict/fr/lexicon.txt"
+        },
+        "file": "dict/fr/tokenizer.tknz",
+        "|V|": 35
+    },
+    "train": {
+        "bin": "cat.ctc.train",
+        "option": {
+            "amp": true,
+            "batch_size": 480,
+            "check_freq": 500,
+            "verbose": true,
+            "large-dataset": true,
+            "ld": "data/fr/{11_1000,1001_1200}/*.tar"
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "best",
+            "num": 3
+        },
+        "infer": {
+            "bin": "cat.ctc.decode",
+            "option": {
+                "beam_size": 16,
+                "nj": 16,
+                "store_ark": true
+            }
+        },
+        "er": {
+            "per": true
+        }
+    },
+    "commit": "1b77bc21f7a5faac5e47f6bc4445f23ebf0e0633"
+}

@@ -1,0 +1,42 @@
+{
+    "data": {
+        "train": "train_pl",
+        "dev": "dev_pl",
+        "test": "test_pl",
+        "filter": "10:2000"
+    },
+    "tokenizer": {
+        "type": "LexiconTokenizer",
+        "option-init": {
+            "lexicon": "dict/pl/lexicon_rmsymb.txt"
+        },
+        "file": "dict/pl/tokenizer_rmsymb.tknz",
+        "|V|": 37
+    },
+    "train": {
+        "bin": "cat.ctc.train",
+        "option": {
+            "amp": true,
+            "batch_size": 640,
+            "check_freq": 167,
+            "init_model": "/mnt/workspace/liziwei/CAT/egs/commonvoice/mul_exp/03_flatpn_mul10_finetune_pl/01_flatpn_mul10_best-3_pl.pt"
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "best",
+            "num": 3
+        },
+        "infer": {
+            "bin": "cat.ctc.decode",
+            "option": {
+                "beam_size": 16,
+                "nj": 16
+            }
+        },
+        "er": {
+            "per": true
+        }
+    },
+    "commit": "1b77bc21f7a5faac5e47f6bc4445f23ebf0e0633"
+}

@@ -1,0 +1,266 @@
+{
+    "train_en": {
+        "scp": "data/en/excluded_train/feats.scp",
+        "trans": "data/en/excluded_train/text"
+    },
+    "dev_en": {
+        "scp": "data/en/dev/feats.scp",
+        "trans": "data/en/dev/text"
+    },
+    "test_en": {
+        "scp": "data/en/test/feats.scp",
+        "trans": "data/en/test/text"
+    },
+    "train_es": {
+        "scp": "data/es/excluded_train/feats.scp",
+        "trans": "data/es/excluded_train/text"
+    },
+    "dev_es": {
+        "scp": "data/es/dev/feats.scp",
+        "trans": "data/es/dev/text"
+    },
+    "test_es": {
+        "scp": "data/es/test/feats.scp",
+        "trans": "data/es/test/text"
+    },
+    "train_fr": {
+        "scp": "data/fr/excluded_train/feats.scp",
+        "trans": "data/fr/excluded_train/text"
+    },
+    "dev_fr": {
+        "scp": "data/fr/dev/feats.scp",
+        "trans": "data/fr/dev/text"
+    },
+    "test_fr": {
+        "scp": "data/fr/test/feats.scp",
+        "trans": "data/fr/test/text"
+    },
+    "train_it": {
+        "scp": "data/it/excluded_train/feats.scp",
+        "trans": "data/it/excluded_train/text"
+    },
+    "dev_it": {
+        "scp": "data/it/dev/feats.scp",
+        "trans": "data/it/dev/text"
+    },
+    "test_it": {
+        "scp": "data/it/test/feats.scp",
+        "trans": "data/it/test/text"
+    },
+    "train_id": {
+        "scp": "data/id/excluded_train/feats.scp",
+        "trans": "data/id/excluded_train/text"
+    },
+    "dev_id": {
+        "scp": "data/id/dev/feats.scp",
+        "trans": "data/id/dev/text"
+    },
+    "test_id": {
+        "scp": "data/id/test/feats.scp",
+        "trans": "data/id/test/text"
+    },
+    "train_ky": {
+        "scp": "data/ky/excluded_train/feats.scp",
+        "trans": "data/ky/excluded_train/text"
+    },
+    "dev_ky": {
+        "scp": "data/ky/dev/feats.scp",
+        "trans": "data/ky/dev/text"
+    },
+    "test_ky": {
+        "scp": "data/ky/test/feats.scp",
+        "trans": "data/ky/test/text"
+    },
+    "train_nl": {
+        "scp": "data/nl/excluded_train/feats.scp",
+        "trans": "data/nl/excluded_train/text"
+    },
+    "dev_nl": {
+        "scp": "data/nl/dev/feats.scp",
+        "trans": "data/nl/dev/text"
+    },
+    "test_nl": {
+        "scp": "data/nl/test/feats.scp",
+        "trans": "data/nl/test/text"
+    },
+    "train_pl": {
+        "scp": "data/pl/excluded_train/feats.scp",
+        "trans": "data/pl/excluded_train/text"
+    },
+    "dev_pl": {
+        "scp": "data/pl/dev/feats.scp",
+        "trans": "data/pl/dev/text"
+    },
+    "test_pl": {
+        "scp": "data/pl/test/feats.scp",
+        "trans": "data/pl/test/text"
+    },
+    "train_ru": {
+        "scp": "data/ru/excluded_train/feats.scp",
+        "trans": "data/ru/excluded_train/text"
+    },
+    "dev_ru": {
+        "scp": "data/ru/dev/feats.scp",
+        "trans": "data/ru/dev/text"
+    },
+    "test_ru": {
+        "scp": "data/ru/test/feats.scp",
+        "trans": "data/ru/test/text"
+    },
+    "train_sv-SE": {
+        "scp": "data/sv-SE/excluded_train/feats.scp",
+        "trans": "data/sv-SE/excluded_train/text"
+    },
+    "dev_sv-SE": {
+        "scp": "data/sv-SE/dev/feats.scp",
+        "trans": "data/sv-SE/dev/text"
+    },
+    "test_sv-SE": {
+        "scp": "data/sv-SE/test/feats.scp",
+        "trans": "data/sv-SE/test/text"
+    },
+    "train_tr": {
+        "scp": "data/tr/excluded_train/feats.scp",
+        "trans": "data/tr/excluded_train/text"
+    },
+    "dev_tr": {
+        "scp": "data/tr/dev/feats.scp",
+        "trans": "data/tr/dev/text"
+    },
+    "test_tr": {
+        "scp": "data/tr/test/feats.scp",
+        "trans": "data/tr/test/text"
+    },
+    "train_tt": {
+        "scp": "data/tt/excluded_train/feats.scp",
+        "trans": "data/tt/excluded_train/text"
+    },
+    "dev_tt": {
+        "scp": "data/tt/dev/feats.scp",
+        "trans": "data/tt/dev/text"
+    },
+    "test_tt": {
+        "scp": "data/tt/test/feats.scp",
+        "trans": "data/tt/test/text"
+    },
+    "train_en_mul": {
+        "scp": "data/en/excluded_train/feats.scp",
+        "trans": "data/en/excluded_train/text_mul"
+    },
+    "train_es_mul": {
+        "scp": "data/es/excluded_train/feats.scp",
+        "trans": "data/es/excluded_train/text_mul"
+    },
+    "train_fr_mul": {
+        "scp": "data/fr/excluded_train/feats.scp",
+        "trans": "data/fr/excluded_train/text_mul"
+    },
+    "train_it_mul": {
+        "scp": "data/it/excluded_train/feats.scp",
+        "trans": "data/it/excluded_train/text_mul"
+    },
+    "train_ky_mul": {
+        "scp": "data/ky/excluded_train/feats.scp",
+        "trans": "data/ky/excluded_train/text_mul"
+    },
+    "train_nl_mul": {
+        "scp": "data/nl/excluded_train/feats.scp",
+        "trans": "data/nl/excluded_train/text_mul"
+    },
+    "train_ru_mul": {
+        "scp": "data/ru/excluded_train/feats.scp",
+        "trans": "data/ru/excluded_train/text_mul"
+    },
+    "train_sv-SE_mul": {
+        "scp": "data/sv-SE/excluded_train/feats.scp",
+        "trans": "data/sv-SE/excluded_train/text_mul"
+    },
+    "train_tr_mul": {
+        "scp": "data/tr/excluded_train/feats.scp",
+        "trans": "data/tr/excluded_train/text_mul"
+    },
+    "train_tt_mul": {
+        "scp": "data/tt/excluded_train/feats.scp",
+        "trans": "data/tt/excluded_train/text_mul"
+    },
+    "dev_en_mul": {
+        "scp": "data/en/dev/feats.scp",
+        "trans": "data/en/dev/text_mul"
+    },
+    "dev_es_mul": {
+        "scp": "data/es/dev/feats.scp",
+        "trans": "data/es/dev/text_mul"
+    },
+    "dev_fr_mul": {
+        "scp": "data/fr/dev/feats.scp",
+        "trans": "data/fr/dev/text_mul"
+    },
+    "dev_it_mul": {
+        "scp": "data/it/dev/feats.scp",
+        "trans": "data/it/dev/text_mul"
+    },
+    "dev_ky_mul": {
+        "scp": "data/ky/dev/feats.scp",
+        "trans": "data/ky/dev/text_mul"
+    },
+    "dev_nl_mul": {
+        "scp": "data/nl/dev/feats.scp",
+        "trans": "data/nl/dev/text_mul"
+    },
+    "dev_ru_mul": {
+        "scp": "data/ru/dev/feats.scp",
+        "trans": "data/ru/dev/text_mul"
+    },
+    "dev_sv-SE_mul": {
+        "scp": "data/sv-SE/dev/feats.scp",
+        "trans": "data/sv-SE/dev/text_mul"
+    },
+    "dev_tt_mul": {
+        "scp": "data/tt/dev/feats.scp",
+        "trans": "data/tt/dev/text_mul"
+    },
+    "dev_tr_mul": {
+        "scp": "data/tr/dev/feats.scp",
+        "trans": "data/tr/dev/text_mul"
+    },
+    "test_en_mul": {
+        "scp": "data/en/test/feats.scp",
+        "trans": "data/en/test/text_mul"
+    },
+    "test_es_mul": {
+        "scp": "data/es/test/feats.scp",
+        "trans": "data/es/test/text_mul"
+    },
+    "test_fr_mul": {
+        "scp": "data/fr/test/feats.scp",
+        "trans": "data/fr/test/text_mul"
+    },
+    "test_it_mul": {
+        "scp": "data/it/test/feats.scp",
+        "trans": "data/it/test/text_mul"
+    },
+    "test_ky_mul": {
+        "scp": "data/ky/test/feats.scp",
+        "trans": "data/ky/test/text_mul"
+    },
+    "test_nl_mul": {
+        "scp": "data/nl/test/feats.scp",
+        "trans": "data/nl/test/text_mul"
+    },
+    "test_ru_mul": {
+        "scp": "data/ru/test/feats.scp",
+        "trans": "data/ru/test/text_mul"
+    },
+    "test_sv-SE_mul": {
+        "scp": "data/sv-SE/test/feats.scp",
+        "trans": "data/sv-SE/test/text_mul"
+    },
+    "test_tr_mul": {
+        "scp": "data/tr/test/feats.scp",
+        "trans": "data/tr/test/text_mul"
+    },
+    "test_tt_mul": {
+        "scp": "data/tt/test/feats.scp",
+        "trans": "data/tt/test/text_mul"
+    }
+}

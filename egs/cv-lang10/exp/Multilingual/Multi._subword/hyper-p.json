@@ -1,0 +1,69 @@
+{
+    "data": {
+        "train": "text_sample",
+        "dev": [
+            "dev_en",
+            "dev_es",
+            "dev_fr",
+            "dev_it",
+            "dev_ky",
+            "dev_nl",
+            "dev_ru",
+            "dev_sv-SE",
+            "dev_tr",
+            "dev_tt"
+        ],
+        "test": [
+            "test_en",
+            "test_es",
+            "test_fr",
+            "test_it",
+            "test_ky",
+            "test_nl",
+            "test_ru",
+            "test_sv-SE",
+            "test_tr",
+            "test_tt"
+        ],
+        "filter": "10:1200"
+    },
+    "tokenizer": {
+        "type": "SentencePieceTokenizer",
+        "option-train": {
+            "model_type": "bpe",
+            "vocab_size": 5000,
+            "model_prefix": "dict/ten/ten_bpe/spm_bpe5000"
+        },
+        "|V|": 5000,
+        "file": "dict/ten/tokenizer_bpe5000.tknz"
+    },
+    "env": {
+        "CUDA_VISIBLE_DEVICES": "0,1,2,3,4,5,6,7,8,9"
+    },
+    "train": {
+        "bin": "cat.ctc.train",
+        "option": {
+            "amp": true,
+            "batch_size": 345,
+            "check_freq": 856,
+            "large-dataset": true,
+            "ld": "data/tar_wo_lid/*/{11_1000,1001_1200}/*.tar"
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "best",
+            "num": 3
+        },
+        "infer": {
+            "bin": "cat.ctc.decode",
+            "option": {
+                "beam_size": 16,
+                "nj": 16,
+                "store_ark": true
+            }
+        },
+        "er": {}
+    },
+    "commit": "1b77bc21f7a5faac5e47f6bc4445f23ebf0e0633"
+}
