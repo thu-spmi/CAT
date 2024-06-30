@@ -1,0 +1,71 @@
+{
+    "data": {
+        "train": [
+            "train_raw_ori"
+        ],
+        "dev": "dev_raw_ori",
+        "test": [
+            
+            "test_alimeeting_raw_ori",
+            "dev_alimeeting_raw_ori",
+            "test_raw_ori",
+            "test_706_array_raw_ori"
+        ],
+        "filter": "10000:400000"
+    },
+    
+    "env": {
+        "CUDA_VISIBLE_DEVICES": "0,1,2,3"
+    },
+    "tokenizer": {
+        "type": "SentencePieceTokenizer",
+        "option-train": {
+            "model_type": "char",
+            "vocab_size": 4232,
+            "add_dummy_prefix": false,
+            "use_all_vocab": true,
+            "model_prefix": "sentencepiece/aishell4_char/spm"
+        },
+        "|V|": 3038,
+        "file": "exp/a11-ctc-e2e-chunk/tokenizer.tknz"
+    },
+    "train": {
+        "bin": "cat.ctc.train_me2e_kaldi_chunk",
+        "option": {
+            "amp": false,
+            "batch_size": 36,
+            "grad_norm": 2.0,
+            "check_freq": 472,
+            "seed": 0,
+            "grad_accum_fold": 2,
+            "unfreeze": null,
+            "bf": null,
+            "am": null,
+            
+            "batching_uneven":true
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "best",
+            "num": 5
+        },
+        "infer": {
+            "bin": "cat.ctc.decode_me2e",
+            "option": {
+                "beam_size": 32,
+                "nj": 48,
+                "built_model_by":"cat.ctc.train_me2e_kaldi_chunk",
+                "n_fft": 512,
+                "win_length": 400,
+                "hop_length": 160,
+                "streaming": true,
+                "gpu": true
+            }
+        },
+        "er": {
+            "cer": true
+        }
+    },
+    "commit": "618a15f70780200cdc42eed3f69f6ce1d61a4e61"
+}

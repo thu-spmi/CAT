@@ -1,0 +1,55 @@
+{
+    "trainer": {
+        "simu": false,
+        "use_crf": false,
+        "lamb": 0.01,
+        "chunk_size": 40,
+        "context_size_left": 80,
+        "context_size_right": 40,
+        "jitter_range": 5,
+        "simu_loss_weight": 0.975,
+        "n_fft": 512,
+        "win_length": 400,
+        "hop_length": 160,
+        "idim": 80,
+        "beamforming": "mvdr",
+        "wpe": false,
+        "ref_ch": 0,
+        "noSE": false
+    },
+    "encoder": {
+        "type": "ConformerNet",
+        "kwargs": {
+            "num_cells": 12,
+            "idim": 80,
+            "hdim": 512,
+            "conv": "vgg2l",
+            "num_heads": 4,
+            "dropout": 0.3,
+            "dropout_attn": 0.3,
+            "kernel_size": 15,
+            "num_classes": 6600,
+            "with_head": true
+        }
+    },
+    "scheduler": {
+        "type": "SchedulerEarlyStop",
+        "kwargs": {
+            "stop_lr": 1e-06,
+            "min_step": 2000,
+            "n_tol": 3,
+            "gamma": 0.5
+        },
+        "optimizer": {
+            "type": "Adam",
+            "kwargs": {
+                "lr": 1e-05,
+                "betas": [
+                    0.9,
+                    0.98
+                ],
+                "weight_decay": 1e-06
+            }
+        }
+    }
+}

@@ -1,0 +1,64 @@
+{
+    "data": {
+        "train": [
+            "train_raw_ori"
+        ],
+        "dev": "dev_raw_ori",
+        "test": [
+            
+            "test_raw_ori"
+        ],
+        "filter": "10000:400000"
+    },
+    
+    "tokenizer": {
+        "type": "SentencePieceTokenizer",
+        "file": "exp/c-base/tokenizer.tknz",
+        "|V|": 6600
+    },
+    "train": {
+        "bin": "cat.ctc.train_me2e_kaldi_chunk",
+        "option": {
+            "amp": false,
+            "batching_mode":"bucket",
+            "bucket_size":640000,
+            "grad_norm": 2.0,
+            "seed": 0,
+            "grad_accum_fold": 15,
+
+            "batching_uneven":true,
+            "unfreeze": "beamformer",
+
+            "init_model":"/home/kongxz/workspace/CAT/egs/aishell4/exp/ctc-cuside-16k-6w-ch/check/best-5.pt"
+        }
+    },
+    "env": {
+        "CUDA_VISIBLE_DEVICES": "6,7,8,9"
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "best",
+            "num": 5
+        },
+        "infer": {
+            "bin": "cat.ctc.decode_me2e",
+            "option": {
+                "beam_size": 32,
+                "nj": 48,
+                "built_model_by":"cat.ctc.train_me2e_kaldi_chunk",
+                "n_fft": 512,
+                "win_length": 400,
+                "hop_length": 160,
+                "wpe": false,
+                "noSE": true,
+                "use_SACC": false,
+                "streaming": true,
+                "gpu": true
+            }
+        },
+        "er": {
+            "cer": true
+        }
+    },
+    "commit": "618a15f70780200cdc42eed3f69f6ce1d61a4e61"
+}
