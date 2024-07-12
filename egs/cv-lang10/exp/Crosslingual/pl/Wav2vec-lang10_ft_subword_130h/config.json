@@ -1,0 +1,40 @@
+{
+    "specaug": {
+        "freq_mask_width_range": 0.35,
+        "num_freq_mask": 2,
+        "num_time_mask": 10,
+        "time_mask_width_range": 0.05
+    },
+    "encoder": {
+        "type": "Wav2Vec2Encoder",
+        "kwargs": {
+            "backend": "fairseq",
+            "pretrained_model": "/mnt/workspace/saier/CAT/egs/jsa/data/checkpoint_best_645e_946745s.pt",
+            "enc_head_type": "Linear",
+            "use_wav2vec2_encoder": true,
+            "tune_wav2vec2_encoder": true,
+            "idim": 768,
+            "num_classes": 500
+        }
+    },
+    "scheduler": {
+        "type": "SchedulerEarlyStop",
+        "kwargs": {
+            "min_step": 13180,
+            "n_tol": 5,
+            "gamma": 0.5,
+            "stop_lr": 1e-06
+        },
+        "optimizer": {
+            "type": "Adam",
+            "kwargs": {
+                "lr": 3e-05,
+                "betas": [
+                    0.9,
+                    0.98
+                ],
+                "weight_decay": 1e-06
+            }
+        }
+    }
+}

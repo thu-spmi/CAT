@@ -1,0 +1,49 @@
+{
+    "data": {
+        "train": "train_pl_10h_raw",
+        "dev": "dev_pl_raw",
+        "test": "test_pl_raw",
+        "filter": "32000:250000"
+    },
+    "tokenizer": {
+        "type": "SentencePieceTokenizer",
+        "option-train": {
+            "model_type": "bpe",
+            "vocab_size": 500,
+            "model_prefix": "sentencepiece/pl/spm_bpe500"
+        },
+        "|V|": 500,
+        "file": "data/dict_pl/tokenizer_bpe500.tknz"
+    },
+    "env": {
+        "CUDA_VISIBLE_DEVICES": "0,1"
+    },
+    "train": {
+        "bin": "cat.ctc.train",
+        "option": {
+            "amp": true,
+            "batch_size": 100,
+            "check_freq": 81,
+            "trset": "data/pkl_raw/train_bpe500_10h.pkl",
+            "devset": "data/pkl_raw/dev_bpe500.pkl",
+            "resume": "wav2vec/11_w2v_base_bpe500_ft_10h/check/checkpoint.321e26001s.pt"
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "best",
+            "num": 3
+        },
+        "infer": {
+            "bin": "cat.ctc.decode",
+            "option": {
+                "beam_size": 16,
+                "nj": 16,
+                "store_ark": true
+            }
+        },
+        "er": {
+        }
+    },
+    "commit": "1b77bc21f7a5faac5e47f6bc4445f23ebf0e0633"
+}

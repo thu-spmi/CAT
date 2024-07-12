@@ -1,0 +1,47 @@
+{
+    "data": {
+        "train": "train_id_1h_raw",
+        "dev": "dev_id_raw",
+        "test": "test_id_raw",
+        "filter": "32000:250000"
+    },
+    "tokenizer": {
+        "type": "SentencePieceTokenizer",
+        "option-train": {
+            "model_type": "bpe",
+            "vocab_size": 500,
+            "model_prefix": "sentencepiece/id/spm_bpe500"
+        },
+        "|V|": 500,
+        "file": "data/dict_id/tokenizer_bpe500.tknz"
+    },
+    "env": {
+        "CUDA_VISIBLE_DEVICES": "0,1"
+    },
+    "train": {
+        "bin": "cat.ctc.train",
+        "option": {
+            "amp": true,
+            "batch_size": 88,
+            "check_freq": 9,
+            "trset": "data/id/pkl_raw/train_bpe500_1h.pkl",
+            "devset": "data/id/pkl_raw/dev_bpe500.pkl"
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "best",
+            "num": 3
+        },
+        "infer": {
+            "bin": "cat.ctc.decode",
+            "option": {
+                "beam_size": 16,
+                "nj": 16,
+                "store_ark": true
+            }
+        },
+        "er": {}
+    },
+    "commit": "1b77bc21f7a5faac5e47f6bc4445f23ebf0e0633"
+}

@@ -1,0 +1,42 @@
+{
+    "specaug": {
+        "freq_mask_width_range": 0.35,
+        "num_freq_mask": 2,
+        "num_time_mask": 10,
+        "time_mask_width_range": 0.05
+    },
+    "encoder": {
+        "type": "ConformerNet",
+        "kwargs": {
+            "num_cells": 22,
+            "idim": 80,
+            "hdim": 1024,
+            "conv": "vgg2l",
+            "num_heads": 4,
+            "d_head": 224,
+            "kernel_size": 15,
+            "num_classes": 75
+        }
+    },
+    "scheduler": {
+        "type": "SchedulerNoamEarlyStop",
+        "kwargs": {
+            "warmup_step": 45000,
+            "min_step": 50000,
+            "dim_model": 1024,
+            "peak_factor": 1.0,
+            "n_tol": 50
+        },
+        "optimizer": {
+            "type": "Adam",
+            "kwargs": {
+                "lr": 0.0003,
+                "betas": [
+                    0.9,
+                    0.98
+                ],
+                "weight_decay": 1e-06
+            }
+        }
+    }
+}
