@@ -292,6 +292,8 @@ class ConformerNet(AbsEncoder):
         dropout: float = 0.1,
         dropout_attn: float = 0.0,
         delta_feats: bool = False,
+        causal: bool = False,
+        modernized_atten: bool = False,
         with_head: bool = True,
         subsample_norm: str = "none",
         time_reduction_factor: int = 1,
@@ -335,7 +337,10 @@ class ConformerNet(AbsEncoder):
         )
 
         self.cells = nn.ModuleList()
-        pe = c_layers.PositionalEncoding(hdim)
+        if modernized_atten:
+            pe = None
+        else:
+            pe = c_layers.PositionalEncoding(hdim)
 
         for i in range(num_cells):
             if i == time_reduction_pos and time_reduction_factor > 1:
@@ -352,6 +357,8 @@ class ConformerNet(AbsEncoder):
                 multiplier,
                 dropout,
                 dropout_attn,
+                causal=causal,
+                modernized_atten=modernized_atten
             )
             self.cells.append(cell)
 
