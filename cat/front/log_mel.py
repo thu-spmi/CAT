@@ -1,3 +1,16 @@
+# Copyright 2020 Tsinghua SPMI Lab / Tasi
+# Apache 2.0.
+# Author: Xiangzhu (kongxiangzhu99@gmail.com), Keyu An
+#
+# Acknowledgment:
+# This code is adapted from the ESPnet project. The original code can be found at https://github.com/espnet/espnet.
+#
+# Description:
+#   This script defines the LogMel class, which converts Short-Time Fourier Transform (STFT) 
+#   features to Mel-frequency filter bank (fbank) features using the librosa library. 
+#   It includes functionality to configure the Mel filter bank parameters and apply the conversion.
+#
+
 import librosa
 import torch
 from typing import Tuple

@@ -1,6 +1,6 @@
 # Copyright 2023 Tsinghua University
 # Apache 2.0.
-# Author: Xiangzhu Kong
+# Author: Xiangzhu Kong (kongxiangzhu99@gmail.com)
 
 """Compute WER/CER of sentences.
 """
@@ -16,6 +16,16 @@ import json
 
 
 class Processor:
+    """
+    A class used to process strings or lists of strings through a series of user-defined processing functions.
+
+    Methods:
+        append(new_processing: Callable[[str], str]):
+            Adds a new processing function to the processing pipeline.
+
+        __call__(seqs: Union[List[str], str]) -> Union[List[str], str]:
+            Applies the processing pipeline to the input string or list of strings.
+    """
     def __init__(self) -> None:
         self._process = []
 

@@ -1,8 +1,8 @@
-# Copyright 2022 Tsinghua University
+# Copyright 2020 Tsinghua SPMI Lab / Tasi
 # Apache 2.0.
-# Author: Xiangzhu Kong
+# Author: Xiangzhu (kongxiangzhu99@gmail.com), Huahuan Zheng
 
-"""Top interface of CTC training.
+"""Top interface of CTC training for librosa format feature.
 """
 
 __all__ = ["AMTrainer", "build_model", "_parser", "main"]
@@ -190,14 +190,6 @@ class AMTrainer(nn.Module):
 
         return cal_wer(ground_truth, hypos)
 
-    def wave2fbank(self,audio, lx):
-        audio = audio[...,0]
-        samples, flens = self.stft(audio, lx)
-        input_power = samples[..., 0] ** 2 + samples[..., 1] ** 2
-        input_amp = torch.sqrt(torch.clamp(input_power, min=1.0e-10))
-        feats, _ = self.logmel(input_amp, flens)
-        
-        return feats,flens
     
     def beamforming(self,audio, lx):
         samples, flens = self.stft(audio, lx)

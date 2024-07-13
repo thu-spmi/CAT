@@ -1,3 +1,13 @@
+# Copyright 2020 Tsinghua SPMI Lab / Tasi
+# Apache 2.0.
+# Author: Xiangzhu (kongxiangzhu99@gmail.com), Keyu An
+#
+# Acknowledgment:
+# This code is adapted from the ESPnet project. The original code can be found at https://github.com/espnet/espnet.
+#
+# Description:
+#   This script defines several classes and functions for processing and estimating masks for speech enhancement using RNNs.
+
 import torch
 import numpy as np
 from torch_complex.tensor import ComplexTensor

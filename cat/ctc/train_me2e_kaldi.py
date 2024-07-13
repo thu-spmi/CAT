@@ -1,8 +1,8 @@
-# Copyright 2023 Tsinghua University
+# Copyright 2020 Tsinghua SPMI Lab / Tasi
 # Apache 2.0.
-# Author: Xiangzhu Kong
+# Author: Xiangzhu (kongxiangzhu99@gmail.com), Huahuan Zheng
 
-"""Top interface of CTC training.
+"""Top interface of CTC training for kaldi format feature.
 """
 
 __all__ = ["AMTrainer", "build_model", "_parser", "main"]
@@ -209,30 +209,23 @@ class AMTrainer(nn.Module):
         hypos = [y_samples[n, 0, : ly_samples[n, 0]].tolist() for n in range(bs)]
 
         return cal_wer(ground_truth, hypos)
+    
+    def plot_spectrogram(self, audio, lx, save_path, title,ori):
+        '''
+        This function plots the spectrogram of an audio signal, optionally applies beamforming by 'ori', 
+        and saves both the spectrogram image and the reconstructed waveform to specified file paths.
+        
+        Args:
+            audio (torch.Tensor): The input audio signal tensor.
+            lx (torch.Tensor): The lengths of each audio sample in the batch.
+            save_path (str): The path where the resulting spectrogram image and waveform file will be saved.
+            title (str): The title of the plot and the base name for the saved files.
+            ori (bool): A flag indicating whether to use the original audio signal (True) or the beamformed signal (False).
 
-    def wave2fbank(self,audio, lx):
-        audio = audio[...,0]
-        samples, flens = self.stft(audio, lx)
-        input_power = samples[..., 0] ** 2 + samples[..., 1] ** 2
-        input_amp = torch.sqrt(torch.clamp(input_power, min=1.0e-10))
-        feats, _ = self.logmel(input_amp, flens)
-        
-        return feats,flens
-    
-    def test(self,audio,lx):
-        # (B,T,C) --> (B,C,T)
-        audio = audio.permute(0,2,1)
-        samples, flens = self.trans.cal_stft(audio, lx)
-        # (B, C, T, F, 2) --> (B, T, C, F, 2)
-        samples = samples.permute(0,2,1,3,4)
-        samples, flens1 , _ =self.channel(samples,flens)
-        assert (flens == flens1).all()
-   
-        feats, _ = self.trans.stft_to_fbank(samples,flens1)
-        
-        return feats,flens
-    
-    def plot_spectrogram(self,audio,lx,save_path, title,ori):
+        Returns:
+            Saves the spectrogram image as a PNG file.
+            Saves the reconstructed waveform as a WAV file.
+        '''
         audio = audio.detach()
         audio = audio.permute(0,2,1)
         samples, flens = self.trans.cal_stft(audio, lx)
@@ -326,6 +319,18 @@ class AMTrainer(nn.Module):
         torchaudio.save(save_wav_path, waveform_2d_normalized.cpu(), 16000)
     
     def plot_mel_spectrogram(self, mel_spectrogram, save_path, title):
+        '''
+        This function plots a mel spectrogram and saves it as an image file.
+        
+        Args:
+            mel_spectrogram (torch.Tensor): The input mel spectrogram tensor.
+            save_path (str): The path where the resulting mel spectrogram image will be saved.
+            title (str): The title of the plot and the base name for the saved file.
+
+        Returns:
+            Saves the mel spectrogram image as a PNG file.
+        
+        '''
         import matplotlib.pyplot as plt
         plt.clf()
         # 剔除负数值，因为 Mel 频谱通常没有负值
@@ -369,25 +374,9 @@ class AMTrainer(nn.Module):
         
         return feats, flens
     
-    
-    
-    
     def forward(self, audio, lx, labels, ly):
         
-        # audio = audio[...,0]
-        # samples, flens = self.stft(audio, lx)
-        # input_power = samples[..., 0] ** 2 + samples[..., 1] ** 2
-        # input_amp = torch.sqrt(torch.clamp(input_power, min=1.0e-10))
-        # feats, _ = self.logmel(input_amp, flens)
-        
-        # samples, flens = self.stft(audio, lx)
-        # feats, flens1 , _ =self.beamformer(samples,flens)
-        
-        # assert flens == flens1
-        
         feats, flens = self.beamforming(audio, lx)
-        
-
         
         if torch.isnan(feats).any():
             print("feats array contains NaN values!")

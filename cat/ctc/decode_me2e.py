@@ -1,8 +1,8 @@
-# Copyright 2023 Tsinghua University
+# Copyright 2020 Tsinghua SPMI Lab / Tasi
 # Apache 2.0.
-# Author: Xiangzhu Kong
+# Author: Xiangzhu (kongxiangzhu99@gmail.com), Huahuan Zheng
 
-"""CTC decode module
+"""CTC decode module for multi_channel 
 
 NOTE (Huahuan): currently, bs=1 is hard-coded.
 
@@ -80,8 +80,11 @@ def main(args: argparse.Namespace = None):
 
 def dataserver(args, q: mp.Queue):
     testset = ScpDataset(args.input_scp)
-    #n_frames = sum(testset.get_seq_len())
-    #testset.get_seq_len() 得到的是时间序列的长度，需要转换为帧数，可能不太准确，在成帧过程中句子有填充
+    '''
+    NOTE (Xiangzhukong): The total length of the time series obtained 
+        by using 'testset. get_deq_1en()' needs to be converted to frames when calculating RTF, 
+        which may not be accurate because sentences are filled in during the framing process.
+    '''
     n_frames = sum((testset.get_seq_len() - args.win_length) // args.hop_length + 1)
     testloader = DataLoader(
         testset,

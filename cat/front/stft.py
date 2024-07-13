@@ -1,3 +1,15 @@
+# Copyright 2020 Tsinghua SPMI Lab / Tasi
+# Apache 2.0.
+# Author: Xiangzhu (kongxiangzhu99@gmail.com), Keyu An
+#
+# Acknowledgment:
+# This code is adapted from the ESPnet project. The original code can be found at https://github.com/espnet/espnet.
+#
+# Description:
+#   This script defines the Stft class for performing Short-Time Fourier Transform (STFT) and its inverse.
+#   It also provides various utility functions related to tensor manipulation and masking.
+#
+
 from distutils.version import LooseVersion
 from typing import Optional
 from typing import Tuple
@@ -15,6 +27,9 @@ from typing import Tuple
 import torch
 
 class InversibleInterface(ABC):
+    """
+    An abstract base class that defines an interface for classes that have an inverse method.
+    """
     @abstractmethod
     def inverse(
         self, input: torch.Tensor, input_lengths: torch.Tensor = None
@@ -24,6 +39,16 @@ class InversibleInterface(ABC):
 
 
 class Stft(torch.nn.Module, InversibleInterface):
+    """
+    A class for performing Short-Time Fourier Transform (STFT) and its inverse.
+
+    Methods:
+        forward(input: torch.Tensor, ilens: torch.Tensor = None) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+            Applies STFT to the input tensor.
+
+        inverse(input: Union[torch.Tensor, ComplexTensor], ilens: torch.Tensor = None) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+            Applies inverse STFT to the input tensor.
+    """
     def __init__(
         self,
         n_fft: int = 512,

@@ -1,3 +1,16 @@
+# Copyright 2020 Tsinghua SPMI Lab / Tasi
+# Apache 2.0.
+# Author: Xiangzhu (kongxiangzhu99@gmail.com), Keyu An
+#
+# Acknowledgment:
+#   This code is adapted from the ESPnet project. The original code can be found at https://github.com/espnet/espnet.
+#
+# Description:
+#   This script defines the FilterNet class, which is designed to apply filtering 
+#   to multi-channel complex spectrograms using a neural network. It includes 
+#   functionality for processing complex input signals, computing masks, and 
+#   generating filtered outputs.
+
 import torch
 import numpy as np
 from .mask_estimator import RNNP, RNN
@@ -6,6 +19,22 @@ from typing import Tuple
 from torch.nn import functional as F
 
 class FilterNet(torch.nn.Module):
+    """
+    A neural network module for filtering complex tensors using RNN layers.
+
+    Args:
+        type (str): Type of RNN to use (e.g., 'lstm', 'gru', etc.).
+        idim (int): Input dimension.
+        layers (int): Number of RNN layers.
+        units (int): Number of units in each RNN layer.
+        projs (int): Number of projection units.
+        dropout (float): Dropout rate.
+        nmask (int, optional): Number of masks. Default is 1.
+
+    Methods:
+        forward(xs: ComplexTensor, ilens: torch.LongTensor) -> Tuple[Tuple[torch.Tensor, ...], torch.LongTensor]:
+            Forward propagation through the network.
+    """
     def __init__(self, type, idim, layers, units, projs, dropout, nmask=1):
         super().__init__()
         subsample = np.ones(layers + 1, dtype=np.int)

@@ -1,5 +1,14 @@
 #!/bin/bash
-# This script prepare aishell data by torchaudio
+
+# Copyright 2020 Tsinghua SPMI Lab / Tasi
+# Apache 2.0.
+# Author: Xiangzhu Kong (kongxiangzhu99@gmail.com)
+#
+# Description:
+#   This script prepares AISHELL data using torchaudio. It handles tasks such as checking for required files, 
+#   running data preparation scripts, extracting FBank features, and removing spaces from text files. 
+#   The key steps include parsing command-line arguments, preparing data subsets, and performing optional feature extraction.
+
 set -e -u
 
 [ ! $(command -v python) ] && (

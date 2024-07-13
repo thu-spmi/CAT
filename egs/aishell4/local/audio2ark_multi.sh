@@ -1,7 +1,14 @@
 #!/bin/bash
-# Author: Xiangzhu Kong (maxwellzh@outlook.com)
-# This script directly save raw audios into kaldi ark (for experiment reading raw audios)
-# Run local/data_multi.sh to obtain wav.scp and text before this script.
+
+# Copyright 2020 Tsinghua SPMI Lab / Tasi
+# Apache 2.0.
+# Author: Xiangzhu Kong (kongxiangzhu99@gmail.com)
+#
+# Description:
+#   This script saves raw audio files into Kaldi ark format for experimental purposes. It requires running local/data_multi.sh 
+#   to obtain wav.scp and text files before executing this script. The script handles options for resampling and normalization 
+#   of audio waveforms. The key steps include parsing command-line arguments, processing datasets, and packing audio files into 
+#   Kaldi format.
 
 set -e -u
 

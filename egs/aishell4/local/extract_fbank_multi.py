@@ -1,6 +1,11 @@
-"""
-Compute FBank feature for aishell4 using torchaudio.
-"""
+# Copyright 2020 Tsinghua SPMI Lab / Tasi
+# Apache 2.0.
+# Author: Xiangzhu Kong (kongxiangzhu99@gmail.com)
+#
+# Description:
+#   This script computes FBank features for AISHELL-4 using torchaudio. It prepares data subsets, handles 
+#   speed perturbation, and validates the existence of necessary files. The key steps include parsing 
+#   command-line arguments, reading text and wav.scp files, and calling data preparation functions.
 
 import os
 import glob

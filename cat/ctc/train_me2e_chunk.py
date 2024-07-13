@@ -1,6 +1,6 @@
-# Copyright 2022 Tsinghua University
+# Copyright 2020 Tsinghua SPMI Lab / Tasi
 # Apache 2.0.
-# Author: Xiangzhu Kong
+# Author: Xiangzhu (kongxiangzhu99@gmail.com), Keyu An, Huahuan Zheng
 
 __all__ = ["UnifiedAMTrainer", "build_model", "_parser", "main"]
 
@@ -64,7 +64,11 @@ class UnifiedAMTrainer(AMTrainer):
     def bf_chunk_infer(
         self, inputs: torch.FloatTensor, in_lens: torch.LongTensor
     ) -> torch.FloatTensor:
-        
+        """
+        NOTE (Xiangzhukong): 
+            During the simu process, right_cetxt is not required during testing 
+            and is kept here for comparative testing purposes.
+        """
         # time domain to fre domain
         inputs, flens = self.stft(inputs, in_lens)
         

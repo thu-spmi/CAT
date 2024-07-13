@@ -1,6 +1,6 @@
-# Copyright 2022 Tsinghua University
+# Copyright 2020 Tsinghua SPMI Lab / Tasi
 # Apache 2.0.
-# Author: Xiangzhu, Kong, Keyu An, Huahuan Zheng
+# Author: Xiangzhu (kongxiangzhu99@gmail.com), Keyu An, Huahuan Zheng
 
 __all__ = ["UnifiedAMTrainer", "build_model", "_parser", "main"]
 
@@ -73,7 +73,9 @@ class UnifiedAMTrainer(AMTrainer):
         self, inputs: torch.FloatTensor, in_lens: torch.LongTensor
     ) -> torch.FloatTensor:
         """
-        待修改: simu 中right_conetxt 在测试时不需要
+        NOTE (Xiangzhukong): 
+            During the simu process, right_cetxt is not required during testing 
+            and is kept here for comparative testing purposes.
         """
         # time domain to fre domain
         #inputs, flens = self.stft(inputs, in_lens)

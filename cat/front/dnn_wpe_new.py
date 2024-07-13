@@ -1,3 +1,15 @@
+# Copyright 2020 Tsinghua SPMI Lab / Tasi
+# Apache 2.0.
+# Author: Xiangzhu (kongxiangzhu99@gmail.com), Keyu An
+#
+# Acknowledgment:
+#   This code is adapted from the ESPnet project. The original code can be found at https://github.com/espnet/espnet.
+#
+# Description:
+#   This script defines the DNN_WPE class, which implements a deep neural network 
+#   based Weighted Prediction Error (WPE) method for dereverberation of multi-channel 
+#   speech signals. The class includes functionality for estimating masks using a 
+#   neural network and performing WPE iterations to enhance speech signals.
 
 from typing import Tuple
 
@@ -10,6 +22,38 @@ from .mask_estimator import MaskEstimator
 
 
 class DNN_WPE(torch.nn.Module):
+    """
+    Implements a deep neural network based Weighted Prediction Error (WPE) method
+    for dereverberation of multi-channel speech signals.
+
+    Args:
+        wtype (str): Type of neural network for mask estimation (default: "blstmp").
+        widim (int): Input dimension of the neural network (default: 257).
+        wlayers (int): Number of layers in the neural network (default: 3).
+        wunits (int): Number of units in each layer of the neural network (default: 300).
+        wprojs (int): Number of projection units in each layer of the neural network (default: 320).
+        dropout_rate (float): Dropout rate for the neural network (default: 0.0).
+        taps (int): Number of taps for WPE (default: 5).
+        delay (int): Delay for WPE (default: 3).
+        use_dnn_mask (bool): Whether to use DNN-based mask estimation (default: True).
+        nmask (int): Number of masks (default: 1).
+        nonlinear (str): Nonlinear activation function for mask estimation (default: "sigmoid").
+        iterations (int): Number of WPE iterations (default: 1).
+        normalization (bool): Whether to normalize masks (default: False).
+        eps (float): Small value to avoid division by zero (default: 1e-6).
+        diagonal_loading (bool): Whether to use diagonal loading for WPE (default: True).
+        diag_eps (float): Small value for diagonal loading (default: 1e-7).
+        mask_flooring (bool): Whether to floor masks for numerical stability (default: False).
+        flooring_thres (float): Flooring threshold for masks (default: 1e-6).
+        use_torch_solver (bool): Whether to use torch solver for WPE (default: True).
+
+    Methods:
+        forward(data: ComplexTensor, ilens: torch.LongTensor) -> Tuple[ComplexTensor, torch.LongTensor, ComplexTensor]:
+            Forward function for WPE dereverberation.
+
+        predict_mask(data: ComplexTensor, ilens: torch.LongTensor) -> Tuple[torch.Tensor, torch.LongTensor]:
+            Predicts masks for WPE dereverberation.
+    """
     def __init__(
         self,
         wtype: str = "blstmp",

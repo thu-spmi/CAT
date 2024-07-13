@@ -1,5 +1,15 @@
 #!/bin/bash
 
+# Copyright 2023 Tsinghua University
+# Apache 2.0.
+# Author: Xiangzhu Kong (kongxiangzhu99@gmail.com)
+#
+# Description:
+#   This script calculates the Character Error Rate (CER) for two sets of experimental results and performs a significance test to compare them.
+#   The script takes in a ground truth file, a cache folder for storing intermediate results, the type of calculation for significance testing, 
+#   and the result files from two experiments. It then runs the CER calculations for each experiment and saves the results in the specified cache folder.
+#   Finally, it performs a significance test comparing the CER results of the two experiments.
+
 # Check if all required arguments are provided
 if [ "$#" -ne 5 ]; then
     echo "Usage: $0 <ground_truth_file> <cache_folder> <calculation_type> <exp1_result_file> <exp2_result_file>"

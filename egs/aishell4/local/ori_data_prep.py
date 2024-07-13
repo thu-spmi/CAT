@@ -1,3 +1,13 @@
+# Copyright 2020 Tsinghua SPMI Lab / Tasi
+# Apache 2.0.
+# Author: Xiangzhu Kong (kongxiangzhu99@gmail.com)
+#
+# Description:
+#   This script processes AISHELL-4 dataset by segmenting audio files based on TextGrid annotations.
+#   It extracts non-overlapping speech segments, saves them as separate WAV files, and generates corresponding 
+#   Kaldi format files including wav.scp, text, utt2spk, and spk2utt. The script also handles directory creation 
+#   and logging of the processing steps.
+
 import textgrid as tg
 from pydub import AudioSegment
 import soundfile as sf
@@ -13,6 +23,15 @@ from tqdm import tqdm
 from intervaltree import IntervalTree
 
 def maximize_nonoverlapping_count(intervals):
+    """
+    Maximize the count of non-overlapping intervals.
+
+    Args:
+        intervals (list): List of tuples representing intervals (start, end).
+
+    Returns:
+        list: List of non-overlapping intervals.
+    """
     # 创建 IntervalTree 对象并插入所有间隔
     tree = IntervalTree()
     for start, end in intervals:

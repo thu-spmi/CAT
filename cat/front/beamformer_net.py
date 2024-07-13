@@ -1,3 +1,16 @@
+# Copyright 2020 Tsinghua SPMI Lab / Tasi
+# Apache 2.0.
+# Author: Xiangzhu (kongxiangzhu99@gmail.com), Keyu An
+#
+# Acknowledgment:
+#    This code is adapted from the ESPnet project. The original code can be found at https://github.com/espnet/espnet.
+#
+# Description:
+#    The `BeamformerNet` class is a neural network model designed for time-frequency masking-based beamforming to enhance multi-channel speech signals. 
+#    It incorporates features for dereverberation using Weighted Prediction Error (WPE) and beamforming using different methods like MVDR. 
+#    This class allows flexible configurations for both WPE and beamforming components.
+
+
 from collections import OrderedDict
 from typing import Optional
 

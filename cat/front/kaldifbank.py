@@ -1,6 +1,14 @@
 # Copyright 2023 Tsinghua University
 # Apache 2.0.
-# Author: Xiangzhu Kong
+# Author: Xiangzhu Kong (kongxiangzhu99@gmail.com)
+
+# Acknowledgment:
+#   This code is adapted from the TrochAudio project. The original code can be found at https://pytorch.org/audio/0.13.1/compliance.kaldi.html.
+
+# Description:
+#   This script provides functions for feature extraction from audio signals, including Short-Time Fourier Transform (STFT),
+#   Mel filter bank calculation, and other related operations. It includes the Feature_Trans class for handling various audio
+#   transformations and feature extraction steps.
 
 import torch
 import torchaudio
@@ -63,19 +71,16 @@ def _feature_window_function(
 
 def _get_strided(waveform: Tensor, window_size: int, window_shift: int, snip_edges: bool) -> Tensor:
     """
-    给定一个波形（形状为（..., num_samples）的张量），返回一个张量
-    （..., m, window_size），表示窗口沿着每个波形的移动。每一行都是一个帧。
+    Returns a tensor containing strided windows from the input waveform.
 
     Args:
-        waveform (Tensor): 形状为（..., num_samples）的张量
-        window_size (int): 帧长度
-        window_shift (int): 帧移
-        snip_edges (bool): 如果为True，则通过仅输出完全适应文件的帧来处理端部效应，
-            帧的数量取决于frame_length。如果为False，则帧的数量仅取决于frame_shift，
-            并在末尾反映数据。
+        waveform (Tensor): Input tensor of shape (..., num_samples).
+        window_size (int): Frame length.
+        window_shift (int): Frame shift.
+        snip_edges (bool): Whether to handle edge effects by only outputting frames that fit completely within the waveform.
 
     Returns:
-        Tensor: 形状为（..., m, window_size）的张量，其中每一行都是一个帧
+        Tensor: Tensor of shape (..., m, window_size), where each row is a frame.
     """
     assert waveform.dim() >= 2
 
@@ -218,6 +223,23 @@ class Feature_Trans():
         need_spectrum: bool = False
         
         ):
+        """
+        A class for handling various audio transformations and feature extraction steps.
+
+        Methods:
+            cal_stft(waveform: Tensor, ilens: Tensor) -> Tuple[Tensor, Tensor]:
+                Calculates the Short-Time Fourier Transform (STFT) of the input waveform.
+
+            cal_fbank(waveform: Tensor, ilens: Tensor) -> Tuple[Tensor, Tensor]:
+                Calculates the Mel filter bank features of the input waveform.
+
+            stft_to_fbank(input: Tensor, ilens: Tensor, signal_log_energy: Tensor = None) -> Tuple[Tensor, Tensor]:
+                Converts STFT to Mel filter bank features.
+
+            spectrum_to_fbank(input: Tensor, ilens: Tensor, signal_log_energy: Tensor = None) -> Tuple[Tensor, Tensor]:
+                Converts spectrum to Mel filter bank features.
+        """
+        
         self.channel = channel
         
         self.window_size = window_size
@@ -258,6 +280,16 @@ class Feature_Trans():
         pass
     
     def cal_stft(self,waveform, ilens):
+        """
+        Calculates the Short-Time Fourier Transform (STFT) of the input waveform.
+
+        Args:
+            waveform (Tensor): Input waveform tensor.
+            ilens (Tensor): Input lengths tensor.
+
+        Returns:
+            Tuple[Tensor, Tensor]: STFT result and its lengths.
+        """
         #device, dtype = waveform.device, waveform.dtype
         #epsilon = _get_epsilon(device, dtype)
 
@@ -308,6 +340,16 @@ class Feature_Trans():
         return fft, olens#, power_spectrum
     
     def cal_fbank(self,waveform,ilens):
+        """
+        Calculates the Mel filter bank features of the input waveform.
+
+        Args:
+            waveform (Tensor): Input waveform tensor.
+            ilens (Tensor): Input lengths tensor.
+
+        Returns:
+            Tuple[Tensor, Tensor]: Mel filter bank features and their lengths.
+        """
         device, dtype = waveform.device, waveform.dtype
 
         strided_input, signal_log_energy = _get_window(
@@ -377,6 +419,17 @@ class Feature_Trans():
     def stft_to_fbank(
                 self, input, ilens,signal_log_energy: torch.Tensor = None
                 ):
+        """
+        Converts STFT to Mel filter bank features.
+
+        Args:
+            input (Tensor): STFT input tensor.
+            ilens (Tensor): Input lengths tensor.
+            signal_log_energy (Tensor, optional): Signal log energy tensor.
+
+        Returns:
+            Tuple[Tensor, Tensor]: Mel filter bank features and their lengths.
+        """
         # input:(B,T,F,2)
         device, dtype = input.device, input.dtype
         if not input.is_complex():
@@ -426,6 +479,17 @@ class Feature_Trans():
     def spectrum_to_fbank(
                 self, input, ilens,signal_log_energy: torch.Tensor = None
                 ):
+        """
+        Converts spectrum to Mel filter bank features.
+
+        Args:
+            input (Tensor): Spectrum input tensor.
+            ilens (Tensor): Input lengths tensor.
+            signal_log_energy (Tensor, optional): Signal log energy tensor.
+
+        Returns:
+            Tuple[Tensor, Tensor]: Mel filter bank features and their lengths.
+        """
         # input:(B,T,F,2)
         device, dtype = input.device, input.dtype
         

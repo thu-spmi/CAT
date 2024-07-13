@@ -1,3 +1,16 @@
+# Copyright 2020 Tsinghua SPMI Lab / Tasi
+# Apache 2.0.
+# Author: Xiangzhu (kongxiangzhu99@gmail.com), Keyu An
+#
+# Acknowledgment:
+#    This code is adapted from the ESPnet project. The original code can be found at https://github.com/espnet/espnet.
+#
+# Description:
+#   This script contains various functions to perform Weighted Power minimization Distortionless response (WPD) convolutional beamforming for 
+#   enhancing multi-channel speech signals. The key functions include calculating the power spectral density (PSD) matrix, 
+#   framing signals, computing covariance matrices, and applying WPD filtering.
+
+
 from typing import List
 from typing import Union
 

@@ -1,6 +1,12 @@
-# Copyright 2022 Tsinghua University
+# Copyright 2020 Tsinghua SPMI Lab / Tasi
 # Apache 2.0.
-# Author: Xiangzhu Kong
+# Author: Xiangzhu Kong (kongxiangzhu99@gmail.com)
+#
+# Description:
+#   This script simulates room acoustics and generates reverberant speech signals with noise for speech processing experiments.
+#   The key functions include generating room configurations, placing microphones and sources, and mixing speech and noise at specified SNR levels.
+#   The script saves the generated data and metadata, and supports resuming from saved progress.
+
 
 import argparse
 import numpy as np
@@ -58,17 +64,17 @@ offsets_m = [-0.4, -0.25, -0.15, -0.1, 0.1, 0.15, 0.25, 0.41]  # 偏移量
 
 def check_conditions(speech_source, noise_sources, mic_middle_point):
     """
-    检查语音源、噪声源们与麦克风阵列之间的条件是否满足:
-        1、声源与麦克风阵列的距离位于(0.5, 5.0)之内
-        2、语音源与噪声源们之间的角度大于20°
+    Check if the conditions between the speech source, noise sources, and microphone array are met:
+        1. The distance between the sources and the microphone array is within (0.5, 5.0) meters.
+        2. The angle between the speech source and the noise sources is greater than 20°.
 
-    参数：
-    - speech: 语音源的位置，格式为 [x, y, z]
-    - noise_sources: 噪声源们的位置列表，每个噪声源的位置格式为 [x, y, z]
-    - mic_middle_point: 麦克风阵列中心点的位置，格式为 [x, y, z]
+    Args:
+        speech_source (list): Coordinates of the speech source [x, y, z].
+        noise_sources (list): List of coordinates for the noise sources [x, y, z].
+        mic_middle_point (list): Coordinates of the microphone array center [x, y, z].
 
-    返回：
-        如果满足条件，返回 True, 否则返回 False。
+    Returns:
+        bool: True if conditions are met, False otherwise.
     """
 
     # 计算语音源与麦克风阵列的距离和角度
@@ -146,7 +152,13 @@ def adjust_matrix_dimension(matrix, target_size, target_dimension):
 
 def rms(data):
     """
-    calc rms of wav
+    Calculate the root mean square (RMS) of the waveform data.
+
+    Args:
+        data (numpy.ndarray): Input waveform data.
+
+    Returns:
+        float: RMS value.
     """
     energy = data ** 2
     max_e = np.max(energy)
@@ -156,9 +168,17 @@ def rms(data):
     return rms
 
 def snr_mix(clean, noise, snr):
-    '''
-    mix clean and noise according to snr
-    '''
+    """
+    Mix clean and noise signals according to the specified SNR.
+
+    Args:
+        clean (numpy.ndarray): Clean speech signal.
+        noise (numpy.ndarray): Noise signal.
+        snr (float): Signal-to-noise ratio (SNR).
+
+    Returns:
+        numpy.ndarray: Scaled noise signal to achieve the specified SNR.
+    """
     clean_rms = rms(clean)
     clean_rms = np.maximum(clean_rms, eps)
     noise_rms = rms(noise)
@@ -169,12 +189,16 @@ def snr_mix(clean, noise, snr):
 
 def get_one_spk_noise(clean, noise, snr, scale):
     """
-    mix clean and noise according to the snr and scale
-    args:
-        clean: numpy.array, L x C  L is always segment_length
-        noise: numpy.array, L' x C
-        snr: float
-        scale: float
+    Mix clean and noise signals according to the specified SNR and scale the result.
+
+    Args:
+        clean (numpy.ndarray): Clean speech signal, shape (L, C) where L is segment length.
+        noise (numpy.ndarray): Noise signal, shape (L', C).
+        snr (float): Signal-to-noise ratio (SNR).
+        scale (float): Scaling factor for the resulting signal.
+
+    Returns:
+        Tuple[numpy.ndarray, numpy.ndarray]: Scaled noisy and clean signals.
     """
     clean = clean.T
     noise = noise.T
@@ -193,6 +217,17 @@ def get_one_spk_noise(clean, noise, snr, scale):
 
 # 检查麦克风位置是否在房间内
 def is_mic_inside_room(mic_array, room_x, room_y):
+    """
+    Check if the microphones are inside the room.
+
+    Args:
+        mic_array (numpy.ndarray): Microphone array positions.
+        room_x (float): Room width.
+        room_y (float): Room length.
+
+    Returns:
+        bool: True if all microphones are inside the room, False otherwise.
+    """
     for mic in mic_array.T:  # 遍历每个麦克风
         x, y = mic[:2]  # 获取麦克风的 x 和 y 坐标
         if x < 0 or x > room_x or y < 0 or y > room_y:
@@ -200,6 +235,17 @@ def is_mic_inside_room(mic_array, room_x, room_y):
     return True  # 所有麦克风都在房间内，返回 True
 
 def get_speech_reverb(room, speech_source,speech_path):
+    """
+    Simulate reverberant speech by placing the speech source in the room.
+
+    Args:
+        room (pyroomacoustics.Room): Room object.
+        speech_source (list): Coordinates of the speech source [x, y, z].
+        speech_path (str): Path to the speech file.
+
+    Returns:
+        Tuple[numpy.ndarray, int, bool]: Reverberant speech signals, original length, and a flag indicating if the room was skipped.
+    """
     fs, audio = wavfile.read(speech_path)
     audio_len = len(audio)
     # 更新声源
@@ -225,6 +271,18 @@ def get_speech_reverb(room, speech_source,speech_path):
     
  
 def get_noise_reverb(room, noise_source,noise_path,speech_len):
+    """
+    Simulate reverberant noise by placing the noise source in the room.
+
+    Args:
+        room (pyroomacoustics.Room): Room object.
+        noise_source (list): Coordinates of the noise source [x, y, z].
+        noise_path (str): Path to the noise file.
+        speech_len (int): Length of the speech signal.
+
+    Returns:
+        Tuple[numpy.ndarray, int, int, bool]: Reverberant noise signals, start position, end position, and a flag indicating if the room was skipped.
+    """
     fs, audio = wavfile.read(noise_path)
     audio_len = len(audio)
     if audio_len > speech_len:
@@ -282,12 +340,31 @@ def non_uniform_linear_array(center, offsets_m):
     return np.vstack((mic_positions_x_m, mic_positions_y_m, mic_positions_z_m))
 
 def is_inside_room(room_x, room_y, source):
-    """检查声源是否在房间内"""
+    """
+    Check if the source is inside the room.
+
+    Args:
+        room_x (float): Room width.
+        room_y (float): Room length.
+        source (list): Coordinates of the source [x, y, z].
+
+    Returns:
+        bool: True if the source is inside the room, False otherwise.
+    """
     x, y, _ = source
     return 0 < x < room_x and 0 < y < room_y
 
 
 def save_progress(progress_file, wav_scp_entries, all_samples_info, progress):
+    """
+    Save the current progress to a file.
+
+    Args:
+        progress_file (str): Path to the progress file.
+        wav_scp_entries (list): List of wav.scp entries.
+        all_samples_info (list): List of all sample information.
+        progress (dict): Progress information to be saved.
+    """
     with open(progress_file, 'w') as f:
         json.dump({
             'wav_scp_entries': wav_scp_entries,
@@ -296,6 +373,15 @@ def save_progress(progress_file, wav_scp_entries, all_samples_info, progress):
         }, f)
 
 def load_progress(progress_file):
+    """
+    Load progress from a file.
+
+    Args:
+        progress_file (str): Path to the progress file.
+
+    Returns:
+        tuple: List of wav.scp entries, list of all sample information, and progress information.
+    """
     try:
         with open(progress_file, 'r') as f:
             data = json.load(f)

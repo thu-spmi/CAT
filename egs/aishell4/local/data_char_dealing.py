@@ -1,12 +1,26 @@
+# Copyright 2020 Tsinghua SPMI Lab / Tasi
+# Apache 2.0.
+# Author: Xiangzhu Kong (maxwellzh@outlook.com)
+#
+# Description:
+#   This script processes text files by removing all strings matching a specific pattern '<*>'.
+#   The key functions include collecting special strings from the text file, backing up the original text file, 
+#   and writing the cleaned text back to the file.
+
 import os
 import re
 import shutil
 
-"""
-函数功能：删去text文件中所有的包含特定格式的字符串<*>
-"""
-
 def collect_special_strings(file_path):
+    """
+    Collects special strings matching the pattern '<*>' from the given file.
+
+    Args:
+        file_path (str): Path to the text file.
+
+    Returns:
+        dict: A dictionary with the special strings as keys and the corresponding uids as values.
+    """
     special_strings = {}
 
     with open(file_path, "r", encoding="utf-8") as f:

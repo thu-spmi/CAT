@@ -1,5 +1,18 @@
 # -*- coding: utf-8 -*-
 
+# Copyright 2020 Tsinghua SPMI Lab / Tasi
+# Apache 2.0.
+# Author: Xiangzhu (kongxiangzhu99@gmail.com), Keyu An
+#
+# Acknowledgment:
+# This code is adapted from the ESPnet project. The original code can be found at https://github.com/espnet/espnet.
+#
+# Description:
+#   This script provides utility tools related to neural network operations and tensor manipulations. 
+#   It includes functions for padding, masking, accuracy calculation, and device management.
+#
+
+
 """Network related utility tools."""
 
 import logging
