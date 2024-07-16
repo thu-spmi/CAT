@@ -3,7 +3,7 @@ src/
 test_*
 tmp_*
 egs/**/data/
-egs/**/exp/
+# egs/**/exp/
 egs/**/sentencepiece
 .vscode
 *.tknz
@@ -13,7 +13,7 @@ egs/**/sentencepiece
 *.arpa
 *.bin
 *.tar
-*.png
+#*.png
 *.jpg
 *.pt
 *.tmp
