@@ -1,6 +1,6 @@
-# Copyright 2023 Tsinghua University
+# Copyright 2020 Tsinghua SPMI Lab 
 # Apache 2.0.
-# Author: Xiangzhu Kong (kongxiangzhu99@gmail.com)
+# Author: Xiangzhu Kong(kongxiangzhu99@gmail.com)
 
 """Compute WER/CER of sentences.
 """

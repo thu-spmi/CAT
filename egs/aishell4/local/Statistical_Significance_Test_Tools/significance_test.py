@@ -1,6 +1,6 @@
-# Copyright 2020 Tsinghua SPMI Lab / Tasi
+# Copyright 2020 Tsinghua SPMI Lab 
 # Apache 2.0.
-# Author: Xiangzhu (kongxiangzhu99@gmail.com), Hong Liu
+# Author: Xiangzhu Kong(kongxiangzhu99@gmail.com), Hong Liu
 #
 # Description:
 #   This script contains functions to perform statistical hypothesis testing using McNemar's test and the matched-pair t-test. 

@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Copyright 2020 Tsinghua SPMI Lab / Tasi
+# Copyright 2020 Tsinghua SPMI Lab 
 # Apache 2.0.
-# Author: Xiangzhu Kong (kongxiangzhu99@gmail.com)
+# Author: Xiangzhu Kong(kongxiangzhu99@gmail.com)
 #
 # Description:
 #   This script saves raw audio files into Kaldi ark format for experimental purposes. It requires running local/data_multi.sh 

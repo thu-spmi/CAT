@@ -1,6 +1,9 @@
-# Copyright 2020 Tsinghua SPMI Lab / Tasi
+# Copyright 2020 Tsinghua SPMI Lab 
 # Apache 2.0.
-# Author: Xiangzhu Kong (kongxiangzhu99@gmail.com)
+# Author: Xiangzhu Kong(kongxiangzhu99@gmail.com)
+#
+# Acknowledgment:
+#   This code is adapted from the AISHELL4 project. The original code can be found at https://github.com/felixfuyihui/AISHELL-4.
 #
 # Description:
 #   This script simulates room acoustics and generates reverberant speech signals with noise for speech processing experiments.

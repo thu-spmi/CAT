@@ -1,6 +1,6 @@
-# Copyright 2020 Tsinghua SPMI Lab / Tasi
+# Copyright 2020 Tsinghua SPMI Lab 
 # Apache 2.0.
-# Author: Xiangzhu Kong (kongxiangzhu99@gmail.com)
+# Author: Xiangzhu Kong(kongxiangzhu99@gmail.com)
 #
 # Description:
 #   This script computes FBank features for AISHELL-4 using torchaudio. It prepares data subsets, handles 

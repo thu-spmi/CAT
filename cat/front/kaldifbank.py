@@ -1,6 +1,6 @@
-# Copyright 2023 Tsinghua University
+# Copyright 2020 Tsinghua SPMI Lab 
 # Apache 2.0.
-# Author: Xiangzhu Kong (kongxiangzhu99@gmail.com)
+# Author: Xiangzhu Kong(kongxiangzhu99@gmail.com)
 
 # Acknowledgment:
 #   This code is adapted from the TrochAudio project. The original code can be found at https://pytorch.org/audio/0.13.1/compliance.kaldi.html.

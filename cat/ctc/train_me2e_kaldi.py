@@ -1,6 +1,6 @@
-# Copyright 2020 Tsinghua SPMI Lab / Tasi
+# Copyright 2020 Tsinghua SPMI Lab 
 # Apache 2.0.
-# Author: Xiangzhu (kongxiangzhu99@gmail.com), Huahuan Zheng
+# Author: Xiangzhu Kong(kongxiangzhu99@gmail.com), Huahuan Zheng
 
 """Top interface of CTC training for kaldi format feature.
 """

@@ -1,7 +1,7 @@
 # CUSIDE-Array
 
 ## Introduction
-This project is based on the research presented in the paper titled [A Streaming Multi-Channel End-to-End Speech Recognition System with Realistic Evaluations]().
+This project is based on the research presented in the paper titled [A Streaming Multi-Channel End-to-End Speech Recognition System with Realistic Evaluations](https://arxiv.org/abs/2407.09807).
 
 More detailed introduction to Streaming multi-channel end-to-end (ME2E) ASR in Chinese can be found in [ME2E_ASR_ch](ME2E_ASR_ch.md).
 

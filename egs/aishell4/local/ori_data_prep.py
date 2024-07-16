@@ -1,6 +1,6 @@
-# Copyright 2020 Tsinghua SPMI Lab / Tasi
+# Copyright 2020 Tsinghua SPMI Lab 
 # Apache 2.0.
-# Author: Xiangzhu Kong (kongxiangzhu99@gmail.com)
+# Author: Xiangzhu Kong(kongxiangzhu99@gmail.com)
 #
 # Description:
 #   This script processes AISHELL-4 dataset by segmenting audio files based on TextGrid annotations.

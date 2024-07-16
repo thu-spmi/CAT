@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Copyright 2023 Tsinghua University
+# Copyright 2020 Tsinghua SPMI Lab 
 # Apache 2.0.
-# Author: Xiangzhu Kong (kongxiangzhu99@gmail.com)
+# Author: Xiangzhu Kong(kongxiangzhu99@gmail.com)
 #
 # Description:
 #   This script calculates the Character Error Rate (CER) for two sets of experimental results and performs a significance test to compare them.

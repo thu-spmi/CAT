@@ -1,6 +1,7 @@
 # 流式多通道端到端语音识别 Streaming multi-channel end-to-end (ME2E) ASR
 
-**本文档介绍如何使用多通道端到端语音识别 (ME2E ASR) 框架进行流式多通道端到端语音识别任务**
+**本文档介绍如何使用多通道端到端语音识别 (ME2E ASR) 框架进行流式多通道端到端语音识别任务，对应下面文章的实验工作：
+[A Streaming Multi-Channel End-to-End Speech Recognition System with Realistic Evaluations](https://arxiv.org/abs/2407.09807)**
 
 *相关文献：*
 

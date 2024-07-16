@@ -1,6 +1,6 @@
-# Copyright 2020 Tsinghua SPMI Lab / Tasi
+# Copyright 2020 Tsinghua SPMI Lab 
 # Apache 2.0.
-# Author: Xiangzhu Kong (maxwellzh@outlook.com)
+# Author: Xiangzhu Kong(kongxiangzhu99@gmail.com)
 #
 # Description:
 #   This script processes text files by removing all strings matching a specific pattern '<*>'.
