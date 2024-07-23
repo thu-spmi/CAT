@@ -25,6 +25,7 @@ CAT aims at combining the advantages of both the hybrid and the E2E ASR approche
 
 4. Scalable and extensible. It is easy to be extended to train tens of thousands of speech data and add new models and tasks.
 
+See [What's New](docs/whatsnew.md) for recently added functionalities and features!
 
 ## Installation
 
@@ -65,7 +66,6 @@ To get started with this project, please refer to [TEMPLATE](egs/TEMPLATE/README
 
 ## Further reading
 
-- [What's New](docs/whatsnew.md)
 - [Some tips about the usage of third party tools](docs/guide_for_third_party_tools.md)
 - [Tutorial on building your first CAT project (yesno)](docs/yesno_tutorial_ch.md)
 - [Step-by-step workflow for CAT-v2](docs/toolkitworkflow.md)
