@@ -1,0 +1,46 @@
+{
+    "data": {
+        "train": "train",
+        "dev": "dev",
+        "test": [
+            "dev",
+            "test"
+        ],
+        "filter": "10:2000"
+    },
+    "tokenizer": {
+        "type": "SentencePieceTokenizer",
+        "option-train": {
+            "model_type": "bpe",
+            "vocab_size": 500,
+            "model_prefix": "sentencepiece/bpe500/spm"
+        },
+        "|V|": 500,
+        "file": "exp/mul-10-phone-small-pt-bpe500-ft-4/tokenizer.tknz"
+    },
+    "train": {
+        "bin": "cat.ctc.train",
+        "option": {
+            "amp": true,
+            "batch_size": 30,
+            "check_freq": 488,
+            "init_model": "/home/dlk/code/asr/cat/egs/MightLJSpeech/mul10-phone/small/mul10_phone_pt_smal_mianyu_ft.pt"
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "last",
+            "num": 3
+        },
+        "infer": {
+            "bin": "cat.ctc.decode",
+            "option": {
+                "beam_size": 32,
+                "nj": 16,
+                "store_ark": true
+            }
+        },
+        "er": {}
+    },
+    "commit": "1b77bc21f7a5faac5e47f6bc4445f23ebf0e0633"
+}

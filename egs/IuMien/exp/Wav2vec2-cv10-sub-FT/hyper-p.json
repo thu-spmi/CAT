@@ -1,0 +1,45 @@
+{
+    "data": {
+        "train": "train_raw",
+        "dev": "dev_raw",
+        "test": [
+            "dev_raw",
+            "test_raw"
+        ],
+        "filter": "10000:250000"
+    },
+    "tokenizer": {
+        "type": "SentencePieceTokenizer",
+        "option-train": {
+            "model_type": "bpe",
+            "vocab_size": 500,
+            "model_prefix": "sentencepiece/pl/spm_bpe500"
+        },
+        "|V|": 500,
+        "file": "exp/XLR-10-bpe/tokenizer.tknz"
+    },
+    "train": {
+        "bin": "cat.ctc.train",
+        "option": {
+            "amp": true,
+            "batch_size": 30,
+            "check_freq": 488
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "last",
+            "num": 3
+        },
+        "infer": {
+            "bin": "cat.ctc.decode",
+            "option": {
+                "beam_size": 32,
+                "nj": 8,
+                "store_ark": true
+            }
+        },
+        "er": {}
+    },
+    "commit": "1b77bc21f7a5faac5e47f6bc4445f23ebf0e0633"
+}
