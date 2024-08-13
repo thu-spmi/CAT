@@ -1,0 +1,45 @@
+{
+    "data": {
+        "train": "train",
+        "dev": "dev",
+        "test": [
+            "dev",
+            "test"
+        ],
+        "filter": "10:2000"
+    },
+    "tokenizer": {
+        "type": "LexiconTokenizer",
+        "option-init": {
+            "lexicon": "/home/dlk/code/asr/cat/egs/MightLJSpeech/dict/lexicon.txt"
+        },
+        "|V|": 54,
+        "file": "exp/conformer-lexicon-2/tokenizer.tknz"
+    },
+    "train": {
+        "bin": "cat.ctc.train",
+        "option": {
+            "amp": true,
+            "batch_size": 30,
+            "check_freq": 488
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "last",
+            "num": 3
+        },
+        "infer": {
+            "bin": "cat.ctc.decode",
+            "option": {
+                "beam_size": 32,
+                "nj": 16,
+                "store_ark": true
+            }
+        },
+        "er": {
+            "per": true
+        }
+    },
+    "commit": "1b77bc21f7a5faac5e47f6bc4445f23ebf0e0633"
+}

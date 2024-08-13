@@ -1,0 +1,45 @@
+{
+    "data": {
+        "train": "train_raw",
+        "dev": "dev_raw",
+        "test": [
+            "dev_raw",
+            "test_raw"
+        ],
+        "filter": "10000:250000"
+    },
+    "tokenizer": {
+        "type": "LexiconTokenizer",
+        "option-init": {
+            "lexicon": "/home/dlk/code/asr/cat/egs/MightLJSpeech/dict/lexicon.txt"
+        },
+        "|V|": 54,
+        "file": "exp/XLR-10-phone-2/tokenizer.tknz"
+    },
+    "train": {
+        "bin": "cat.ctc.train",
+        "option": {
+            "amp": true,
+            "batch_size": 30,
+            "check_freq": 488
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "best",
+            "num": 3
+        },
+        "infer": {
+            "bin": "cat.ctc.decode",
+            "option": {
+                "beam_size": 32,
+                "nj": 8,
+                "store_ark": true
+            }
+        },
+        "er": {
+            "per": true
+        }
+    },
+    "commit": "1b77bc21f7a5faac5e47f6bc4445f23ebf0e0633"
+}

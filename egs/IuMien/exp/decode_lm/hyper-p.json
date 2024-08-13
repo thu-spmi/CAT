@@ -1,0 +1,17 @@
+{
+    "data": {
+        "train": "train",
+        "dev": "dev",
+        "test": "test"
+    },
+    "tokenizer": {
+        "type": "SimpleTokenizer",
+        "option-init": {
+            "dmap": "/home/dlk/code/asr/cat/egs/MightLJSpeech/dict/word_list"
+        },
+        "|V|": 1549,
+        "file": "exp2/decode_lm/tokenizer.tknz"
+    },
+    "inference": {},
+    "commit": "618a15f70780200cdc42eed3f69f6ce1d61a4e61"
+}

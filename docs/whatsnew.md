@@ -1,4 +1,5 @@
 # What's New
+- 2024.8: Release the code for “Low-Resourced Speech Recognition for Iu Mien Language via Weakly-Supervised Phoneme-based Multilingual Pre-training” [Readme](../egs/IuMien/README.md) | [Paper](https://arxiv.org/abs/2407.13292)". 
 - 2024.6: Release the code for Streaming multi-channel end-to-end (ME2E) ASR. [Readme](./cuside-array.md) | [Paper](https://arxiv.org/abs/2407.09807)
 - 2024.6: Release the code for "Whistle: Data-Efficient Multilingual and Crosslingual Speech Recognition via Weakly Phonetic Supervision". [Readme](../egs/cv-lang10/readme.md) | [Paper](https://arxiv.org/abs/2406.02166)
 - 2023.5: Release the code for Exploring Energy-based Language Models with Different Architectures and Training Methods for Speech Recognition. [Readme](./energy-based_LM_training.md) | [Paper](https://arxiv.org/abs/2305.12676)
