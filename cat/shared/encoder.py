@@ -5,6 +5,7 @@
 
 """Decoder modules impl
 """
+from squeezeformer.encoder import SqueezeformerEncoder
 from torchaudio.models.wav2vec2.utils import import_huggingface_model
 from transformers import Wav2Vec2ForCTC
 from . import layer as c_layers
@@ -291,6 +292,8 @@ class ConformerNet(AbsEncoder):
         dropout: float = 0.1,
         dropout_attn: float = 0.0,
         delta_feats: bool = False,
+        causal: bool = False,
+        modernized_atten: bool = False,
         with_head: bool = True,
         subsample_norm: str = "none",
         time_reduction_factor: int = 1,
@@ -334,7 +337,10 @@ class ConformerNet(AbsEncoder):
         )
 
         self.cells = nn.ModuleList()
-        pe = c_layers.PositionalEncoding(hdim)
+        if modernized_atten:
+            pe = None
+        else:
+            pe = c_layers.PositionalEncoding(hdim)
 
         for i in range(num_cells):
             if i == time_reduction_pos and time_reduction_factor > 1:
@@ -351,6 +357,8 @@ class ConformerNet(AbsEncoder):
                 multiplier,
                 dropout,
                 dropout_attn,
+                causal=causal,
+                modernized_atten=modernized_atten
             )
             self.cells.append(cell)
 
@@ -577,3 +585,83 @@ class JoinAPNonLinearEncoder(JoinAPLinearEncoder):
     def AP(self) -> torch.Tensor:
         # (Np, Dp) -> (Np, H_ap) -> (Np, H)
         return self.A2(self.sig(self.A1(self.P)))
+
+
+class Squeezeformer(AbsEncoder):
+    """
+    Squeezeformer incorporates the Temporal U-Net structure, which reduces the cost of the
+    multi-head attention modules on long sequences, and a simpler block structure of feed-forward module,
+    followed up by multi-head attention or convolution modules,
+    instead of the Macaron structure proposed in Conformer.
+
+    Args:
+        num_classes (int): Number of classification classes
+        input_dim (int, optional): Dimension of input vector
+        encoder_dim (int, optional): Dimension of squeezeformer encoder
+        num_encoder_layers (int, optional): Number of squeezeformer blocks
+        reduce_layer_index (int, optional): The layer index to reduce sequence length
+        recover_layer_index (int, optional): The layer index to recover sequence length
+        num_attention_heads (int, optional): Number of attention heads
+        feed_forward_expansion_factor (int, optional): Expansion factor of feed forward module
+        conv_expansion_factor (int, optional): Expansion factor of squeezeformer convolution module
+        feed_forward_dropout_p (float, optional): Probability of feed forward module dropout
+        attention_dropout_p (float, optional): Probability of attention module dropout
+        conv_dropout_p (float, optional): Probability of squeezeformer convolution module dropout
+        conv_kernel_size (int or tuple, optional): Size of the convolving kernel
+        half_step_residual (bool): Flag indication whether to use half step residual or not
+    Inputs: inputs
+        - **inputs** (batch, time, dim): Tensor containing input vector
+        - **input_lengths** (batch): list of sequence input lengths
+    Returns: outputs, output_lengths
+        - **outputs** (batch, out_channels, time): Tensor produces by squeezeformer.
+        - **output_lengths** (batch): list of sequence output lengths
+    """
+    def __init__(
+        self,
+        num_classes: int = -1,
+        idim: int = 80,
+        hdim: int = 256,
+        num_cells: int = 12,
+        num_heads: int = 4,
+        reduce_layer_index: int = 5,
+        recover_layer_index: int = 11,
+        feed_forward_expansion_factor: int = 4,
+        conv_expansion_factor: int = 2,
+        dropout_in: float = 0.1,
+        feed_forward_dropout_p: float = 0.1,
+        attention_dropout_p: float = 0.1,
+        conv_dropout_p: float = 0.1,
+        kernel_size: int = 31,
+        half_step_residual: bool = False,
+        with_head: bool = True
+    ) -> None:
+        super().__init__(with_head=with_head, num_classes=num_classes, n_hid=hdim)
+        self.encoder = SqueezeformerEncoder(
+            input_dim = idim,
+            encoder_dim = hdim,
+            num_layers = num_cells,
+            reduce_layer_index = reduce_layer_index,
+            recover_layer_index = recover_layer_index,
+            num_attention_heads = num_heads,
+            feed_forward_expansion_factor = feed_forward_expansion_factor,
+            conv_expansion_factor = conv_expansion_factor,
+            input_dropout_p = dropout_in,
+            feed_forward_dropout_p = feed_forward_dropout_p,
+            attention_dropout_p = attention_dropout_p,
+            conv_dropout_p = conv_dropout_p,
+            conv_kernel_size = kernel_size,
+            half_step_residual = half_step_residual,
+        )
+
+    def impl_forward(self, x: torch.Tensor, lens: torch.Tensor):
+        """
+        Forward propagate a `x` and `targets` pair for training.
+        Args:
+            x (torch.FloatTensor): A input sequence passed to encoder. Typically for inputs this will be a padded
+                `FloatTensor` of size ``(batch, seq_length, dimension)``.
+            lens (torch.LongTensor): The length of input tensor. ``(batch)``
+        Returns:
+            * predictions (torch.FloatTensor): Result of model predictions.
+        """
+        out, ls = self.encoder(x, lens)
+        return out, ls
