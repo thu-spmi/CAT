@@ -10,7 +10,7 @@
 from queue import SimpleQueue
 from typing import List
 from . import coreutils as coreutils
-from .tokenizer import AbsTokenizer
+from .tokenizer import AbsTokenizer, load
 
 import io
 import os
@@ -799,3 +799,272 @@ class PipeDynamicBatching:
                 max_bin = sample[0].shape[0]
             batch.append(sample)
         return
+
+class WeightedConcatDataset(Dataset):
+    def __init__(
+        self, datasets: List[AbsDataset], weights: Optional[List[int]] = None
+    ) -> None:
+        super().__init__()
+        self._datasets = datasets
+        if weights is None:
+            self._weights = [1] * len(self._datasets)
+        else:
+            for w in weights:
+                assert (
+                    isinstance(w, int) and w > 0
+                ), f"weight must be positive integer, instead {weights}"
+            self._weights = weights
+        assert len(self._datasets) == len(self._weights)
+        self.num_subdatasets = len(self._datasets)
+
+        lengths = [
+            len(self._datasets[i]) * self._weights[i]
+            for i in range(self.num_subdatasets)
+        ]
+        for k in range(1, self.num_subdatasets):
+            lengths[k] += lengths[k - 1]
+        self._indexing_intervals = lengths
+
+    def __len__(self) -> int:
+        return sum(
+            len(self._datasets[i]) * self._weights[i]
+            for i in range(self.num_subdatasets)
+        )
+
+    def get_seq_len(self) -> List[int]:
+        out = np.empty((len(self),), dtype=np.int32)
+        offset = 0
+        for i in range(self.num_subdatasets):
+            subset_lens = self._datasets[i].get_seq_len()
+            for _ in range(self._weights[i]):
+                if isinstance(subset_lens, list):
+                    subset_lens = np.asarray(subset_lens)
+                out[offset : offset + len(self._datasets[i])] = subset_lens
+                offset += len(self._datasets[i])
+
+        return out
+
+    def __getitem__(self, index: int):
+        isubset = bisect.bisect_right(self._indexing_intervals, index)
+        if isubset > 0:
+            index -= self._indexing_intervals[isubset - 1]
+        index %= len(self._datasets[isubset])
+        return self._datasets[isubset][index]
+
+
+
+class JSASpeechDataset(AbsDataset):
+    """Read in kaldi style with ark file.
+
+    Data format (store with pickle):
+        {
+            'label': np.ndarray,
+            'linfo': np.ndarray,
+            'arkname': np.ndarray,
+            'key': np.ndarray
+        }
+    """
+
+    def __init__(self, path: str) -> None:
+        super().__init__(path)
+        with open(path, "rb") as fib:
+            self._meta_data = pickle.load(fib)
+        self._feat_reader = FeatureReader()
+
+    def filt_by_len(self, filt_func: Callable[[int, int], bool]):
+        """filter the dataset according to the `filt_func`, call before loading data.
+
+        filt_func (function): invoked via filt_func(feat_len, label_len),
+            True for keeping the data, False for removed.
+        """
+        torm = []
+        linfo = self._meta_data["linfo"]
+        labellen = self._meta_data["label1"][:, -1]
+        for i in range(len(self)):
+            if not filt_func(linfo[i], labellen[i]):
+                torm.append(i)
+        del linfo
+        del labellen
+
+        for metakey in ["label1", "label2", "linfo", "arkname", "key"]:
+            self._meta_data[metakey] = np.delete(self._meta_data[metakey], torm, axis=0)
+        return
+
+    def get_seq_len(self) -> List[int]:
+        return self._meta_data["linfo"]
+
+    def __len__(self) -> int:
+        return len(self._meta_data["linfo"])
+
+    def __getitem__(self, index: int) -> Tuple[torch.FloatTensor, torch.LongTensor]:
+        mat = self._feat_reader(self._meta_data["arkname"][index])
+        # remove padding in label
+        # [*, *, *, *, -1, -1, rel_len(4)]
+        label = self._meta_data["label1"][index]
+        label = label[: label[-1]]
+        extra_data = self._meta_data["label2"][index]
+        extra_data = extra_data[: extra_data[-1]]
+        key = self._meta_data["key"][index]
+        return torch.tensor(mat), torch.tensor(label), torch.tensor(extra_data), key
+
+class JSAsortedPadCollateASR:
+    """Collect data into batch by desending order according to frame length and add padding.
+
+    Args:
+        batch  : list of (mat, label)
+        mat    : torch.FloatTensor
+        label  : torch.IntTensor
+
+    Return:
+        (logits, input_lengths, labels, label_lengths, extras, extras_lengths, indexs)
+    """
+
+    def __init__(self, flatten_target: bool = False) -> None:
+        """
+        flatten_target (bool): flatten the target to be 1-dim, default False (2-dim)
+        """
+        self._flatten_target = flatten_target
+
+    def __call__(self, batch: List[Tuple[torch.FloatTensor, torch.IntTensor]]):
+        batches = [(mat, label, mat.size(0), extra, key) for mat, label, extra, key in batch]
+        batch_sorted = sorted(batches, key=lambda item: item[2], reverse=True)
+
+        mats = coreutils.pad_list([x[0] for x in batch_sorted])
+
+        if self._flatten_target:
+            labels = torch.cat([x[1] for x in batch_sorted], dim=0)
+            extras = torch.cat([x[3] for x in batch_sorted], dim=0)
+        else:
+            labels = coreutils.pad_list([x[1] for x in batch_sorted]).to(torch.long)
+            extras = coreutils.pad_list([x[3] for x in batch_sorted]).to(torch.long)
+
+        input_lengths = torch.LongTensor([x[2] for x in batch_sorted])
+
+        label_lengths = torch.LongTensor([x[1].size(0) for x in batch_sorted])
+
+        extras_lengths = torch.LongTensor([x[3].size(0) for x in batch_sorted])
+
+        indexs = [x[4] for x in batch_sorted]
+
+        return mats, input_lengths, labels, label_lengths, extras, extras_lengths, indexs
+
+class P2GDataset(AbsDataset):
+    """Read in kaldi style with ark file.
+
+    Data format (store with pickle):
+        {
+            'label': np.ndarray,
+            'linfo': np.ndarray,
+            'arkname': np.ndarray,
+            'key': np.ndarray
+        }
+    """
+
+    def __init__(self, path: str) -> None:
+        super().__init__(path)
+        with open(path, "rb") as fib:
+            self._meta_data = pickle.load(fib)
+        
+    def filt_by_len(self, filt_func: Callable[[int, int], bool]):
+        """filter the dataset according to the `filt_func`, call before loading data.
+
+        filt_func (function): invoked via filt_func(feat_len, label_len),
+            True for keeping the data, False for removed.
+        """
+        torm = []
+        linfo = self._meta_data["linfo"]
+        labellen = self._meta_data["label"][:, -1]
+        filt_func = lambda x, y: x > y + 2
+        for i in range(len(self)):
+            if not filt_func(linfo[i], labellen[i]):
+                torm.append(i)
+        del linfo
+        del labellen
+        for metakey in ["label", "linfo", "arkname", "key"]:
+            self._meta_data[metakey] = np.delete(self._meta_data[metakey], torm, axis=0)
+        return
+
+    def get_seq_len(self) -> List[int]:
+        return self._meta_data["linfo"]
+
+    def __len__(self) -> int:
+        return len(self._meta_data["linfo"])
+
+    def __getitem__(self, index: int) -> Tuple[torch.FloatTensor, torch.LongTensor]:
+        mat = self._meta_data["arkname"][index]
+        mat = mat[: mat[-1]]
+        label = self._meta_data["label"][index]
+        label = label[: label[-1]]
+        return torch.tensor(mat), torch.tensor(label)
+
+class P2GLargeDataset(AbsDataset):
+
+    # def __init__(self, path: str, bpe_tokenizer_file:AbsTokenizer, phone_tokenizer_file: AbsTokenizer) -> None:
+    def __init__(self, path: str):
+        super().__init__(path)
+        with open(path, "rb") as fib:
+            self._meta_data = pickle.load(fib)
+        
+        # phone_tokenizer = load(phone_tokenizer_file)
+        # self.phone_list = phone_tokenizer._units
+        # self.bpe_tokenizer = load(bpe_tokenizer_file)
+        
+    def filt_by_len(self, filt_func: Callable[[int, int], bool]):
+        """
+        WARNING: if you using 'P2GLargeDataset', we assume you already done filt_by_len process in pkl data step.
+        """
+        # print(f"### WARNING: if you using 'P2GLargeDataset', we assume you already done filt_by_len process in pkl data step.")
+
+        return
+
+    def get_seq_len(self) -> List[int]:
+        return self._meta_data["in_len"]
+
+    def __len__(self) -> int:
+        return len(self._meta_data["key"])
+
+    def __getitem__(self, index: int) -> Tuple[torch.FloatTensor, torch.LongTensor]:
+        # mat = [self.phone_list[phone] for phone in self._meta_data["input"][index].split()]
+        # label = self.bpe_tokenizer.encode(self._meta_data["label"][index])
+        mat = self._meta_data["input"][index]
+        label = self._meta_data["label"][index]
+        return torch.tensor(mat, dtype=torch.int64), torch.tensor(label, dtype=torch.int64)
+
+class P2GTestDataset(AbsDataset):
+    """
+    Read data from text_phn file
+    """
+
+    def __init__(self, scp_file: str, sort_by_key: bool = False) -> None:
+        super().__init__(scp_file)
+
+        if not os.path.isfile(scp_file):
+            raise FileNotFoundError(f"{scp_file} is not a valid file.")
+
+        self._dataset = []
+        with open(scp_file, "r") as fi:
+            for line in fi:
+                try:
+                    uid, phn = line.strip().split(maxsplit=1)
+                except ValueError:
+                    if len(line) != 0:
+                        uid = line.strip().split(maxsplit=1)[0]
+                        phn = '0'
+                        print(f"### Warning: {uid} has empty transcript!")
+                phn = list(map(int, phn.split()))
+                self._dataset.append([uid, phn])
+        if sort_by_key:
+            self._dataset = sorted(self._dataset, key=lambda x: x[0])
+
+    def __len__(self) -> int:
+        return len(self._dataset)
+
+    def impl_get_len(self):
+        _ls = []
+        for _, mat in self._dataset:
+            _ls.append(len(mat))
+        return _ls
+
+    def __getitem__(self, index: int) -> Tuple[str, torch.FloatTensor]:
+        key, mat = self._dataset[index]
+        return [key, torch.tensor(mat)]

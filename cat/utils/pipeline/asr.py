@@ -380,7 +380,7 @@ if __name__ == "__main__":
             intfname = cfg_infr["infer"]["bin"]
             # check tokenizer
             if intfname != "cat.ctc.cal_logit":
-                if "tokenizer" not in infr_option:
+                if "tokenizer" not in infr_option and intfname not in ["cat.ctc.decode_jsa_s2p", "cat.ctc.decode_jsa_g2p"]:
                     assert (
                         hyper_cfg.get("tokenizer", {}).get("file", None) is not None
                     ), (
@@ -389,6 +389,24 @@ if __name__ == "__main__":
                         f"2. set inference:infer:option:tokenizer \n"
                     )
                     infr_option["tokenizer"] = hyper_cfg["tokenizer"]["file"]
+                
+                if intfname == "cat.ctc.decode_jsa_mls":
+                    if "char_tokenizer" not in infr_option:
+                        assert (
+                            hyper_cfg.get("tokenizer", {}).get("char_tokenizer", None) is not None
+                        ), (
+                            "\nyou should set tokenizer:char_tokenizer for MLS decoding;\n"
+                        ) 
+                        infr_option["char_tokenizer"] = hyper_cfg["tokenizer"]["char_tokenizer"]
+                
+                if intfname in ["cat.ctc.decode_jsa_s2p", "cat.ctc.decode_jsa_g2p"]:
+                    if "phone_tokenizer" not in infr_option:
+                        assert (
+                            hyper_cfg.get("tokenizer", {}).get("phone_tokenizer", None) is not None
+                        ), (
+                            "\nyou should set tokenizer:phone_tokenizer for s2p decoding;\n"
+                        )
+                        infr_option["phone_tokenizer"] = hyper_cfg["tokenizer"]["phone_tokenizer"]
 
             ignore_field_data = False
             os.makedirs(f"{working_dir}/{D_INFER}", exist_ok=True)
@@ -409,7 +427,8 @@ if __name__ == "__main__":
                             )
                         )
                     )
-            elif intfname in ["cat.ctc.decode", "cat.rnnt.decode","cat.ctc.decode_me2e"]:
+            elif intfname in ["cat.ctc.decode", "cat.rnnt.decode","cat.ctc.decode_me2e","cat.ctc.decode_jsa", 
+                              "cat.ctc.decode_jsa_mls", "cat.ctc.decode_jsa_s2p", "cat.ctc.decode_jsa_g2p"]:
                 if "input_scp" in infr_option:
                     ignore_field_data = True
                 if "output_prefix" not in infr_option:
@@ -441,8 +460,15 @@ if __name__ == "__main__":
                         if ilmw != 0:
                             prefix += f"_ilm{ilmw}"
                     infr_option["output_prefix"] = os.path.join(
-                        working_dir, f"{D_INFER}/{prefix}" + "_{}"
+                        working_dir, f"{D_INFER}/" + "{}" + f"/{prefix}"
                     )
+                if intfname == "cat.ctc.decode_jsa_mls":
+                    infr_option["output_prefix"] = infr_option["output_prefix"] + "_mls"
+                if intfname == "cat.ctc.decode_jsa_s2p":
+                    infr_option["output_prefix"] = infr_option["output_prefix"] + "_s2p"
+                if intfname == "cat.ctc.decode_jsa_g2p":
+                    infr_option["output_prefix"] = infr_option["output_prefix"] + "_g2p"
+                
             else:
                 ignore_field_data = True
                 sys.stderr.write(
@@ -483,7 +509,8 @@ if __name__ == "__main__":
                                 fmt.format(f"{_set}: " + sfmt.set(k, running_option[k]))
                             )
                     running_option["input_scp"] = scp
-                    if intfname in ["cat.ctc.decode", "cat.rnnt.decode","cat.ctc.decode_me2e"]:
+                    if intfname in ["cat.ctc.decode", "cat.rnnt.decode","cat.ctc.decode_me2e","cat.ctc.decode_jsa", 
+                                    "cat.ctc.decode_jsa_mls","cat.ctc.decode_jsa_s2p", "cat.ctc.decode_jsa_g2p"]:
                         if os.path.isfile(running_option["output_prefix"]):
                             sys.stderr.write(
                                 sfmt.warn(
@@ -505,6 +532,14 @@ if __name__ == "__main__":
             import utils.wer as wercal
 
             err_option = cfg_infr["er"]
+            if "type" in hyper_cfg["tokenizer"] and hyper_cfg["tokenizer"]["type"] == "LexiconTokenizer":
+                err_option["per"] = True
+                err_option["phone_tokenizer"] = hyper_cfg["tokenizer"]["file"]
+
+            if intfname in ["cat.ctc.decode_jsa_s2p", "cat.ctc.decode_jsa_g2p"]:
+                err_option["per"] = True
+                err_option["phone_tokenizer"] = hyper_cfg["tokenizer"]["phone_tokenizer"]
+
             if "hy" not in err_option:
                 assert (
                     infr_option.get("output_prefix", None) is not None

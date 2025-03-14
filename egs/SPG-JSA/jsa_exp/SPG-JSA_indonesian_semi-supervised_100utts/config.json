@@ -1,0 +1,78 @@
+{
+    "specaug": {
+        "freq_mask_width_range": 0.35,
+        "num_freq_mask": 2,
+        "num_time_mask": 10,
+        "time_mask_width_range": 0.05
+    },
+    "s2p_encoder": {
+        "type": "ConformerNet",
+        "init_model": "s2p_exp/Whistle_phone_ft_indonesian_100utts/check/best-3.pt",
+        "kwargs": {
+            "num_cells": 14,
+            "idim": 80,
+            "hdim": 512,
+            "conv": "vgg2l",
+            "num_heads": 4,
+            "kernel_size": 15,
+            "n_classes": 37
+        }
+    },
+    "beamDecoder": {
+        "type": "CTCBeamDecoder",
+        "n_classes": 37,
+        "beam_width": 16,
+        "log_probs_input": true,
+        "num_processes": 2
+    },
+    "jsa": {
+        "n_samples": 10,
+        "supervised_trans": "data/id/excluded_train_sub_100utts/text"
+    },
+    "p2g_encoder": {
+        "type": "TransformerDecoder",
+        "init_model": "p2g_exp/P2G_indonesian_with_100utts_S2P_result/check/best-3.pt",
+        "kwargs": {
+            "num_layers": 8,
+            "num_emb": 37,
+            "hdim": 512,
+            "num_heads": 4,
+            "intermediate_size": 1024,
+            "num_classes": 500,
+            "with_head": true
+        }
+    },
+    "g2p_encoder": {
+        "type": "TransformerDecoder",
+        "init_model": "g2p_exp/G2P_indonesian_with_100utts_S2P_result/check/best-3.pt",
+        "kwargs": {
+            "num_layers": 8,
+            "num_emb": 35,
+            "hdim": 512,
+            "num_heads": 4,
+            "intermediate_size": 1024,
+            "n_classes": 37,
+            "with_head": true
+        }
+    },
+    "scheduler": {
+        "type": "SchedulerEarlyStop",
+        "kwargs": {
+            "min_step": 20000,
+            "n_tol": 50,
+            "gamma": 0.5,
+            "stop_lr": 1e-06
+        },
+        "optimizer": {
+            "type": "Adam",
+            "kwargs": {
+                "lr": 3e-05,
+                "betas": [
+                    0.9,
+                    0.98
+                ],
+                "weight_decay": 1e-06
+            }
+        }
+    }
+}

@@ -1,0 +1,36 @@
+{
+    "encoder": {
+        "type": "TransformerDecoder",
+        "kwargs": {
+            "num_layers": 8,
+            "num_emb": 37,
+            "hdim": 512,
+            "num_heads": 4,
+            "intermediate_size": 1024,
+            "num_classes": 500,
+            "with_head": true
+        }
+    },
+    "scheduler": {
+        "type": "SchedulerNoamEarlyStop",
+        "kwargs": {
+            "warmup_step": 1670,
+            "dim_model": 512,
+            "peak_factor": 0.5,
+            "n_tol": 10,
+            "stop_lr": 1e-06,
+            "gamma": 0.5
+        },
+        "optimizer": {
+            "type": "Adam",
+            "kwargs": {
+                "lr": 3e-05,
+                "betas": [
+                    0.9,
+                    0.98
+                ],
+                "weight_decay": 1e-06
+            }
+        }
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "decoder": {
+        "type": "NGram",
+        "kwargs": {
+            "f_binlm": "/mnt/workspace/saier/CAT/egs/jsa/data/dict_pl/lm/4gram.arpa",
+            "gram_order": 4,
+            "num_classes": 43748
+        }
+    }
+}

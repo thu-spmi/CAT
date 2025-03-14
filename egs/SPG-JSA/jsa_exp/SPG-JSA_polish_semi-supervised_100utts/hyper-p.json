@@ -1,0 +1,43 @@
+{
+    "data": {
+        "train": "train_pl",
+        "dev": "dev_pl",
+        "test": "test_pl",
+        "filter": "10:1200"
+    },
+    "tokenizer": {
+        "type": "SentencePieceTokenizer",
+        "|V|": 500,
+        "file": "data/lang_pl/tokenizer_bpe500.tknz",
+        "phone_tokenizer": "data/lang_pl/tokenizer_phn.tknz",
+        "char_tokenizer": "data/lang_pl/tokenizer_char.tknz"
+    },
+    "train": {
+        "bin": "cat.ctc.train_jsa",
+        "option": {
+            "amp": true,
+            "batch_size": 360,
+            "check_freq": 379,
+            "eval_error_rate": true,
+            "tr_set_weight": [
+                1, 297
+            ]
+        }
+    },
+    "inference": {
+        "infer": {
+            "bin": "cat.ctc.decode_jsa",
+            "option": {
+                "beam_size": 16,
+                "nj": 16
+            }
+        },
+        "avgmodel": {
+            "mode": "best",
+            "num": 3
+        },
+        "er": {
+        }
+    },
+    "commit": "1b77bc21f7a5faac5e47f6bc4445f23ebf0e0633"
+}

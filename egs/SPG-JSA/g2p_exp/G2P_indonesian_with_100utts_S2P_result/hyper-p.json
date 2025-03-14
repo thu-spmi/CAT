@@ -1,0 +1,44 @@
+{
+    "data": {
+        "train": "train_id_s2p",
+        "dev": "dev_id_s2p",
+        "test": "test_id_char",
+        "filter": "10:1200"
+    },
+    "tokenizer": {
+        "type": "LexiconTokenizer",
+        "|V|": 37,
+        "file": "data/lang_id/tokenizer_phn.tknz"
+    },
+    "env": {
+        "CUDA_VISIBLE_DEVICES": "0,1"
+    },
+    "train": {
+        "bin": "cat.ctc.train",
+        "option": {
+            "amp": true,
+            "batch_size": 960,
+            "check_freq": 17,
+            "eval_error_rate": true,
+            "T_dataset": "P2GDataset",
+            "flatten_target_data": false
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "best",
+            "num": 3
+        },
+        "infer": {
+            "bin": "cat.ctc.decode",
+            "option": {
+                "T_dataset": "P2GTestDataset",
+                "beam_size": 16,
+                "nj": 16
+            }
+        },
+        "er": {
+        }
+    },
+    "commit": "1b77bc21f7a5faac5e47f6bc4445f23ebf0e0633"
+}

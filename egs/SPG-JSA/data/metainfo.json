@@ -1,0 +1,46 @@
+{
+    "train_pl": {
+        "scp": "data/pl/excluded_train/feats.scp",
+        "trans": "data/pl/excluded_train/text"
+    },
+    "train_pl_100utts": {
+        "scp": "data/pl/excluded_train_sub_100sample/feats.scp",
+        "trans": "data/pl/excluded_train_sub_100sample/text"
+    },
+    "dev_pl": {
+        "scp": "data/pl/dev/feats.scp",
+        "trans": "data/pl/dev/text"
+    },
+    "test_pl": {
+        "scp": "data/pl/test/feats.scp",
+        "trans": "data/pl/test/text"
+    },
+    "train_id": {
+        "scp": "data/id/excluded_train/feats.scp",
+        "trans": "data/id/excluded_train/text"
+    },
+    "train_id_100utts": {
+        "scp": "data/id/excluded_train_sub_100utts/feats.scp",
+        "trans": "data/id/excluded_train_sub_100utts/text"
+    },
+    "dev_id": {
+        "scp": "data/id/dev/feats.scp",
+        "trans": "data/id/dev/text"
+    },
+    "test_id": {
+        "scp": "data/id/test/feats.scp",
+        "trans": "data/id/test/text"
+    },
+    "train_id_s2p": {
+        "scp": "jsa_exp/SPG-JSA_indonesian_semi-supervised_100utts/decode/train_id/ctc_bs6_best-3_s2p",
+        "trans": "data/id/excluded_train/text"
+    },
+    "dev_id_s2p": {
+        "scp": "jsa_exp/SPG-JSA_indonesian_semi-supervised_100utts/decode/dev_id/ctc_bs16_best-3_s2p",
+        "trans": "data/id/test/text"
+    },
+    "test_id_s2p": {
+        "scp": "jsa_exp/SPG-JSA_indonesian_semi-supervised_100utts/decode/test_id/ctc_bs16_best-3_s2p_phn_id",
+        "trans": "data/id/test/text"
+    }
+}

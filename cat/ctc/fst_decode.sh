@@ -88,7 +88,7 @@ if [[ ! -f $f_out || $force == "True" ]]; then
         done | sort -k 1 >$lat_dir/$file.txt
         rm $lat_dir/$file.*.txt
     done
-    python utils/data/text2nbest.py $lat_dir/{trans.txt,ac_cost.txt} $f_out.nbest
+    # python utils/data/text2nbest.py $lat_dir/{trans.txt,ac_cost.txt} $f_out.nbest
 
 else
     echo "$f_out exists, skip decoding." 1>&2
@@ -96,5 +96,5 @@ fi
 
 echo $f_out
 echo "$0 done." 1>&2
-rm -r $log_dir $hyps_dir $lat_dir
+# rm -r $log_dir $hyps_dir $lat_dir
 exit 0

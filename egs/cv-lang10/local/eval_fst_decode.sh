@@ -44,10 +44,9 @@ for set in $data; do
         --acwt $acwt --lmwt $lmwt \
         --wip $wip --nbest $nbest \
         $dir/decode/$set/ark $graph $dir/decode/$set)
+    python utils/data/text2nbest.py $dir/decode/$set/lat/{trans.txt,ac_cost.txt} $dir/decode/$set/ac${acwt}_lm${lmwt}_wip${wip}.hyp.nbest
+    rm -r -f $dir/decode/$set/{log,lat,hyp}
 
-    # echo -en "${set}_$(basename $fout)\t"
-    # python utils/wer.py --cer \
-    #     $(get_test_tran $set) $fout
     echo -en "${set}_$(basename $fout)\t"
     python utils/wer.py  \
         $(get_test_tran $set) $fout

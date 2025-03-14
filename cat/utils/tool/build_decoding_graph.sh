@@ -8,6 +8,7 @@ set -e
     help="Path to the tokenizer for compiling G.fst")
 ("lm_path", type=str, help="LM file (in ARPA format). This should be a token-based n-gram.")
 ("out_dir", type=str, help="Output directory. Decoding graph would be saved as <out_dir>/TLG.fst")
+("--word_list", type=str, help="Word list of your text, only for bpe model")
 ("-c", "--clean-auxiliary", action="store_true", help="Clean all temp files except the TLG.fst")
 PARSER
 eval $(python utils/parseopt.py $0 $*)
@@ -47,10 +48,15 @@ for f in units.txt lexiconp.txt words.txt; do
     [ ! -f $out_dir/$f ] &&
         skip=0
 done
+if [ -f "$word_list" ];then
+  [ $skip -eq 0 ] &&
+      python utils/tool/prep_decoding_graph_materials.py \
+          $tokenizerT $tokenizerG $out_dir --word_list $word_list
+else
 [ $skip -eq 0 ] &&
     python utils/tool/prep_decoding_graph_materials.py \
         $tokenizerT $tokenizerG $out_dir
-
+fi                    
 # 2. add disambiguous symbols ->
 #    lexiconp_disambig.txt
 #        two 1.0 t uː #1
