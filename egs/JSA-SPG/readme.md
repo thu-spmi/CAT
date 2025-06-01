@@ -1,7 +1,7 @@
 
 # 1. Overview
 
-This directory contains the experimental codes corresponding to the research on "Phoneme-based Cross-lingual ASR Training without Pronunciation Dictionary via Joint Stochastic Approximation". The codes are designed to reproduce the experiments described in the paper, covering data preprocessing, model training, and evaluation steps.
+This directory contains the experimental codes corresponding to the research on "Phoneme-based Cross-lingual ASR Training without Pronunciation Dictionary via Joint Stochastic Approximation". The code is designed to reproduce the experiments described in the paper, covering data preprocessing, model training, and evaluation steps.
 
 # 2. Results
 
