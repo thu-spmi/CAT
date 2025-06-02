@@ -1,14 +1,14 @@
-# SPG-JSA Training Guide
+# JSA-SPG Training Guide
 Author: Sardar (sar_dar@foxmail.com)
 
-This directory contains the experimental codes for SPG-JSA training. The codes are designed to reproduce the experiments described in the paper, covering data preprocessing, model training, and evaluation steps.
+This directory contains the experimental codes for JSA-SPG training. The codes are designed to reproduce the experiments described in the paper, covering data preprocessing, model training, and evaluation steps.
 > **Tips:** 
-> 1. All the codes need to be run in the `<path to CAT>/egs/SPG-JSA` directory.
-> 2. `<exp dir>` represents SPG-JSA experiment directory, which contains the `hyper-p.json` and `config.json` files. For example, `jsa_exp/SPG-JSA_indonesian_semi-supervised_100utts`
+> 1. All the codes need to be run in the `<path to CAT>/egs/JSA-SPG` directory.
+> 2. `<exp dir>` represents JSA-SPG experiment directory, which contains the `hyper-p.json` and `config.json` files. For example, `jsa_exp/JSA-SPG_indonesian_semi-supervised_100utts`
 
-## 1. SPG-JSA training
+## 1. JSA-SPG training
 ### step 1: SPG model initialization
-* **S2P model:** For semi-supervised training, fine-tune Whistle (90M) model on 10 minutes of data, follow [S2P training guideline](../s2p_exp/readme).
+* **S2P model:** For semi-supervised training, fine-tune Whistle (90M) model on 10 minutes of data, follow [S2P training guideline](../s2p_exp/readme.md).
 * **P2G model:** Use the S2P model to generate phoneme pseudo-labels on the full dataset. Then, train the P2G model according to the [P2G training guideline](../p2g_exp/readme.md).
 * **G2P model:** Use the S2P model to generate phoneme pseudo-labels on the full dataset. Then, train the G2P model according to the [G2P training guideline](../g2p_exp/readme.md).
 * Once the three models are initialized, set the checkpoint path as the `init-model` option in the `config.json` file.
@@ -23,14 +23,14 @@ The three models in the SPG architecture use different tokenizers, all of which 
 python local/pkl_spg_data.py <exp dir>
 ```
 * For semi-supervised training, you need to use the `"tr_set_weight"` parameter in the `hyper-p.json` file to adjust the ratio of the two training sets. For example, `"tr_set_weight": [1, 20]` means that the first dataset configured in `"data":"train"` will be repeated once, and the second dataset (e.g., 100 sentences) will be repeated 20 times. 
-### step 4: SPG-JSA training
+### step 4: JSA-SPG training
 * If you want to conduct semi-supervised training, configure the text data path of the supervised dataset in the `"jsa:supervised_trans"` parameter of the `config.json` file. Otherwise, run it in an unsupervised manner.
 * run the following script for start the training:
 ```bash
 python utils/pipeline/asr.py <exp dir> --sta 3 --sto 3
 ```
 
-## 2.  SPG-JSA decoding
+## 2.  JSA-SPG decoding
 Currently, GPU decoding is used for MLS decoding, while CPU decoding is used for other types of decoding.
 ### 2.1 decoding without LM
 * Configure the following settings in the `hyper-p.json` file:
@@ -135,7 +135,7 @@ python utils/pipeline/asr.py <exp dir> --sta 4
 			"bin": "cat.ctc.decode_jsa_s2p",
 			"option": {
 				"beam_size": 128,
-				"nj": 32,
+				"nj": 16,
 				"thread_per_woker": 3,
 				"save_nbest": true
 			}
@@ -170,7 +170,7 @@ run the following script for replace checkpoint:
 python local/replace_checkpoint.py <path of SPG model> --p2g <path of P2G aug model> --out <new path for the SPG model after P2G augmentation>
 ```
 ### step 5: decoding
-* In the `hyper-p.json` file in the SPG-JSA experiment directory, add the path of the newly generated checkpoint to the `"resume"` option under `"inference":"option"`. With other configurations remaining unchanged, you can perform **decoding without LM**, **decoding with an LM**, and **MLS rescoring**.
+* In the `hyper-p.json` file in the JSA-SPG experiment directory, add the path of the newly generated checkpoint to the `"resume"` option under `"inference":"option"`. With other configurations remaining unchanged, you can perform **decoding without LM**, **decoding with an LM**, and **MLS rescoring**.
 
 ## 4. Language Domain Adaptation (LDA) training 
 ### step 1: generate phoneme pseudo-labels
@@ -179,7 +179,7 @@ python local/replace_checkpoint.py <path of SPG model> --p2g <path of P2G aug mo
 ```bash
 python local/pkl_p2g_data.py <exp dir> <path of character tokenizer> --gpu --test --save2info
 ```
-* Configure the following settings in the `hyper-p.json` file in SPG-JSA experiment directory:
+* Configure the following settings in the `hyper-p.json` file in JSA-SPG experiment directory:
 ```json
 {
 	...

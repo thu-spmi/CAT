@@ -1,10 +1,10 @@
 
-# P2G training for SPG-JSA training
+# P2G training for JSA-SPG training
 Author: Sardar (sar_dar@foxmail.com)
 
-This directory contains the experimental codes for training P2G models that are used for SPG-JSA initialization. The codes are designed to reproduce the experiments described in the paper, covering data preprocessing, model training, and evaluation steps.
+This directory contains the experimental codes for training P2G models that are used for JSA-SPG initialization. The codes are designed to reproduce the experiments described in the paper, covering data preprocessing, model training, and evaluation steps.
 
-> **Tips:** All the codes need to be run in the `<path to CAT>/egs/SPG-JSA` directory.
+> **Tips:** All the codes need to be run in the `<path to CAT>/egs/JSA-SPG` directory.
 # Training process
 We assume that you have completed the training of the S2P model and the preparation of the data in the CAT style, as described in the [`S2P training guide`](../s2p_exp/readme.md). 
 

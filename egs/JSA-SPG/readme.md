@@ -5,17 +5,17 @@ This directory contains the experimental codes corresponding to the research on 
 
 # 2. Results
 
-## 2.1 SPG-JSA Crosslingual ASR Experiments
+## 2.1 JSA-SPG Crosslingual ASR Experiments
 
 **Settings**: 
-Two languages (Polish and Indonesian) from the Common Voice dataset were used. Only 10 minutes of phoneme - annotated data per language was utilized. Two schemes, "SPG init from G2P" and SPG - JSA, were compared.
+Two languages (Polish and Indonesian) from the Common Voice dataset were used. Only 10 minutes of phoneme - annotated data per language was utilized. Two schemes, "SPG init from G2P" and JSA-SPG, were compared.
 
 **Results**:  
-The following result table shows that PERs (\%) and WERs (\%) for SPG-JSA experiment on Common Voice dataset. FT denotes fine-tuning. MLS denotes marginal likelihood scoring. NA denotes not applied.
+The following result table shows that PERs (\%) and WERs (\%) for JSA-SPG experiment on Common Voice dataset. FT denotes fine-tuning. MLS denotes marginal likelihood scoring. NA denotes not applied.
 > Tips:  $^\dagger$ denotes results from whistle paper. More experiment details see [cv-lang10](../cv-lang10).
 
 |                Exp.                | **Polish** |        |      |      | **Indonesian** |        |       |          |
-| :--------------------------------: | :--------: | :----: | ---- | ---- | -------------- | ------ | ----- | -------- |
+| :-------------------------------- | :--------: | :----: | ---- | ---- | -------------- | ------ | ----- | -------- |
 |                                    |    PER     | w/o LM | w LM | MLS  | PER            | w/o LM | w LM  | MLS      |
 | **Monolingual phoneme $^\dagger$** |    2.82    |   NA   | 4.97 | NA   | 5.74           | NA     | 3.28  | NA       |
 | **Monolingual subword $^\dagger$** |     NA     | 19.38  | 7.12 | NA   | NA             | 31.96  | 10.85 | NA       |
@@ -23,13 +23,13 @@ The following result table shows that PERs (\%) and WERs (\%) for SPG-JSA experi
 | **Whistle subword FT $^\dagger$**  |     NA     |  5.84  | 3.82 | NA   | NA             | 12.48  | 2.92  | NA       |
 |       **SPG init from G2P**        |   17.72    |  8.73  | 4.68 | 5.91 | 21.85          | 10.15  | 3.81  | 3.09     |
 |    **+ P2G augmentation**     |   17.72    |  5.93  | 4.97 | 5.88 | 21.85          | 6.34   | 3.44  | 2.91     |
-|            **SPG-JSA**             |   17.35    |  8.19  | 4.65 | [3.93](./jsa_exp/SPG-JSA_polish_semi-supervised_100utts/)  | 20.66          | 9.04   | 3.26  | [2.47](./jsa_exp/SPG-JSA_indonesian_semi-supervised_100utts/)   |
-|    **+ P2G augmentation**     |   17.35    |  4.64  | 4.37 | **[3.64](./jsa_exp/SPG-JSA_polish_semi-supervised_100utts/)**  | 20.66          | 4.55   | 2.92  | **[2.31](./jsa_exp/SPG-JSA_indonesian_semi-supervised_100utts/)** |
+|            **JSA-SPG**             |   17.35    |  8.19  | 4.65 | [3.93](./jsa_exp/JSA-SPG_polish_semi-supervised_100utts/)  | 20.66          | 9.04   | 3.26  | [2.47](./jsa_exp/JSA-SPG_indonesian_semi-supervised_100utts/)   |
+|    **+ P2G augmentation**     |   17.35    |  4.64  | 4.37 | **[3.64](./p2g_exp/P2G_augment_polish/)**  | 20.66          | 4.55   | 2.92  | **[2.31](./p2g_exp/P2G_augment_indonesian/)** |
 
 ## 2.2 Language Domain Adaptation Experiments
 
 **Settings**: 
-The SPG-JSA model trained on Common Voice was tested on target domain test set, and dLanguage Domain Adaptation was further applied.
+The JSA-SPG model trained on Common Voice was tested on target domain test set, and Language Domain Adaptation was further applied.
 
 **Results**:  
 
@@ -37,8 +37,8 @@ The SPG-JSA model trained on Common Voice was tested on target domain test set, 
 | :--------------------------: | :--------: | :---: | --------- | -------------- | ----- | --------- |
 |                              |   w/o LM   | w LM  | MLS       | w/o LM         | w LM  | MLS       |
 | **Whistle subword FT on CV** |   33.46    | 22.58 | NA        | 43.69          | 12.39 | NA        |
-|      **SPG-JSA on CV**       |   35.18    | 29.04 | 26.79     | 39.19          | 16.93 | 14.28     |
-|   **+ LDA training**    |   28.87    | 23.84 | **20.57** | 30.69          | 12.68 | **11.23** |
+|      **JSA-SPG on CV**       |   35.18    | 29.04 | 26.79     | 39.19          | 16.93 | 14.28     |
+|   **+ LDA training**    |   28.87    | 23.84 | **[20.57](./p2g_exp/P2G_LDA_training_polish/)** | 30.69          | 12.68 | **[11.23](./p2g_exp/P2G_LDA_training_indonesian/)** |
 
 ## 2.3 Effect of Supervised Data Amount
 
@@ -55,7 +55,7 @@ The SPG-JSA model trained on Common Voice was tested on target domain test set, 
 # 3. Code Structure
 
 The code is organized into several main directories:
-- **`jsa_exp`**: includes experiment directories for training SPG-JSA models. The experimental process of SPG-JSA is detailed here. **You should start your experiment from here**.
+- **`jsa_exp`**: includes experiment directories for training JSA-SPG models. The experimental process of JSA-SPG is detailed here. **You should start your experiment from here**.
 - **`g2p_exp`**: includes experiment directories for training G2P models.
 - **`p2p_exp`**: includes experiment directories for training P2G models.
 - **`s2p_exp`**: includes experiment directories for training S2P models.
@@ -64,7 +64,7 @@ The code is organized into several main directories:
 - **`cat` and `utils`**: include codes for ASR training and evaluation in CAT.
 
 # 4. How to Use
-The detailed training steps of SPG-JSA start from [here](./jsa_exp/readme.md). 
+The detailed training steps of JSA-SPG start from [here](./jsa_exp/readme.md). 
 1. **Data Preparation**
     - Download the necessary datasets, which can be the Common Voice, VoxPopuli, or your custom dataset.
     - Format the data in the CAT style. You can refer to the [Common Voice repository](../commonvoice) for guidance.
