@@ -577,3 +577,63 @@ class JoinAPNonLinearEncoder(JoinAPLinearEncoder):
     def AP(self) -> torch.Tensor:
         # (Np, Dp) -> (Np, H_ap) -> (Np, H)
         return self.A2(self.sig(self.A1(self.P)))
+
+class TransformerDecoder(AbsEncoder):
+    def __init__(self,
+                 num_layers,
+                 hdim,
+                 num_heads,
+                 intermediate_size,
+                 num_classes,
+                 num_emb,
+                 is_decoder: bool = False,
+                 add_cross_attention: bool = False,
+                 max_position_embeddings: int = 512,
+                 with_head: bool = True):
+        super().__init__(
+            with_head=with_head, num_classes=num_classes, dim_last_hid=hdim
+        )
+
+        self.decoder = c_layers.BertEncoder(num_layers,
+                                            hdim=hdim,
+                                            num_heads=num_heads,
+                                            intermediate_size=intermediate_size,
+                                            is_decoder=is_decoder,
+                                            add_cross_attention=add_cross_attention,
+                                            max_position_embeddings=max_position_embeddings)
+        self.embedding = nn.Embedding(num_emb, hdim)
+        self.dtype = torch.float32
+    
+    def invert_attention_mask(self, encoder_attention_mask: torch.Tensor):
+        """
+        Invert an attention mask (e.g., switches 0. and 1.).
+
+        Args:
+            encoder_attention_mask (`torch.Tensor`): An attention mask.
+
+        Returns:
+            `torch.Tensor`: The inverted attention mask.
+        """
+        if encoder_attention_mask.dim() == 3:
+            encoder_extended_attention_mask = encoder_attention_mask[:, None, :, :]
+        if encoder_attention_mask.dim() == 2:
+            encoder_extended_attention_mask = encoder_attention_mask[:, None, None, :]
+        encoder_extended_attention_mask = (1.0 - encoder_extended_attention_mask) * torch.finfo(self.dtype).min
+        return encoder_extended_attention_mask
+    
+    def generate_attention_mask(self, lens_matrix):
+        seq_len = torch.max(lens_matrix) 
+        attention_mask = torch.arange(seq_len, device=lens_matrix.device)[
+                None, :
+            ] < lens_matrix[:, None].to(lens_matrix.device)
+        return self.invert_attention_mask(attention_mask.to(self.dtype))
+
+    def impl_forward(self, x: torch.Tensor, xlens: torch.Tensor, enc_hidden_state: torch.Tensor = None, enc_hidden_state_lens: torch.Tensor = None):
+        attention_mask = self.generate_attention_mask(xlens)
+        x_em = self.embedding(x)
+        if enc_hidden_state is None:
+            out = self.decoder(x_em, attention_mask)
+        else:
+            enc_attention_mask = self.generate_attention_mask(enc_hidden_state_lens)
+            out = self.decoder(x_em, attention_mask, enc_hidden_state, enc_attention_mask)
+        return out[0], xlens

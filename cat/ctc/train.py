@@ -54,12 +54,16 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace, **mkwar
         world_size=args.world_size,
         rank=args.rank,
     )
+    if "T_dataset" in args:
+        exec("from ..shared.data import " + args.T_dataset)
+        mkwargs["T_dataset"] = eval(args.T_dataset)
 
     if "T_dataset" not in mkwargs:
         mkwargs["T_dataset"] = KaldiSpeechDataset
 
     if "collate_fn" not in mkwargs:
-        mkwargs["collate_fn"] = sortedPadCollateASR(flatten_target=True)
+        flatten_target = args.flatten_target_data if "flatten_target_data" in args else True
+        mkwargs["collate_fn"] = sortedPadCollateASR(flatten_target=flatten_target)
 
     if "func_build_model" not in mkwargs:
         mkwargs["func_build_model"] = build_model
@@ -273,8 +277,7 @@ def build_beamdecoder(cfg: dict) -> CTCBeamDecoder:
         alpha=cfg.get("alpha", 1.0),
         beta=cfg.get("beta", 0.0),
         num_processes=cfg.get("num_processes", 6),
-        log_probs_input=True,
-        is_token_based=("kenlm" in cfg),
+        log_probs_input=True
     )
 
 
@@ -347,8 +350,30 @@ def build_model(
 
     model.cuda(args["gpu"])
     model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args["gpu"]])
+
+    if "init_model_P2G" in args:
+        assert os.path.isfile(args["init_model_P2G"])
+        coreutils.distprint("> initialize p2g_encoder from: " + args["init_model_P2G"], args["gpu"])
+        enc_checkpoint = torch.load(
+            args["init_model_P2G"], 
+            map_location=f"cuda:{args['gpu']}"
+        )["model"]  # type: OrderedDict
+        enc_checkpoint = translate_checkpoint(enc_checkpoint, "p2g_encoder", "encoder")
+        model.load_state_dict(enc_checkpoint)
+        del enc_checkpoint
+
     return model
 
+def translate_checkpoint(state_dict: OrderedDict, old_string: str, new_string: str) -> OrderedDict:
+    """Translate checkpoint of previous version of model so that it could be loaded with the new one."""
+    old_string = old_string + '.'
+    new_string = new_string + '.'
+    new_state_dict = OrderedDict()
+    for k, v in state_dict.items():
+        if old_string in k:
+            k = k.replace(old_string, new_string, 1)
+            new_state_dict[k] = v
+    return new_state_dict
 
 def _parser():
     parser = coreutils.basic_trainer_parser("CTC trainer.")

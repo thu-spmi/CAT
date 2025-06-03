@@ -1,0 +1,42 @@
+{
+    "data": {
+        "train": "train_id_100utts",
+        "dev": "dev_id",
+        "test": "test_id",
+        "filter": "10:2000"
+    },
+    "tokenizer": {
+        "type": "LexiconTokenizer",
+        "option-init": {
+            "lexicon": "data/lang_id/lexicon.txt"
+        },
+        "|V|": 37,
+        "file": "data/lang_id/tokenizer_phn.tknz"
+    },
+    "train": {
+        "bin": "cat.ctc.train",
+        "option": {
+            "amp": true,
+            "batch_size": 100,
+            "check_freq": 1,
+            "init_model": "data/Multi._phoneme_S_best-3_indonesian_mapped.pt",
+            "eval_error_rate": true
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "best",
+            "num": 3
+        },
+        "infer": {
+            "bin": "cat.ctc.decode",
+            "option": {
+                "beam_size": 16,
+                "nj": 16
+            }
+        },
+        "er": {
+        }
+    },
+    "commit": "1b77bc21f7a5faac5e47f6bc4445f23ebf0e0633"
+}

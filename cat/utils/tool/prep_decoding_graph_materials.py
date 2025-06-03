@@ -15,6 +15,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("tokenizerT", type=str, help="Path to the T tokenizer.")
     parser.add_argument("tokenizerG", type=str, help="Path to the G tokenizer.")
+    parser.add_argument("--word_list", type=str, default=None, help="Path to the word list.")
     parser.add_argument(
         "out_dir", type=str, help="Output directory, where all files will be store."
     )
@@ -60,6 +61,27 @@ if __name__ == "__main__":
         units = [(c, i + 1) for c, i in unit2index.items()]
         units[0] = ("<blk>", 1)
         del reversed_units
+    elif isinstance(tokenizerT, tknz.SentencePieceTokenizer):
+        if args.word_list is not None:
+          word2unit = {}
+          word2unit['<unk>'] = [1]
+          unit2index = { w: i for i, w in tokenizerT._vocab_to_dict().items() }
+          reversed_units = {index: unit for unit, index in unit2index.items()}
+          with open(args.word_list, "r") as fin:
+            for line in fin:
+                w = line.replace("\n", "")             
+                l = tokenizerT.encode(w)
+                word2unit[w] = l
+          lexicon = [
+              (vocabulary[word], " ".join(reversed_units[i] for i in units))
+              for word, units in word2unit.items()
+          ]
+          units = [(c, i + 1) for c, i in unit2index.items()]
+          units[0] = ("<blk>", 1)
+          del reversed_units
+        else:
+            sys.stderr.write(f"ERROR: For BPE model, the word list of the language is required\n")
+            sys.exit(1)
     else:
         # must support dump_vocab method
         index2unit = {

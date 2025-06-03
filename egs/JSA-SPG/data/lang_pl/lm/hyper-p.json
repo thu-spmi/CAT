@@ -1,0 +1,39 @@
+{
+    "data": {
+        "train": [
+            "train_pl"
+        ],
+        "dev": [
+            "dev_pl"
+        ],
+        "test": [
+            "test_pl"
+        ],
+        "packing-text-lm": {
+            "nj": 4,
+            "prune_shorter": 5
+        }
+    },
+    "tokenizer": {
+        "type": "SimpleTokenizer",
+        "option-init": {
+            "dmap": "data/dict_pl/lexicon_rmsymb.txt"
+        },
+        "|V|": 43748,
+        "file": "data/dict_pl/lm/tokenizer_rmsymb_lm.tknz"
+    },
+    "inference":{
+        "infer":{
+            "bin":"cat.lm.rescore",
+            "option": {
+                "nbestlist": "jsa_exp/82_JSA_pl_100utts_AED_P2G/decode/test_pl/aed_bs16_best-3.nbest",
+                "save_lm_nbest": "jsa_exp/82_JSA_pl_100utts_AED_P2G/decode/test_pl/aed_bs16_best-3_lm_rescore.nbest",
+                "cpu": true,
+                "nj": 16,
+                "alpha": 0.5,
+                "verbose": true
+            }
+        }
+    },
+    "commit": "c102b404d8bbce612eecb7e5fa6cb7679609ec5c"
+}

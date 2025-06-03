@@ -52,7 +52,7 @@ function exc_install() {
         # install ctcdecode is annoying...
         [[ $force == "False" && $(check_py_package ctcdecode) -eq 0 ]] || {
             if [ ! -d src/ctcdecode ]; then
-                git clone --recursive https://github.com/maxwellzh/ctcdecode.git src/ctcdecode
+                git clone --recursive https://github.com/WayenVan/ctcdecode.git src/ctcdecode
             else
                 cd src/ctcdecode
                 git pull --recurse-submodules

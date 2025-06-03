@@ -483,10 +483,18 @@ class LexiconTokenizer(AbsTokenizer):
         ]  # type: List[List[int]]
         return sum(rt_indices, [])
 
-    def decode(self, *args, **kwargs):
-        raise NotImplementedError(
-            f"{self.__class__.__name__} does not support decode() method."
-        )
+    def _dec(self, indices: Union[Iterable[int], Iterable[Iterable[int]]]):
+        str_phone = ""
+        is_first = True
+        for j in range(len(indices)):
+            ind = indices[j]
+            phone = list(self._units.keys())[list(self._units.values()).index(ind)]
+            if is_first:
+                str_phone = str_phone + phone
+            else:
+                str_phone = str_phone + " " + phone
+            is_first = False
+        return str_phone
 
 
 class RawTokenizer(AbsTokenizer):

@@ -1,0 +1,44 @@
+{
+    "data": {
+        "train": "train_pl",
+        "dev": "dev_pl_jsa_s2p",
+        "test": "test_pl_jsa_s2p",
+        "filter": "10:1200"
+    },
+    "tokenizer": {
+        "type": "SentencePieceTokenizer",
+        "|V|": 500,
+        "file": "data/lang_pl/tokenizer_bpe500.tknz"
+    },
+    "env": {
+        "CUDA_VISIBLE_DEVICES": "0,1,2,3"
+    },
+    "train": {
+        "bin": "cat.ctc.train",
+        "option": {
+            "amp": true,
+            "batch_size": 2500,
+            "check_freq": 1367,
+            "eval_error_rate": true,
+            "T_dataset": "P2GLargeDataset",
+            "flatten_target_data": false,
+            "init_model_P2G": "jsa_exp/SPG-JSA_polish_semi-supervised_100utts/check/best-3.pt"
+        }
+    },
+    "inference": {
+        "infer": {
+            "bin": "cat.ctc.decode",
+            "option": {
+                "T_dataset": "P2GTestDataset",
+                "beam_size": 16,
+                "nj": 16
+            }
+        },
+        "avgmodel": {
+            "mode": "best",
+            "num": 3
+        },
+        "er": {}
+    },
+    "commit": "1b77bc21f7a5faac5e47f6bc4445f23ebf0e0633"
+}

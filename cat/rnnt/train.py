@@ -24,9 +24,10 @@ import warp_rnnt
 try:
     import warp_ctct
 except ModuleNotFoundError:
-    print(
-        "WARNING: 'warp-ctct' not installed. Refer to https://github.com/maxwellzh/warp-ctct"
-    )
+    pass
+    # print(
+    #     "WARNING: 'warp-ctct' not installed. Refer to https://github.com/maxwellzh/warp-ctct"
+    # )
 from collections import OrderedDict
 from typing import *
 

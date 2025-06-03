@@ -13,7 +13,7 @@ import re
 import pickle
 from multiprocessing import Pool
 from typing import *
-
+from cat.shared.tokenizer import load
 
 class Processor:
     def __init__(self) -> None:
@@ -198,6 +198,10 @@ def main(args: argparse.Namespace = None):
         l_hy = [seq for _, seq in l_hy]
         l_gt = [seq for _, seq in l_gt]
 
+        if args.per:
+            phone_tokenizer = load(args.phone_tokenizer)
+            l_gt = phone_tokenizer.decode(phone_tokenizer.encode(l_gt))
+
     # multi-processing compute
     num_threads = max(min(num_lines // 10000, int(os.cpu_count())), 1)
 
@@ -231,7 +235,12 @@ def main(args: argparse.Namespace = None):
     _ser = _se / num_lines
 
     # format: %SER 13.60 | %WER 4.50 [ 2367 / 52576, 308 ins, 157 del, 1902 sub ]
-    prefix = "WER" if not args.cer else "CER"
+    if args.cer:
+        prefix = "CER"
+    elif args.per:
+        prefix = "PER"
+    else:
+        prefix = "WER"
     pretty_str = f"%SER {_ser*100:.2f} | %{prefix} {_wer*100:.2f} [ {_err} / {_sum}, {_ins} ins, {_del} del, {_sub} sub ]"
 
     sys.stdout.write(pretty_str + "\n")
@@ -259,6 +268,9 @@ def _parser():
         "--cer", action="store_true", default=False, help="Compute CER. Default: False"
     )
     parser.add_argument(
+        "--per", action="store_true", default=False, help="Compute PER. Default: False"
+    )
+    parser.add_argument(
         "--force-cased", action="store_true", help="Force text to be the same cased."
     )
     parser.add_argument(
@@ -266,6 +278,11 @@ def _parser():
         action="store_true",
         default=False,
         help="Compute Oracle WER/CER. This requires the `hy` to be N-best list instead of text. Default: False",
+    )
+    parser.add_argument(
+        "--phone_tokenizer",
+        default=None,
+        help="phoneme tokenizer file path. for calculating PER.",
     )
     return parser
 

@@ -389,6 +389,11 @@ def train_nn(working_dir: str, prompt: str = "{}\n"):
             prompt.format(sfmt.set("tokenizer", train_options["tokenizer"]))
         )
 
+    if settings["train"]["bin"] == "cat.ctc.train_jsa":
+        assert "tokenizer" in settings, sfmt.missing("tokenizer", "train:option")
+        train_options["tokenizer"] = settings["tokenizer"]["file"]
+        train_options["phone_tokenizer"] = settings["tokenizer"]["phone_tokenizer"]
+
     import importlib
 
     interface = importlib.import_module(settings["train"]["bin"])

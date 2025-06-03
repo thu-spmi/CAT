@@ -23,6 +23,7 @@ import argparse
 from tqdm import tqdm
 from typing import *
 from ctcdecode import CTCBeamDecoder as CTCDecoder
+import kaldiio
 
 import torch
 import torch.multiprocessing as mp
@@ -78,7 +79,11 @@ def main(args: argparse.Namespace = None):
 
 
 def dataserver(args, q: mp.Queue):
-    testset = ScpDataset(args.input_scp)
+    if "T_dataset" in args:
+        exec("from ..shared.data import " + args.T_dataset)
+        testset = eval(args.T_dataset)(args.input_scp)
+    else:
+        testset = ScpDataset(args.input_scp)
     n_frames = sum(testset.get_seq_len())
     testloader = DataLoader(
         testset,
@@ -148,7 +153,8 @@ def worker(
     else:
         assert model is not None
         device = "cpu"
-
+    
+    os.makedirs(os.path.dirname(args.output_prefix), exist_ok=True)
     tokenizer = tknz.load(args.tokenizer)
 
     if args.lm_path is None:
@@ -177,7 +183,8 @@ def worker(
             log_probs_input=True,
             is_token_based=True,
         )
-
+        
+    results = {}
     # {'uid': {0: (-10.0, 'a b c'), 1: (-12.5, 'a b c d')}}
     with torch.no_grad():
         while True:
@@ -201,6 +208,7 @@ def worker(
             beam_results, beam_scores, _, out_lens = searcher.decode(
                 logits.cpu(), olens
             )
+            results[key] = logits[0].cpu().numpy()
             # make it in descending order
             # -log(p) -> log(p)
             beam_scores = -beam_scores
@@ -220,7 +228,10 @@ def worker(
 
             del batch
     q_out.put(None, block=True)
-
+    if args.store_ark:
+        output_dir = os.path.join(os.path.dirname(args.output_prefix),"ark")
+        os.makedirs(output_dir, exist_ok=True)
+        kaldiio.save_ark(os.path.join(output_dir, f"decode.{pid+1}.ark"), results)
 
 @torch.no_grad()
 def build_model(args: argparse.Namespace):
@@ -285,6 +296,8 @@ def _parser():
         help="Tell where to import build_model() function. defautl: cat.ctc.train",
     )
     parser.add_argument("--streaming", action="store_true", default=False)
+    parser.add_argument("--store_ark", type=bool, default=False, help="whether store logits as ark file.")
+
     return parser
 
 
