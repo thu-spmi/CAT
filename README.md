@@ -3,6 +3,8 @@
 # CAT: CRF-based ASR Toolkit
 **CAT provides a complete workflow for CRF-based data-efficient end-to-end speech recognition.**
 
+See [What's New](docs/whatsnew.md) for recently added functionalities and features!
+
 - [Overview](#overview)
 - [Features](#features)
 - [Installation](#installation)
@@ -24,8 +26,6 @@ CAT aims at combining the advantages of both the hybrid and the E2E ASR approche
 3. Flexible configuration with JSON. Check the [guideline for configuration](docs/configure_guide.md).
 
 4. Scalable and extensible. It is easy to be extended to train tens of thousands of speech data and add new models and tasks.
-
-See [What's New](docs/whatsnew.md) for recently added functionalities and features!
 
 ## Installation
 
