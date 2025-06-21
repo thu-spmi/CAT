@@ -1,0 +1,54 @@
+{
+    "data": {
+        "train": [
+            "train_de_130h"
+    ],
+        "dev": [
+            "dev_de"
+    ],
+        "test": [
+            "test_de"
+        ],
+        "is_S2P2G": true
+    },
+    "tokenizer": {
+        "type": "LexiconTokenizer",
+        "file": "dict/de/tokenizer_phn.tknz",
+        "|V|": 47
+    },
+    "input_tokenizer": {
+        "file": "dict/de/tokenizer_phn.tknz"
+    },
+    "env": {
+        "CUDA_VISIBLE_DEVICES": "2,3,4,5,6,7,8,9"
+    },
+    "train": {
+        "bin": "cat.aed.train_mt5_tkm",
+        "option": {
+            "amp": false,
+            "batch_size": 26,
+            "grad_norm": 5.0,
+            "grad_accum_fold": 17,
+            "check_freq": 208,
+            "eval_error_rate": true
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "last",
+            "num": 3
+        },
+        "infer": {
+            "bin": "cat.aed.decode_mt5_tkm",
+            "built_model_by": "cat.aed.train_mt5_tkm",
+            "option": {
+                "beam_size": 4,
+                "batch_size": 10,
+                "gpu": true,
+                "hgf_tokenizer": "local/mt5-base"
+            }
+        },
+        "er": {}
+    },
+    "commit": "1b77bc21f7a5faac5e47f6bc4445f23ebf0e0633"
+}

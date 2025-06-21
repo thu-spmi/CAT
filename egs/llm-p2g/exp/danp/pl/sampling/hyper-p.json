@@ -1,0 +1,60 @@
+{
+    "data": {
+        "train": [
+            "train_pl_phn_mul-07_32sample"
+    ],
+        "dev": [
+            "dev_pl_phn_mul-07"
+    ],
+        "test": [
+             "test_pl_phn_mul-07"
+        ],
+        "is_noisy_data": true,
+        "use_hgf_tknz": true,
+        "is_P2G": true
+    },
+    "tokenizer": {
+        "type": "LexiconTokenizer",
+        "option-init": {
+            "lexicon": "CAT/egs/commonvoice/dict/pl/lexicon.txt"
+        },
+        "file": "/home/saier/CAT/egs/jsa/data/dict_pl/tokenizer_phn.tknz",
+        "|V|": 37
+    },
+    "input_tokenizer": {
+        "file": "/home/saier/CAT/egs/jsa/data/dict_pl/tokenizer_phn.tknz"
+    },
+    "env": {
+        "CUDA_VISIBLE_DEVICES": "6,7,8,9"
+    },
+    "train": {
+        "bin": "cat.aed.train_mt5",
+        "option": {
+            "amp": false,
+            "batch_size": 110,
+            "grad_norm": 5.0,
+            "grad_accum_fold": 4,
+            "check_freq": 1544,
+            "eval_error_rate": true,
+            "hgf_tokenizer": "/mnt/nas4_workspace/spmiData/asr/models/mt5-base",
+            "is_P2G": true
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "best",
+            "num": 3
+        },
+        "infer": {
+            "bin": "cat.aed.decode_mt5",
+            "option": {
+                "beam_size": 4,
+                "batch_size": 10,
+                "gpu": true,
+                "hgf_tokenizer": "/mnt/nas4_workspace/spmiData/asr/models/mt5-base"
+            }
+        },
+        "er": {}
+    },
+    "commit": "1b77bc21f7a5faac5e47f6bc4445f23ebf0e0633"
+}

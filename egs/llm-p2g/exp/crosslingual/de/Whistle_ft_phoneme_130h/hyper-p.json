@@ -1,0 +1,51 @@
+{
+    "data": {
+        "train": "train_de_130h",
+        "dev": "dev_de",
+        "test": [
+            
+            "test_de"
+    ],
+        "filter": "10:2000"
+    },
+    "tokenizer": {
+        "type": "LexiconTokenizer",
+        "option-init": {
+            "lexicon": "/mnt/workspace/mate/CAT/egs/commonvoice/dict/de/lexicon.txt"
+        },
+        "file": "/mnt/nas4_workspace/spmiData/asr/dict/de/tokenizer_phn.tknz",
+        "|V|": 47
+    },
+    "env": {
+        "CUDA_VISIBLE_DEVICES": "9"
+    },
+    "train": {
+        "bin": "cat.ctc.train",
+        "option": {
+            "amp": true,
+            "batch_size": 214,
+            "grad_norm": 5.0,
+            "grad_accum_fold": 3,
+            "check_freq": 144,
+            "resume": "exp/mul_exp/09_mul10_phone_ft_de_130h/check/checkpoint_resume.pt"
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "last",
+            "num": 3
+        },
+        "infer": {
+            "bin": "cat.ctc.decode_sample",
+            "option": {
+                "beam_size": 16,
+                "is_uniq": true,
+                "gpu": true
+            }
+        },
+        "er": {
+            "per": true
+        }
+    },
+    "commit": "1b77bc21f7a5faac5e47f6bc4445f23ebf0e0633"
+}
