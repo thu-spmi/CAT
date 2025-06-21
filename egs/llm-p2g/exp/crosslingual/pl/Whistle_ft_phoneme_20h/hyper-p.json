@@ -1,0 +1,51 @@
+{
+    "data": {
+        "train": "train_pl_20h",
+        "dev": "dev_pl",
+        "test": [
+            
+            "test_pl"
+    ],
+        "filter": "10:2000"
+    },
+    "tokenizer": {
+        "type": "LexiconTokenizer",
+        "option-init": {
+            "lexicon": "/mnt/workspace/mate/CAT/egs/commonvoice/dict/pl/lexicon.txt"
+        },
+        "file": "/home/saier/CAT/egs/jsa/data/dict_pl/tokenizer_rmsymb.tknz",
+        "|V|": 37
+    },
+    "env": {
+        "CUDA_VISIBLE_DEVICES": "5,6,7,8"
+    },
+    "train": {
+        "bin": "cat.ctc.train",
+        "option": {
+            "amp": true,
+            "batch_size": 214,
+            "grad_norm": 5.0,
+            "grad_accum_fold": 3,
+            "check_freq": 26,
+            "resume": "exp/mul_exp/13_mul10_phn_ft_pl_20h/check/checkpoint.054e1326s_resume.pt"
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "last",
+            "num": 3
+        },
+        "infer": {
+            "bin": "cat.ctc.decode",
+            "option": {
+                "beam_size": 16,
+                "gpu": true,
+                "store_ark": true
+            }
+        },
+        "er": {
+            "per": true
+        }
+    },
+    "commit": "1b77bc21f7a5faac5e47f6bc4445f23ebf0e0633"
+}

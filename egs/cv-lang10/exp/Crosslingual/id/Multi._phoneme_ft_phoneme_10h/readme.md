@@ -64,6 +64,6 @@ The script [`run.sh`](../../../run.sh) contains the overall model training proce
 ### Resources
 * The files used to fine-tune this model and the fine-tuned model are available in the following table.
 
-    | Pronunciation lexicon | Checkpoint model | Language model | Tensorboard log |
+    | Tokenizer | Checkpoint model | Language model | Tensorboard log |
     | ----------- | ----------- | ----------- | ----------- |
-    | [`lexicon_id.txt`](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/cat-multilingual/cv-lang10/dict/id/lexicon_id.txt) | [`Multi._phoneme_ft_phoneme_10h_best-3.pt`](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/cat-multilingual/cv-lang10/exp/id/Multi._phoneme_ft_phoneme_10h_best-3.pt) | [`lm_id_4gram.arpa`](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/cat-multilingual/cv-lang10/exp/id/lm_id_4gram.arpa) | [`tb_Multi._phoneme_ft_phoneme_10h`](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/cat-multilingual/cv-lang10/exp/id/tb_log_Multi._phoneme_ft_phoneme_10h.tar.gz) |
+    | [`Tokenizer`](http://cat-ckpt.oss-cn-beijing.aliyuncs.com/cat-multilingual/cv-lang10/dict/id/tokenizer_phn.tknz?OSSAccessKeyId=LTAI5tF9KeigLW4UoLbK9vnJ&Expires=2064643468&Signature=a939RsS7xGpjHuFyO4yU%2FPdrv88%3D) | [`Multi._phoneme_ft_phoneme_10h_best-3.pt`](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/cat-multilingual/cv-lang10/exp/id/Multi._phoneme_ft_phoneme_10h_best-3.pt) | [`lm_id_4gram.arpa`](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/cat-multilingual/cv-lang10/exp/id/lm_id_4gram.arpa) | [`tb_Multi._phoneme_ft_phoneme_10h`](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/cat-multilingual/cv-lang10/exp/id/tb_log_Multi._phoneme_ft_phoneme_10h.tar.gz) |

@@ -1,0 +1,62 @@
+{
+    "data": {
+        "train": [
+            "train_pl_20h_phn_mul_13_32best",
+            "train_pl_20h_phn_mul_13_32sample",
+            "train_pl_20h_phn_mul_13_16best_ep50",
+            "train_pl_20h_phn_mul_13_16best_ep70",
+            "train_pl_20h_phn_mul_13_16best_ep90",
+            "train_pl_20h_phn_mul_13_16best_ep110"
+        ],
+        "dev": [
+            "dev_pl_20h_phn_mul_13"
+        ],
+        "test": [
+            "test_pl_20h_phn_mul_13"
+        ],
+        "is_noisy_data": true,
+        "use_hgf_tknz": true,
+        "is_P2G": true
+    },
+    "tokenizer": {
+        "type": "LexiconTokenizer",
+        "file": "dict/pl/tokenizer_phn.tknz",
+        "|V|": 37
+    },
+    "input_tokenizer": {
+        "file": "dict/pl/tokenizer_phn.tknz"
+    },
+    "env": {
+        "CUDA_VISIBLE_DEVICES": "6,7,8,9"
+    },
+    "train": {
+        "bin": "cat.aed.train_mt5",
+        "option": {
+            "amp": false,
+            "batch_size": 110,
+            "grad_norm": 5.0,
+            "grad_accum_fold": 4,
+            "check_freq": 1160,
+            "eval_error_rate": true,
+            "hgf_tokenizer": "local/mt5-base",
+            "is_P2G": true
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "best",
+            "num": 3
+        },
+        "infer": {
+            "bin": "cat.aed.decode_mt5",
+            "option": {
+                "beam_size": 4,
+                "batch_size": 10,
+                "gpu": true,
+                "hgf_tokenizer": "local/mt5-base"
+            }
+        },
+        "er": {}
+    },
+    "commit": "1b77bc21f7a5faac5e47f6bc4445f23ebf0e0633"
+}

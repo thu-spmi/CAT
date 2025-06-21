@@ -52,6 +52,6 @@ The script [`run.sh`](../../../run.sh) contains the overall model training proce
 ### Resources
 * The files used to train this model and the trained model are available in the following table. 
 
-    | Pronunciation lexicon | Checkpoint model | Language model | Tensorboard log |
+    | Tokenizer | Checkpoint model | Language model | Tensorboard log |
     | ----------- | ----------- | ----------- | ----------- |
-    | [`lexicon_sv-SE.txt`](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/cat-multilingual/cv-lang10/dict/sv-SE/lexicon_sv-SE.txt) | [`Mono_sv-SE_best-3.pt`](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/cat-multilingual/cv-lang10/exp/sv-SE/Mono_sv-SE_best-3.pt) | [`lm_sv-SE_4gram.arpa`](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/cat-multilingual/cv-lang10/exp/sv-SE/lm_sv-SE_4gram.arpa) | [`tb_sv-SE`](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/cat-multilingual/cv-lang10/exp/sv-SE/tb_log_sv-SE.tar.gz) |
+    | [`Tokenizer`](http://cat-ckpt.oss-cn-beijing.aliyuncs.com/cat-multilingual/cv-lang10/dict/sv-SE/tokenizer.tknz?OSSAccessKeyId=LTAI5tF9KeigLW4UoLbK9vnJ&Expires=2064644959&Signature=qfcKyzAEEmkWHirINICJVToFZxI%3D) | [`Mono_sv-SE_best-3.pt`](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/cat-multilingual/cv-lang10/exp/sv-SE/Mono_sv-SE_best-3.pt) | [`lm_sv-SE_4gram.arpa`](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/cat-multilingual/cv-lang10/exp/sv-SE/lm_sv-SE_4gram.arpa) | [`tb_sv-SE`](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/cat-multilingual/cv-lang10/exp/sv-SE/tb_log_sv-SE.tar.gz) |

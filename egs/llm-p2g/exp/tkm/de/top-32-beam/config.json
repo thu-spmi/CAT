@@ -1,0 +1,57 @@
+{
+    "trainer": {
+        "is_rag_tok": false,
+        "use_beam_search": true,
+        "sample_beam": 32,
+        "fold_size": 2,
+        "s2p_tknz": "data/de/tokenizer_phn.tknz"
+    },
+    "s2p_encoder": {
+        "type": "ConformerNet",
+        "init_model": "exp/crosslingual/de/Whistle_ft_phoneme_130h/check/best-3.pt",
+        "freeze": true,
+        "kwargs": {
+            "num_cells": 14,
+            "idim": 80,
+            "hdim": 512,
+            "conv": "vgg2l",
+            "num_heads": 4,
+            "kernel_size": 15,
+            "n_classes": 47
+        }
+    },
+    "beamDecoder": {
+        "type": "CTCBeamDecoder",
+        "n_classes": 47,
+        "beam_width": 32,
+        "log_probs_input": true,
+        "num_processes": 2
+    },
+    "p2g_model": {
+        "type": "MT5FromPretrainedModel",
+        "kwargs": {
+            "pretrained_model_name_or_path": "local/mt5-base",
+            "from_pretrained": true
+        }
+    },
+    "scheduler": {
+        "type": "SchedulerEarlyStop",
+        "kwargs": {
+            "min_step": 320,
+            "n_tol": 10,
+            "gamma": 0.1,
+            "stop_lr": 1e-06
+        },
+        "optimizer": {
+            "type": "Adam",
+            "kwargs": {
+                "lr": 0.0003,
+                "betas": [
+                    0.9,
+                    0.98
+                ],
+                "weight_decay": 1e-06
+            }
+        }
+    }
+}

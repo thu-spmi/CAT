@@ -1,4 +1,5 @@
 # What's New
+- 2025.6: Release the code for the INTERSPEECH 2025 paper "LLM-based phoneme-to-grapheme for phoneme-based speech recognition". [Readme](../egs/llm-p2g/README.md) | [Paper](https://arxiv.org/abs/2506.04711)".
 - 2024.8: Release the code for “Low-Resourced Speech Recognition for Iu Mien Language via Weakly-Supervised Phoneme-based Multilingual Pre-training” [Readme](../egs/IuMien/README.md) | [Paper](https://arxiv.org/abs/2407.13292)". 
 - 2024.6: Release the code for Streaming multi-channel end-to-end (ME2E) ASR. [Readme](./cuside-array.md) | [Paper](https://arxiv.org/abs/2407.09807)
 - 2024.6: Release the code for "Whistle: Data-Efficient Multilingual and Crosslingual Speech Recognition via Weakly Phonetic Supervision". [Readme](../egs/cv-lang10/readme.md) | [Paper](https://arxiv.org/abs/2406.02166)

@@ -51,6 +51,6 @@ The script [`run.sh`](../../../run.sh) contains the overall model training proce
 ### Resources
 * The files used to train this model and the trained model are available in the following table. 
 
-    | Pronunciation lexicon | Checkpoint model | Language model | Tensorboard log |
+    | Tokenizer | Checkpoint model | Language model | Tensorboard log |
     | ----------- | ----------- | ----------- | ----------- |
-    | [`lexicon_tr.txt`](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/cat-multilingual/cv-lang10/dict/tr/lexicon_tr.txt) | [`Mono_tr_best-3.pt`](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/cat-multilingual/cv-lang10/exp/tr/Mono_tr_best-3.pt) | [`lm_tr_4gram.arpa`](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/cat-multilingual/cv-lang10/exp/tr/lm_tr_4gram.arpa) | [`tb_tr`](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/cat-multilingual/cv-lang10/exp/tr/tb_log_tr.tar.gz) |
+    | [`Tokenizer`](http://cat-ckpt.oss-cn-beijing.aliyuncs.com/cat-multilingual/cv-lang10/dict/tr/tokenizer.tknz?OSSAccessKeyId=LTAI5tF9KeigLW4UoLbK9vnJ&Expires=2064644985&Signature=P5NCAIrocth6tT%2Btw1l9Hs6TL1Y%3D) | [`Mono_tr_best-3.pt`](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/cat-multilingual/cv-lang10/exp/tr/Mono_tr_best-3.pt) | [`lm_tr_4gram.arpa`](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/cat-multilingual/cv-lang10/exp/tr/lm_tr_4gram.arpa) | [`tb_tr`](https://cat-ckpt.oss-cn-beijing.aliyuncs.com/cat-multilingual/cv-lang10/exp/tr/tb_log_tr.tar.gz) |

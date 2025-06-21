@@ -1,0 +1,57 @@
+{
+    "data": {
+        "train": [
+            "train_de_phn_mul09_32sample"
+    ],
+        "dev": [
+            "dev_de_phn_mul09"
+    ],
+        "test": [
+             "test_de_phn_mul09"
+        ],
+        "is_noisy_data": true,
+        "use_hgf_tknz": true,
+        "is_P2G": true
+    },
+    "tokenizer": {
+        "type": "LexiconTokenizer",
+        "file": "dict/de/tokenizer_phn.tknz",
+        "|V|": 47
+    },
+    "input_tokenizer": {
+        "file": "dict/de/tokenizer_phn.tknz"
+    },
+    "env": {
+        "CUDA_VISIBLE_DEVICES": "6,7,8,9"
+    },
+    "train": {
+        "bin": "cat.aed.train_mt5",
+        "option": {
+            "amp": false,
+            "batch_size": 110,
+            "grad_norm": 5.0,
+            "grad_accum_fold": 4,
+            "check_freq": 1160,
+            "eval_error_rate": true,
+            "hgf_tokenizer": "local/mt5-base",
+            "is_P2G": true
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "last",
+            "num": 3
+        },
+        "infer": {
+            "bin": "cat.aed.decode_mt5",
+            "option": {
+                "beam_size": 4,
+                "batch_size": 10,
+                "gpu": true,
+                "hgf_tokenizer": "local/mt5-base"
+            }
+        },
+        "er": {}
+    },
+    "commit": "1b77bc21f7a5faac5e47f6bc4445f23ebf0e0633"
+}

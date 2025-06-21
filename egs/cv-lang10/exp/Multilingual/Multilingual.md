@@ -20,7 +20,7 @@ Five multilingual ASR model are trained with our cv-lang10 data.
 * The [Multi. phoneme S](./Multi._phoneme_S/readme.md) model and [Multi. subword S](./Multi._subword/readme.md) model are based on the Conformer network consisting of 14 encoder blocks with 4 heads and 36 dimensions hidden states, followed by a 512 dimensions feed-forward network. The Noam optimizer was adopted and warm-up steps were set to 10% of training steps.
 * The [Multi. phoneme M](./Multi._phoneme_M/readme.md) model is based on the Conformer network consisting of 22 encoder blocks with 4 heads and 160 dimensions hidden states, followed by a 640 dimensions feed-forward network. The Noam optimizer was adopted and warm-up steps were set to 10% of training steps.
 * The [Multi. phoneme L](./Multi._phoneme_L/readme.md) model is based on the Conformer network consisting of 22 encoder blocks with 4 heads and 224 dimensions hidden states, followed by a 1024 dimensions feed-forward network. The Noam optimizer was adopted and warm-up steps were set to 10% of training steps.
-* The [Wav2vec-lang10](./Wav2vec-lang10/readme.md) model is trained with the sequence-to-sequence toolkit [faieseq](https://github.com/facebookresearch/fairseq). And the model architecture follows [wav2vec-base](https://huggingface.co/facebook/wav2vec2-base/tree/main).
+* The [Multi. wav2vec-base](./Multi._wav2vec-base/readme.md) model is trained with the sequence-to-sequence toolkit [faieseq](https://github.com/facebookresearch/fairseq). And the model architecture follows [wav2vec-base](https://huggingface.co/facebook/wav2vec2-base/tree/main).
 
 ### Results
 * %PER
