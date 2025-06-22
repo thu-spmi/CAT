@@ -1,6 +1,6 @@
 {
     "data": {
-        "train": "train_id_1h",
+        "train": "train_id_10m",
         "dev": "dev_id",
         "test": "test_id",
         "filter": "10:2000"

@@ -1,0 +1,52 @@
+{
+    "data": {
+        "train": "train_de_130h",
+        "dev": "dev_de",
+        "test": [
+            "test_de"
+    ],
+        "filter": "10:2000"
+    },
+    "tokenizer": {
+        "type": "SentencePieceTokenizer",
+        "option-train": {
+            "model_type": "bpe",
+            "vocab_size": 1000,
+            "model_prefix": "/mnt/workspace/liziwei/dict/de/spm_bpe1000"
+        },
+        "|V|": 1000,
+        "file": "/mnt/nas4_workspace/spmiData/asr/dict/de/tokenizer_bpe1000.tknz"
+    },
+    "env": {
+        "CUDA_VISIBLE_DEVICES": "8"
+    },
+    "train": {
+        "bin": "cat.ctc.train",
+        "option": {
+            "amp": true,
+            "batch_size": 214,
+            "grad_norm": 5.0,
+            "grad_accum_fold": 3,
+            "check_freq": 144,
+            "resume": "exp/mul_exp/10_mul10_bpe_ft_de_130h/check/checkpoint.138e19872s.pt"
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "last",
+            "num": 3
+        },
+        "infer": {
+            "bin": "cat.ctc.decode",
+            "option": {
+                "beam_size": 16,
+                "gpu": true,
+                "store_ark": true
+            }
+        },
+        "er": {
+            
+        }
+    },
+    "commit": "1b77bc21f7a5faac5e47f6bc4445f23ebf0e0633"
+}

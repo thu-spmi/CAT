@@ -28,7 +28,7 @@
         "optimizer": {
             "type": "Adam",
             "kwargs": {
-                "lr": 1e-05,
+                "lr": 3e-05,
                 "betas": [
                     0.9,
                     0.98
