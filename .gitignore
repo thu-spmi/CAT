@@ -151,3 +151,11 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+
+
+# macOS metadata
+.DS_Store
+._*
+.AppleDouble
+.LSOverride

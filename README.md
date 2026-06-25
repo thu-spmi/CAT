@@ -5,12 +5,14 @@
 
 See [What's New](docs/whatsnew.md) for recently added functionalities and features!
 
-- [Overview](#overview)
-- [Features](#features)
-- [Installation](#installation)
-- [Getting started](#getting-started)
-- [ASR results](#asr-results)
-- [Further reading](#further-reading)
+- [CAT: CRF-based ASR Toolkit](#cat-crf-based-asr-toolkit)
+  - [Overview](#overview)
+  - [Features](#features)
+  - [Installation](#installation)
+  - [Getting started](#getting-started)
+  - [ASR results](#asr-results)
+  - [Further reading](#further-reading)
+  - [Citation](#citation)
 
 ## Overview
 
@@ -46,6 +48,29 @@ CAT aims at combining the advantages of both the hybrid and the E2E ASR approche
    # Install with default configurations
    #./install.sh
    ```
+
+3. Install CAT from a prepared source bundle
+
+   If the target server cannot run `git clone` or cannot access GitHub reliably, CAT can also be installed from a prepared source bundle. The bundle includes CAT source code and third-party source dependencies that are otherwise fetched by the installer; normal conda/pip packages such as PyTorch can still be installed from configured mirrors.
+
+   On a machine that can fetch the required sources:
+
+   ```bash
+   CAT_REPO_ROOT=/path/to/CAT \
+   OUT_DIR=/path/to/bundles \
+   bash ./offline_install/build_cat_install_bundle.sh
+   ```
+
+   Then copy the generated `cat-install-bundle-*.tar.gz` to the target server and install:
+
+   ```bash
+   tar -xzf cat-install-bundle-*.tar.gz
+   cd cat-install-bundle-*
+   bash install_cat_bundle.sh
+   ```
+
+   The source-bundle installer preserves the module choices of `install.sh`, for example `cat`, `all`, `ctcdecode`, `kenlm`, `ctc-crf`, `fst-decoder`, and `g2p-tool`.
+
 
 ## Getting started
 
