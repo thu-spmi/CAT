@@ -1,0 +1,57 @@
+{
+    "data": {
+        "train": [
+            "train_aishell_3sp_nospace"
+        ],
+        "dev": [
+            "dev_aishell_nospace"
+        ],
+        "test": [
+            "test_aishell_nospace"
+        ]
+    },
+    "tokenizer": {
+        "type": "PretrainedTokenizer",
+        "option-init": {
+            "T_cls": "AutoTokenizer",
+            "pretrained": "data/Qwen/Qwen3-1.7B-base",
+            "use_fast": true
+        },
+        "file": "data/Qwen/Qwen3_fast.tknz",
+        "|V|": 151643
+    },
+    "train": {
+        "bin": "cat.s2p2g.train_qwen_p2g",
+        "option": {
+            "amp": false,
+            "batch_size": 32,
+            "grad_accum_fold": 2,
+            "grad_norm": 5.0,
+            "check_freq": 500,
+            "n_samples": 8,
+            "workers": 8,
+            "pin_memory": true,
+            "prefetch_factor": 2,
+            "prompt": "<|im_start|>{p}<|im_end|><|im_start|>",
+            "gradient_checkpointing": true
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "best",
+            "num": 4
+        },
+        "infer": {
+            "bin": "cat.s2p2g.decode_qwen_p2g",
+            "option": {
+                "beam_size": 4,
+                "batch_size": 1,
+                "gpu": true
+            }
+        },
+        "er": {
+            "cer": true
+        }
+    },
+    "commit": "1b77bc21f7a5faac5e47f6bc4445f23ebf0e0633"
+}

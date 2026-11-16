@@ -1,0 +1,74 @@
+{
+    "train_config": {
+        "num_beam_samples": 0,
+        "num_multinomial_samples": 8,
+        "s2p_temperature": 1.0,
+        "simplified": true
+    },
+    "s2p2g_tokenizer_config": {
+        "llm_tokenizer_path": "data/Qwen/Qwen3-1.7B-base"
+    },
+    "projector_config": {
+        "freeze": false,
+        "speech_embedding_dim": 512,
+        "projector_hidden_dim": 4096,
+        "llm_embedding_dim": 2048,
+        "k": 5
+    },
+    "s2p_encoder": {
+        "type": "ConformerNet",
+        "init_model": "multi_exp/bilingual_latent_softmax/check/best-10.pt",
+        "freeze": true,
+        "kwargs": {
+            "num_cells": 18,
+            "idim": 80,
+            "hdim": 512,
+            "conv": "vgg2l",
+            "num_heads": 8,
+            "d_head": 64,
+            "dropout": 0.3,
+            "dropout_attn": 0.3,
+            "kernel_size": 32,
+            "n_classes": 77
+        }
+    },
+    "beamDecoder": {
+        "type": "CTCBeamDecoder",
+        "n_classes": 77,
+        "beam_width": 16,
+        "log_probs_input": true,
+        "num_processes": 2
+    },
+    "p2g_model": {
+        "type": "LLMFromPretrainedModel",
+        "freeze": true,
+        "kwargs": {
+            "pretrained_model_name_or_path": "data/Qwen/Qwen3-1.7B-base",
+            "from_pretrained": true,
+            "attention_dropout": 0.1
+        }
+    },
+    "scheduler": {
+        "type": "SchedulerEarlyStopWithWarmup",
+        "kwargs": {
+            "batch_size": 80,
+            "warmup_step": 1000,
+            "ref_bs": 80,
+            "ref_lr": 0.0001,
+            "stop_lr": 1e-08,
+            "n_tol": 5,
+            "gamma": 0.0001
+        },
+        "optimizer": {
+            "type": "AdamW",
+            "kwargs": {
+                "lr": 1e-07,
+                "betas": [
+                    0.9,
+                    0.98
+                ],
+                "weight_decay": 0
+            }
+        }
+    }
+}

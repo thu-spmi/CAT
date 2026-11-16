@@ -552,7 +552,9 @@ def load_checkpoint(
         new_state_dict = OrderedDict()
         for k, v in checkpoint["model"].items():
             # remove the 'module.'
-            new_state_dict[k[7:]] = v
+            if k.startswith("module."):
+                k = k[7:]
+            new_state_dict[k] = v
         state_dict = new_state_dict
 
     try:

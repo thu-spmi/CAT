@@ -1,0 +1,54 @@
+{
+    "data": {
+        "train": [
+            "train_ASRU2019_jnl"
+        ],
+        "dev": [
+            "dev_ASRU2019_jnl"
+        ],
+        "test": [
+            "train_ASRU2019_jnl"
+        ],
+        "filter": "10:2000"
+    },
+    "tokenizer": {
+        "type": "LexiconTokenizer",
+        "file": "data/ASRU2019_jnl/tokenizer.tknz",
+        "|V|": 84
+    },
+    "train": {
+        "bin": "cat.ctc.train_mnt_nontonal",
+        "option": {
+            "amp": true,
+            "eval_error_rate": true,
+            "batch_size": 600,
+            "grad_accum_fold": 1,
+            "grad_norm": 2.0,
+            "check_freq": 620,
+            "flatten_target_data": true,
+            "init_model": "multi_exp/bilingual_standard_softmax/check/best-10.pt",
+            "sub2base": "data/ASRU2019_jnl/baseline_sub2base.json"
+        }
+    },
+    "env": {
+        "CUDA_VISIBLE_DEVICES": "0,1,2,3"
+    },
+    "inference": {
+        "infer": {
+            "bin": "cat.ctc.decode",
+            "option": {
+                "beam_size": 16,
+                "thread_per_woker": 2,
+                "gpu": true
+            }
+        },
+        "avgmodel": {
+            "mode": "best",
+            "num": 3
+        },
+        "er": {
+            "per": true
+        }
+    },
+    "commit": "9b478ac89bb6d24d775b60197a5cbba55f92898a"
+}

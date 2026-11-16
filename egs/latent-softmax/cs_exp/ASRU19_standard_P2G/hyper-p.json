@@ -1,0 +1,61 @@
+{
+    "data": {
+        "train": [
+            "train_ASRU2019_jnl"
+        ],
+        "dev": [
+            "dev_ASRU2019_jnl"
+        ],
+        "test": [
+            "test_ASRU2019_jnl_lower"
+        ]
+    },
+    "tokenizer": {
+        "type": "PretrainedTokenizer",
+        "option-init": {
+            "T_cls": "AutoTokenizer",
+            "pretrained": "data/Qwen/Qwen3-1.7B-base",
+            "use_fast": false
+        },
+        "file": "data/Qwen/Qwen3.tknz",
+        "|V|": 151643
+    },
+    "env": {
+        "CUDA_VISIBLE_DEVICES": "0,1,2,3"
+    },
+    "train": {
+        "bin": "cat.s2p2g.train_qwen_p2g",
+        "option": {
+            "amp": false,
+            "batch_size": 40,
+            "grad_accum_fold": 2,
+            "grad_norm": 5.0,
+            "check_freq": 100,
+            "n_samples": 8,
+            "workers": 2,
+            "prompt": "<|im_start|>{p}<|im_end|><|im_start|>",
+            "gradient_checkpointing": true,
+            "init_model": "p2g_exp/multi_standard_softmax/check/best-3.pt"
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "best",
+            "num": 3
+        },
+        "infer": {
+            "bin": "cat.s2p2g.decode_qwen_p2g",
+            "option": {
+                "s2p_beam_size": 16,
+                "beam_size": 4,
+                "batch_size": 1,
+                "gpu": true,
+                "p2g_decode_fold": 8
+            }
+        },
+        "er": {
+            "cer": true
+        }
+    },
+    "commit": "1b77bc21f7a5faac5e47f6bc4445f23ebf0e0633"
+}

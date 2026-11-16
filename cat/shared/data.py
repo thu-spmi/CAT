@@ -1170,3 +1170,336 @@ class P2GTestDataset(AbsDataset):
     def __getitem__(self, index: int) -> Tuple[str, torch.FloatTensor]:
         key, mat = self._dataset[index]
         return [key, torch.tensor(mat)]
+
+
+###################### Latent Softmax data ##############################
+
+
+class TonalKaldiSpeechDataset(KaldiSpeechDataset):
+    """
+        For Latent-Softmax Tonal ASR
+    """
+
+    def __init__(self, path: str) -> None:
+        super().__init__(path)
+
+    def __getitem__(self, index: int) -> Tuple[torch.FloatTensor, torch.LongTensor]:
+        mat = self._feat_reader(self._meta_data["arkname"][index])
+        # remove padding in label
+        # [*, *, *, *, -1, -1, rel_len(4)]
+        label = self._meta_data["label"][index]
+        label = label[: label[-1]]
+        non_tonal = True if self._meta_data["arkname"][index].split('/')[-3] == 'librispeech' else False
+        return torch.tensor(mat), torch.tensor(label), non_tonal
+
+
+class sortedPadCollateTonalASR:
+    """Collect data into batch by desending order according to frame length and add padding.
+
+    Args:
+        batch  : list of (mat, label)
+        mat    : torch.FloatTensor
+        label  : torch.IntTensor
+        non_tonal : bool
+
+    Return:
+        (logits, input_lengths, labels, label_lengths, non_tonal)
+    """
+
+    def __init__(self, flatten_target: bool = False) -> None:
+        """
+        flatten_target (bool): flatten the target to be 1-dim, default False (2-dim)
+        """
+        self._flatten_target = flatten_target
+
+    def __call__(self, batch: List[Tuple[torch.FloatTensor, torch.IntTensor]]):
+        batches = [(mat, label, mat.size(0), non_tonal) for mat, label, non_tonal in batch]
+        batch_sorted = sorted(batches, key=lambda item: item[2], reverse=True)
+
+        mats = coreutils.pad_list([x[0] for x in batch_sorted])
+
+        if self._flatten_target:
+            labels = torch.cat([x[1] for x in batch_sorted], dim=0)
+        else:
+            labels = coreutils.pad_list([x[1] for x in batch_sorted]).to(torch.long)
+
+        input_lengths = torch.LongTensor([x[2] for x in batch_sorted])
+
+        label_lengths = torch.LongTensor([x[1].size(0) for x in batch_sorted])
+
+        non_tonal = torch.BoolTensor([x[3] for x in batch_sorted])
+
+        return mats, input_lengths, labels, label_lengths, non_tonal
+
+
+###################### LLM-ASR (speech encoder + adapter + LLM) ######################
+
+
+class S2P2GAdapterTrainDataset(AbsDataset):
+    """Read S2P2G adapter training data from a pickle manifest.
+
+    Data format (store with pickle):
+        {
+            'text_labels': np.ndarray,
+            'linfo': np.ndarray,
+            'arkname': np.ndarray,
+            'key': np.ndarray
+        }
+    """
+
+    def __init__(self, path: str) -> None:
+        super().__init__(path)
+        with open(path, "rb") as fib:
+            self._meta_data = pickle.load(fib)
+        self._feat_reader = FeatureReader()
+
+    def filt_by_len(self, filt_func: Callable[[int, int], bool]):
+        """Filter the dataset according to the `filt_func`, call before loading data.
+
+        filt_func (function): invoked via filt_func(feat_len, label_len),
+            True for keeping the data, False for removed.
+
+        NOTE: the adapter manifests carry `text_labels`, not `label`, so this
+        helper is only usable on manifests that also provide a `label` column.
+        The adapter trainers never call it; it is kept for parity with the
+        other datasets.
+        """
+        torm = []
+        linfo = self._meta_data["linfo"]
+        labellen = self._meta_data["label"][:, -1]
+        for i in range(len(self)):
+            if not filt_func(linfo[i], labellen[i]):
+                torm.append(i)
+        del linfo
+        del labellen
+
+        for metakey in ["text_labels", "phn_labels", "linfo", "arkname", "key"]:
+            self._meta_data[metakey] = np.delete(self._meta_data[metakey], torm, axis=0)
+        return
+
+    def get_seq_len(self) -> List[int]:
+        return self._meta_data["linfo"]
+
+    def __len__(self) -> int:
+        return len(self._meta_data["linfo"])
+
+    def __getitem__(self, index: int):
+        mat = self._feat_reader(self._meta_data["arkname"][index])
+        text_label = self._meta_data["text_labels"][index]
+        key = self._meta_data["key"][index]
+        return torch.tensor(mat), text_label
+
+
+class S2P2GAdapterTrainCollate:
+    """Collect S2P2G adapter batches sorted by descending frame length.
+
+    Args:
+        batch: list of (mat, text_label)
+
+    Return:
+        (mats, input_lengths, text_labels, text_label_lengths)
+    """
+
+    def __init__(
+        self,
+        tknz: str = None,
+        flatten_target: bool = False,
+        text_transform: Optional[Callable[[Any], Any]] = None,
+    ) -> None:
+        """
+        flatten_target (bool): flatten the target to be 1-dim, default False (2-dim)
+
+        text_transform (callable, optional): CPU-side target preprocessing.
+        """
+        self._flatten_target = flatten_target
+        self._text_transform = text_transform
+
+    def __call__(self, batch):
+        batches = [(mat, mat.size(0), text_label) for mat, text_label in batch]
+
+        batch_sorted = sorted(batches, key=lambda item: item[1], reverse=True)
+
+        mats = coreutils.pad_list([x[0] for x in batch_sorted])
+
+        input_lengths = torch.LongTensor([x[1] for x in batch_sorted])
+
+        raw_text_labels = [x[2] for x in batch_sorted]
+        text_labels = (
+            [self._text_transform(text) for text in raw_text_labels]
+            if self._text_transform is not None
+            else raw_text_labels
+        )
+        text_label_lengths = torch.LongTensor(
+            [len(str(text)) for text in raw_text_labels]
+        )
+
+        return mats, torch.LongTensor(input_lengths), text_labels, text_label_lengths
+
+
+class S2P2GTestDataset(AbsDataset):
+    """
+    Read data from scp file
+    """
+
+    def __init__(self, scp_file: str, sort_by_key: bool = False) -> None:
+        super().__init__(scp_file)
+
+        if not os.path.isfile(scp_file):
+            raise FileNotFoundError(f"{scp_file} is not a valid file.")
+
+        self._dataset = []
+        with open(scp_file, "r") as fi:
+            for line in fi:
+                self._dataset.append(line.split())
+        if sort_by_key:
+            self._dataset = sorted(self._dataset, key=lambda x: x[0])
+        self.freader = FeatureReader()
+
+    def __len__(self) -> int:
+        return len(self._dataset)
+
+    def impl_get_len(self):
+        _ls = []
+        for _, fpath in self._dataset:
+            mat = self.freader(fpath)
+            _ls.append(mat.shape[0])
+
+        del self.freader
+        self.freader = FeatureReader()
+        return _ls
+
+    def __getitem__(self, index: int) -> Tuple[str, torch.FloatTensor]:
+        key, mat_path = self._dataset[index]
+        mat = self.freader(mat_path)
+        return [key, torch.tensor(mat, dtype=torch.float)]
+
+
+class S2P2GTestCollate:
+    """Collect data into batch and add padding.
+
+    Args:
+        batch   : list of (key, feature)
+        key     : str
+        feature : torch.FloatTensor
+
+    Return:
+        (keys, logits, lengths)
+    """
+
+    def __call__(
+        self, batch: Sequence[Tuple[str, torch.FloatTensor]]
+    ) -> Tuple[Sequence[str], torch.FloatTensor, torch.LongTensor]:
+        if len(batch) > 1:
+            batch = sorted(batch, key=lambda item: item[1].size(0), reverse=True)
+        keys = [key for key, _ in batch]
+
+        mats = coreutils.pad_list([feature for _, feature in batch])
+
+        lengths = torch.LongTensor([feature.size(0) for _, feature in batch])
+        return keys, mats, lengths
+
+
+###################### Qwen LLM-P2G data ######################
+
+
+class QwenP2GDataset(AbsDataset):
+    """Sampled phoneme sequences for Qwen LLM-P2G training.
+
+    Data format (store with pickle):
+        {
+            'input': List[List[str]],   # N-best / sampled phoneme sequences
+            'label': List[str]          # grapheme targets
+        }
+    """
+
+    def __init__(self, path: Union[str, list]) -> None:
+        super().__init__(path)
+        with open(path, "rb") as fib:
+            self._meta_data = pickle.load(fib)
+        self.n_samples = len(self._meta_data["input"][0])
+
+    def set_n_samples(self, n_samples: int):
+        if n_samples > self.n_samples:
+            raise ValueError(
+                f"not enough samples for n_samples {n_samples}, exceeds max {self.n_samples}."
+            )
+        else:
+            self.n_samples = n_samples
+
+    def __len__(self) -> int:
+        return len(self._meta_data["label"])
+
+    def set_tokenizer_and_prompt(
+        self,
+        tokenizer: AbsTokenizer,
+        prompt: str,
+        max_seq_len: int = 512,
+        ignore_index: int = -100,
+    ):
+        self.tokenizer = tokenizer
+        self.eos_token_id = self.tokenizer.eos_token_id
+        self.prompt = prompt
+        self.max_seq_len = max_seq_len
+        self.ignore_index = ignore_index
+
+    def tokenization(self, input: List[str], label: str) -> List[int]:
+        input_list = []
+        shifted_output_list = []
+        input_lengths = []
+        for phn_seq in input:
+            # Construct the complete sequence
+            prompt_part = self.prompt.format(p=phn_seq)
+            p_ids = self.tokenizer.encode(prompt_part, add_special_tokens=False)
+            g_ids = self.tokenizer.encode(label, add_special_tokens=False)
+            input_ids = p_ids + g_ids + [self.eos_token_id]
+            shifted_ignore_ids = [self.ignore_index] * (len(p_ids) - 1)
+            shifted_output_ids = (
+                shifted_ignore_ids + g_ids + [self.eos_token_id] + [self.ignore_index]
+            )
+            input_lengths.append(len(input_ids))
+            input_list.append(torch.tensor(input_ids, dtype=torch.int))
+            shifted_output_list.append(torch.tensor(shifted_output_ids, dtype=torch.long))
+        return input_list, shifted_output_list, input_lengths
+
+    def __getitem__(self, index: int):
+        input = self._meta_data["input"][index]
+        label = self._meta_data["label"][index]
+        n_inputs = len(input)
+        if n_inputs > self.n_samples:
+            input = [
+                input[i]
+                for i in np.random.choice(n_inputs, self.n_samples, replace=False).tolist()
+            ]
+
+        return self.tokenization(input, label) + (index,)
+
+
+class sortedPadCollateQwenP2G:
+    def __init__(self, pad_token_id: int, max_seq_len: int = 512, ignore_index: int = -100):
+        self.pad_token_id = pad_token_id
+        self.max_seq_len = max_seq_len
+        self.ignore_index = ignore_index
+
+    def __call__(self, batch: List[Tuple[str, str]]):
+        input_list = [inputs for items in batch for inputs in items[0]]
+        shift_output_list = [outputs for items in batch for outputs in items[1]]
+        input_lengths = [seq_len for items in batch for seq_len in items[2]]
+        indexes = [items[3] for items in batch]
+
+        # Perform padding
+        input_ids = coreutils.pad_list(input_list, pad_value=self.pad_token_id)
+        shift_labels = coreutils.pad_list(shift_output_list, pad_value=self.ignore_index)
+
+        # attention mask
+        batch_size, seq_lens = input_ids.size()
+        attention_mask = (
+            torch.arange(seq_lens).expand(batch_size, seq_lens)
+            < torch.tensor(input_lengths).unsqueeze(1)
+        )
+
+        if seq_lens > self.max_seq_len:
+            input_ids = input_ids[:, : self.max_seq_len]
+            attention_mask = attention_mask[:, : self.max_seq_len]
+            shift_labels = shift_labels[:, : self.max_seq_len]
+
+        return torch.tensor(indexes, dtype=torch.int), input_ids, attention_mask, shift_labels

@@ -532,9 +532,20 @@ if __name__ == "__main__":
             import utils.wer as wercal
 
             err_option = cfg_infr["er"]
-            if "type" in hyper_cfg["tokenizer"] and hyper_cfg["tokenizer"]["type"] == "LexiconTokenizer":
-                err_option["per"] = True
-                err_option["phone_tokenizer"] = hyper_cfg["tokenizer"]["file"]
+            if "type" in hyper_cfg["tokenizer"] and hyper_cfg["tokenizer"]["type"] in (
+                "LexiconTokenizer",
+                "TonalLexiconTokenizer",
+            ):
+                # `per` and `non_tonal_per` both score in phone space and need
+                # the phone tokenizer; only fall back to `per` when the `er`
+                # block does not already ask for a specific metric.
+                if "phone_tokenizer" not in err_option:
+                    err_option["phone_tokenizer"] = hyper_cfg["tokenizer"]["file"]
+                if not any(
+                    err_option.get(k, False)
+                    for k in ("cer", "mer", "per", "non_tonal_per")
+                ):
+                    err_option["per"] = True
 
             if intfname in ["cat.ctc.decode_jsa_s2p", "cat.ctc.decode_jsa_g2p"]:
                 err_option["per"] = True

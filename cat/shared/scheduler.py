@@ -508,3 +508,195 @@ class SchedulerCosineAnnealing(SchedulerFixedStop):
             * (max_lr - self.min_lr)
             * (1 + math.cos(((n_step - 1) % self.period) / self.period * math.pi))
         )
+
+
+class SchedulerCosineAnnealingWithWarmup(Scheduler):
+    """
+    Cosine annealing with a linear warmup phase.
+
+    Design goals:
+        1) The cosine timeline starts after warmup instead of reusing the global
+           training step. This makes the first post-warmup cosine step start
+           from the peak LR smoothly, rather than jumping to a later cosine
+           position.
+        2) The scheduler only runs a single cosine decay after warmup. If the
+           configured training length is longer than one cosine period, the LR
+           stays at `min_lr` instead of silently entering a new cosine cycle.
+
+    Notes:
+        - `start_lr` controls the starting LR of the warmup phase.
+        - `min_lr` controls the floor LR of the cosine decay phase.
+        - `decay_factor` is kept for configuration compatibility with
+          `SchedulerCosineAnnealing`, but it is intentionally not used here
+          because this scheduler disables cosine restarts by design.
+    """
+
+    def __init__(
+        self,
+        optimizer: torch.optim.Optimizer,
+        min_lr: float,
+        stop_step: int,
+        start_lr: Optional[float] = None,
+        period: int = 0,
+        decay_factor: float = 1.0,
+        warmup_steps: int = 0,
+        reverse: bool = False,
+    ):
+        """
+        Args:
+            optimizer (torch.optim.Optimizer): The optimizer instance.
+            min_lr (float): The minimum LR reached after cosine decay.
+            stop_step (int): Total number of training steps.
+            start_lr (Optional[float]): Warmup starting LR. If not provided,
+                the warmup starts from `min_lr` to preserve the old behavior.
+            period (int): Number of steps used by the cosine decay stage.
+                If set to 0, the scheduler uses all post-warmup steps.
+                If set larger than the post-warmup steps, it will be clipped
+                so that the cosine phase fits within the training budget.
+            decay_factor (float): Reserved only for config compatibility.
+            warmup_steps (int): Number of linear warmup steps.
+            reverse (bool): Reverse the optimization order of evaluation metric.
+        """
+        assert warmup_steps >= 0
+        assert warmup_steps < stop_step, (
+            f"warmup_steps ({warmup_steps}) must be smaller than stop_step "
+            f"({stop_step}) so that the cosine phase has at least one step."
+        )
+
+        super().__init__(optimizer, reverse)
+
+        assert min_lr > 0.0
+        assert stop_step > 0
+        assert decay_factor > 0.0 and decay_factor <= 1.0
+
+        # Keep the same fixed-stop attributes as SchedulerFixedStop so that
+        # state dicts and evaluation behavior remain compatible.
+        self.stop_step = int(stop_step)
+        self._in_stop_step = True
+
+        # Keep the same cosine-related attributes as SchedulerCosineAnnealing
+        # so that existing checkpoints can still be loaded without schema drift.
+        self.min_lr = min_lr
+        self.decay_factor = decay_factor
+        self._ref_lr = self.lr_cur
+
+        self.warmup_steps = warmup_steps
+        self.start_lr = min_lr if start_lr is None else start_lr
+        assert self.start_lr > 0.0
+
+        # `cosine_steps` is the effective training budget after warmup. This is
+        # the correct time axis for the cosine phase.
+        self.cosine_steps = self.stop_step - self.warmup_steps
+
+        # We only allow a single cosine decay here. When `period` is shorter
+        # than the remaining training length, the LR decays to `min_lr` and
+        # then stays there, avoiding accidental restarts.
+        if period == 0:
+            self.period = self.cosine_steps
+        else:
+            assert period > 0
+            self.period = min(period, self.cosine_steps)
+
+        # The current training managers call `scheduler.update_lr_step(...)`
+        # after `optimizer.step()`. Therefore the scheduler needs to preload the
+        # LR for the very first optimizer update here, otherwise the first
+        # update would incorrectly use the optimizer's peak LR directly.
+        self._adjust_lr(self._get_lr_by_train_step(1))
+
+    def _get_lr_by_train_step(self, step: int) -> float:
+        """
+        Compute the LR that should be used for a given optimizer update step.
+
+        Args:
+            step (int): 1-based optimizer update index.
+
+        Returns:
+            float: The LR assigned to that optimizer update.
+        """
+        assert step >= 1
+
+        step = min(step, self.stop_step)
+
+        if self.warmup_steps > 0 and step <= self.warmup_steps:
+            # Linear warmup:
+            #   step == 1              -> close to `start_lr`
+            #   step == warmup_steps   -> exactly `_ref_lr`
+            warmup_ratio = step / self.warmup_steps
+            return self.start_lr + (self._ref_lr - self.start_lr) * warmup_ratio
+
+        # Shift the cosine timeline so that the first post-warmup step uses
+        # cosine step 1, which yields the peak LR and therefore connects
+        # smoothly to the end of warmup.
+        cosine_step = max(step - self.warmup_steps, 1)
+
+        # Clamp the cosine step to a single period. This prevents an
+        # accidentally long training run from re-entering a new cosine
+        # cycle at the end.
+        cosine_step = min(cosine_step, self.period)
+
+        # For a single-cycle scheduler we want:
+        #   cosine_step == 1           -> lr == _ref_lr
+        #   cosine_step == self.period -> lr == min_lr
+        # Therefore we map the discrete cosine steps to [0, pi] with
+        # `self.period - 1` intervals instead of the restart-style
+        # denominator used by the base scheduler.
+        if self.period == 1:
+            return self.min_lr
+
+        cosine_progress = (cosine_step - 1) / (self.period - 1)
+        return self.min_lr + 0.5 * (self._ref_lr - self.min_lr) * (
+            1 + math.cos(cosine_progress * math.pi)
+        )
+
+    def update_lr_step(self, n_step: int):
+        """
+        Update LR by training step (minibatch level).
+
+        PyTorch-style behavior:
+            - The manager calls this function after each optimizer update, so
+              `n_step` is treated as the number of finished updates.
+            - This function therefore prepares the LR for the next optimizer
+              update, i.e. for training step `n_step + 1`.
+            - During warmup, LR increases linearly from `start_lr` to `_ref_lr`.
+            - After warmup, the cosine phase is driven by the post-warmup
+              relative step instead of the global step.
+            - Once the cosine phase reaches its final step, LR is clamped at
+              `min_lr` instead of starting a new cosine cycle.
+        """
+        # Mirror SchedulerFixedStop bookkeeping locally because this scheduler
+        # now inherits from the base Scheduler directly.
+        if self._in_stop_step and n_step >= self.stop_step:
+            self._in_stop_step = False
+
+        # `n_step` is the number of finished optimizer updates in the current
+        # managers, so the LR we set here will be consumed by the next update.
+        next_step = min(max(n_step + 1, 1), self.stop_step)
+        self._adjust_lr(self._get_lr_by_train_step(next_step))
+
+    def step(self, metric: float, *args, **kwargs) -> State:
+        """
+        Return the fixed-stop scheduler state during evaluation.
+
+        This keeps the same behavior as `SchedulerFixedStop`: before the
+        training reaches `stop_step`, evaluation reports whether the metric is
+        improved; after `stop_step`, the scheduler asks training to terminate.
+        """
+        if self._in_stop_step:
+            if self._is_improved(metric):
+                return State.IMPROVED
+            else:
+                return State.CONTINUE
+        else:
+            return State.TERMINATED
+
+
+class SchedulerCosineAnnealingWithWarmupFix(SchedulerCosineAnnealingWithWarmup):
+    """
+    Backward-compatible alias for the fixed warmup-cosine scheduler.
+
+    Some older experiment notes use the `WithWarmupFix` name. Keeping this
+    alias avoids breaking those configurations while reusing the corrected
+    implementation above.
+    """
+
+    pass

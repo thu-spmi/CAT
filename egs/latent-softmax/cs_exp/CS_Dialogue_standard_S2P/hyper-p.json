@@ -1,0 +1,56 @@
+{
+    "data": {
+        "train": [
+            "cs_dialog_train"
+        ],
+        "dev": [
+            "cs_dialog_dev"
+        ],
+        "test": [
+            "cs_dialog_test",
+            "cs_dialog_dev"
+        ],
+        "filter": "10:2000"
+    },
+    "tokenizer": {
+        "type": "LexiconTokenizer",
+        "file": "data/CS-Dialogue/tokenizer_extend_test_oov.tknz",
+        "|V|": 84
+    },
+    "train": {
+        "bin": "cat.ctc.train_mnt_nontonal",
+        "option": {
+            "amp": true,
+            "eval_error_rate": true,
+            "batch_size": 300,
+            "grad_accum_fold": 2,
+            "grad_norm": 2.0,
+            "check_freq": 620,
+            "flatten_target_data": true,
+            "init_model": "multi_exp/bilingual_standard_softmax/check/best-10.pt",
+            "sub2base": "data/CS-Dialogue/baseline_sub2base.json"
+        }
+    },
+    "env": {
+        "CUDA_VISIBLE_DEVICES": "0,1,2,3,4,5,6,7"
+    },
+    "inference": {
+        "infer": {
+            "bin": "cat.ctc.decode",
+            "option": {
+                "built-model-by": "cat.ctc.train_mnt_nontonal",
+                "beam_size": 16,
+                "thread_per_woker": 2,
+                "gpu": true
+            }
+        },
+        "avgmodel": {
+            "mode": "best",
+            "num": 3
+        },
+        "er": {
+            "per": true
+        }
+    },
+    "commit": "9b478ac89bb6d24d775b60197a5cbba55f92898a"
+}

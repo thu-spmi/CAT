@@ -1,0 +1,56 @@
+{
+    "trainer": {
+        "model": {
+            "type": "Qwen3FromPretrainedModel",
+            "kwargs": {
+                "pretrained_model_name_or_path": "data/Qwen/Qwen3-1.7B-base",
+                "from_pretrained": true,
+                "attention_dropout": 0.1,
+                "lora": true,
+                "lora_rank": 1024,
+                "lora_alpha": 2048,
+                "lora_dropout": 0.05,
+                "lora_part_modules": "q_proj,k_proj,v_proj,o_proj"
+            }
+        }
+    },
+    "decoder": {
+        "s2p_tokenizer": "data/dict_multi_replace/tokenizer.tknz",
+        "s2p_model": {
+            "type": "ConformerNet",
+            "init_model": "multi_exp/bilingual_standard_softmax/check/best-10.pt",
+            "kwargs": {
+                "num_cells": 18,
+                "idim": 80,
+                "hdim": 512,
+                "conv": "vgg2l",
+                "num_heads": 8,
+                "d_head": 64,
+                "dropout": 0.3,
+                "dropout_attn": 0.3,
+                "kernel_size": 32,
+                "n_classes": 84,
+                "with_head": true
+            }
+        }
+    },
+    "scheduler": {
+        "type": "SchedulerCosineAnnealingWithWarmup",
+        "kwargs": {
+            "min_lr": 1e-05,
+            "stop_step": 15000,
+            "warmup_steps": 2000
+        },
+        "optimizer": {
+            "type": "Adam",
+            "kwargs": {
+                "lr": 8e-05,
+                "betas": [
+                    0.9,
+                    0.98
+                ],
+                "weight_decay": 1e-06
+            }
+        }
+    }
+}

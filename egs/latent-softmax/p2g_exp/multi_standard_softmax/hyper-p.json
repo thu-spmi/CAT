@@ -1,0 +1,64 @@
+{
+    "data": {
+        "train": [
+            "train_aishell_3sp",
+            "train_libri_960h"
+        ],
+        "dev": [
+            "dev_aishell_nospace",
+            "dev-clean-libri_lower",
+            "dev-other-libri_lower"
+        ],
+        "test": [
+            "test_aishell_nospace",
+            "test-clean-libri_lower",
+            "test-other-libri_lower"
+        ]
+    },
+    "tokenizer": {
+        "type": "PretrainedTokenizer",
+        "option-init": {
+            "T_cls": "AutoTokenizer",
+            "pretrained": "data/Qwen/Qwen3-1.7B-base",
+            "use_fast": false
+        },
+        "file": "data/Qwen/Qwen3.tknz",
+        "|V|": 151643
+    },
+    "env": {
+        "CUDA_VISIBLE_DEVICES": "0,1,2,3,4,5,6,7"
+    },
+    "train": {
+        "bin": "cat.s2p2g.train_qwen_p2g",
+        "option": {
+            "amp": false,
+            "batch_size": 40,
+            "grad_accum_fold": 2,
+            "grad_norm": 5.0,
+            "check_freq": 100,
+            "n_samples": 8,
+            "workers": 2,
+            "prompt": "<|im_start|>{p}<|im_end|><|im_start|>",
+            "gradient_checkpointing": true
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "best",
+            "num": 4
+        },
+        "infer": {
+            "bin": "cat.s2p2g.decode_qwen_p2g",
+            "option": {
+                "s2p_beam_size": 16,
+                "beam_size": 4,
+                "batch_size": 1,
+                "gpu": true,
+                "p2g_decode_fold": 8,
+                "smallClass_decoding": true
+            }
+        },
+        "er": {}
+    },
+    "commit": "1b77bc21f7a5faac5e47f6bc4445f23ebf0e0633"
+}
