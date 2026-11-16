@@ -1,0 +1,55 @@
+{
+    "data": {
+        "train": [
+            "cs_dialog_train"
+        ],
+        "dev": [
+            "cs_dialog_dev"
+        ],
+        "test": [
+            "cs_dialog_test",
+            "cs_dialog_dev"
+        ],
+        "filter": "10:2000"
+    },
+    "tokenizer": {
+        "type": "TonalLexiconTokenizer",
+        "file": "data/CS-Dialogue/tokenizer_latent.tknz",
+        "|V|": 77
+    },
+    "train": {
+        "bin": "cat.ctc.train_latent_softmax",
+        "option": {
+            "amp": true,
+            "eval_error_rate": true,
+            "batch_size": 600,
+            "grad_accum_fold": 1,
+            "grad_norm": 2.0,
+            "check_freq": 620,
+            "flatten_target_data": true,
+            "init_model": "multi_exp/bilingual_latent_softmax/check/best-10.pt"
+        }
+    },
+    "env": {
+        "CUDA_VISIBLE_DEVICES": "0,1,2,3,4,5,6,7"
+    },
+    "inference": {
+        "infer": {
+            "bin": "cat.ctc.decode_latent_softmax",
+            "option": {
+                "beam_size": 16,
+                "thread_per_woker": 2,
+                "gpu": true,
+                "smallClass_decoding": true
+            }
+        },
+        "avgmodel": {
+            "mode": "best",
+            "num": 3
+        },
+        "er": {
+            "non_tonal_per": true
+        }
+    },
+    "commit": "9b478ac89bb6d24d775b60197a5cbba55f92898a"
+}

@@ -1,0 +1,64 @@
+{
+    "data": {
+        "train": [
+            "train_aishell_3sp",
+            "train-clean-100-libri",
+            "train-clean-360-libri",
+            "train-other-500-libri"
+        ],
+        "dev": [
+            "dev_aishell",
+            "dev-clean-libri",
+            "dev-other-libri",
+            "test_aishell",
+            "test-clean-libri",
+            "test-other-libri"
+        ],
+        "test": [
+            "train_aishell_3sp",
+            "train-clean-100-libri",
+            "train-clean-360-libri",
+            "train-other-500-libri"
+        ],
+        "filter": "10:2000"
+    },
+    "tokenizer": {
+        "type": "LexiconTokenizer",
+        "option-init": {
+            "lexicon": "data/dict_multi_replace/lexicon.txt"
+        },
+        "file": "data/dict_multi_replace/tokenizer.tknz"
+    },
+    "train": {
+        "bin": "cat.ctc.train",
+        "option": {
+            "amp": true,
+	        "eval_error_rate": true,
+            "batch_size": 640,
+            "grad_norm": 2.0,
+            "dynamic_batch_mode": 1
+        }
+    },
+    "env": {
+        "CUDA_VISIBLE_DEVICES": "0,1,2,3,4,5,6,7"
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "best",
+            "num": 10
+        },
+        "infer": {
+            "bin": "cat.ctc.decode",
+            "option": {
+                "beam_size": 16,
+                "thread_per_woker": 2,
+                "store_ark": false,
+                "gpu": true
+            }
+        },
+        "er": {
+            "per": true
+        }
+    },
+    "commit": "76bcdaa39f468971f23998bc973537029ecd3ac9"
+}

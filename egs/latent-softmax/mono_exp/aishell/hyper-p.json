@@ -1,0 +1,48 @@
+{
+    "data": {
+        "train": [
+            "train_aishell_3sp"
+        ],
+        "dev": "dev_aishell",
+        "test": [
+            "test_aishell"
+        ],
+        "filter": "10:2000"
+    },
+    "tokenizer": {
+        "type": "LexiconTokenizer",
+        "option-init": {
+            "lexicon": "data/dict_aishell_Pinyin2IPA_replace/lexicon.txt"
+        },
+        "file": "data/dict_aishell_Pinyin2IPA_replace/tokenizer.tknz",
+        "|V|": 63
+    },
+    "train": {
+        "bin": "cat.ctc.train",
+        "option": {
+            "amp": true,
+            "eval_error_rate": true,
+            "batch_size": 880,
+            "grad_norm": 2.0
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "best",
+            "num": 10
+        },
+        "infer": {
+            "bin": "cat.ctc.decode",
+            "option": {
+                "beam_size": 16,
+                "nj": 4,
+                "thread_per_woker": 2,
+                "do_normalize": true,
+                "store_ark": true,
+                "gpu": true
+            }
+        },
+        "er": {}
+    },
+    "commit": "fb4229ff0e40e248f6f3e76275647273fea0d566"
+}

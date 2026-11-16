@@ -1,0 +1,53 @@
+{
+    "data": {
+        "train": [
+            "cs_dialog_train_lower"
+        ],
+        "dev": [
+            "cs_dialog_dev_lower"
+        ],
+        "test": [
+            "cs_dialog_test_lower"
+        ],
+        "is_S2P2G": true
+    },
+    "tokenizer": {
+        "type": "PretrainedTokenizer",
+        "file": "data/Qwen/Qwen3.tknz",
+        "|V|": 151643
+    },
+    "env": {
+        "CUDA_VISIBLE_DEVICES": "0,1,2,3,4,5,6,7"
+    },
+    "train": {
+        "bin": "cat.s2p2g.train_s2p2g_adapter",
+        "option": {
+            "amp": false,
+            "batch_size": 80,
+            "grad_norm": 5.0,
+            "grad_accum_fold": 2,
+            "use_fsdp": false,
+            "init_model": "projector_exp/18_C13-cs-dialog-Pr2_init_from_projector02/projector02-best-3_replaced_C13.pt"
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "best",
+            "num": 3
+        },
+        "infer": {
+            "bin": "cat.s2p2g.decode_s2p2g_adapter",
+            "option": {
+                "built_model_by": "cat.s2p2g.train_s2p2g_adapter",
+                "beam_size": 4,
+                "batch_size": 1,
+                "topk":4,
+                "gpu": true
+            }
+        },
+        "er": {
+            "mer": true
+        }
+    },
+    "commit": "1b77bc21f7a5faac5e47f6bc4445f23ebf0e0633"
+}

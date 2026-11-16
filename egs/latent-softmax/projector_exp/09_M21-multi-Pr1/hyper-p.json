@@ -1,0 +1,64 @@
+{
+    "data": {
+        "train": [
+            "train_aishell_3sp_nospace",
+            "train-clean-100-libri_lower",
+            "train-clean-360-libri_lower",
+            "train-other-500-libri_lower"
+        ],
+        "dev": [
+            "dev_aishell_nospace",
+            "dev-clean-libri_lower",
+            "dev-other-libri_lower"
+        ],
+        "test": [
+            "test_aishell_nospace",
+            "test-clean-libri_lower",
+            "test-other-libri_lower"
+        ],
+        "is_S2P2G": true
+    },
+    "tokenizer": {
+        "type": "PretrainedTokenizer",
+        "option-init": {
+            "T_cls": "AutoTokenizer",
+            "pretrained": "data/Qwen/Qwen3-1.7B-base",
+            "use_fast": false
+        },
+        "file": "data/Qwen/Qwen3.tknz",
+        "|V|": 151643
+    },
+    "env": {
+        "CUDA_VISIBLE_DEVICES": "4,5"
+    },
+    "train": {
+        "bin": "cat.s2p2g.train_s2p2g_adapter",
+        "option": {
+            "amp": false,
+            "batch_size": 20,
+            "grad_norm": 5.0,
+            "grad_accum_fold": 4,
+            "check_freq": 703,
+            "use_fsdp": false
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "best",
+            "num": 3
+        },
+        "infer": {
+            "bin": "cat.s2p2g.decode_s2p2g_adapter",
+            "option": {
+                "built_model_by": "cat.s2p2g.train_s2p2g_adapter",
+                "beam_size": 4,
+                "batch_size": 1,
+                "topk":4,
+                "gpu": true
+            }
+        },
+        "er": {
+        }
+    },
+    "commit": "1b77bc21f7a5faac5e47f6bc4445f23ebf0e0633"
+}

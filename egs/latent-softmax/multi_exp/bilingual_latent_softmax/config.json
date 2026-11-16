@@ -1,0 +1,55 @@
+{
+    "specaug": {
+        "freq_mask_width_range": 0.34,
+        "num_freq_mask": 2,
+        "num_time_mask": 10,
+        "time_mask_width_range": 0.05,
+        "apply_time_warp": false
+    },
+    "trainer": {
+        "decoder": {
+            "beam_size": 8,
+            "num_classes": 77
+        },
+        "loss_type": "latent_ctc",
+        "latent_map": "data/dict_multi_replace/tokenizer_M10_latent_softmax_subClassList.json",
+        "major_label_offset": 77,
+        "blank_label": 0
+    },
+    "encoder": {
+        "type": "ConformerNet",
+        "kwargs": {
+            "num_cells": 18,
+            "idim": 80,
+            "hdim": 512,
+            "conv": "vgg2l",
+            "num_heads": 8,
+            "d_head": 64,
+            "dropout": 0.3,
+            "dropout_attn": 0.3,
+            "kernel_size": 32,
+            "num_classes": 77,
+            "with_head": true
+        }
+    },
+    "scheduler": {
+        "type": "SchedulerNoam",
+        "kwargs": {
+            "stop_step": 400000,
+            "dim_model": 512,
+            "warmup_step": 40000,
+            "peak_factor": 1
+        },
+        "optimizer": {
+            "type": "Adam",
+            "kwargs": {
+                "lr": 0.0003,
+                "betas": [
+                    0.9,
+                    0.98
+                ],
+                "weight_decay": 1e-06
+            }
+        }
+    }
+}
