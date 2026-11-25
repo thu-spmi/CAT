@@ -156,3 +156,10 @@ dmypy.json
 
 # latent_ctc keeps its CMake description and upstream README
 !src/latent_ctc/**/*.txt
+
+
+# macOS metadata
+.DS_Store
+._*
+.AppleDouble
+.LSOverride
