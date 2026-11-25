@@ -1,0 +1,58 @@
+{
+    "data": {
+        "train": [
+            "train-clean-100-libri_lower",
+            "train-clean-360-libri_lower",
+            "train-other-500-libri_lower"
+        ],
+        "dev": [
+            "dev-other-libri_lower",
+            "dev-clean-libri_lower"
+        ],
+        "test": [
+            "test-clean-libri_lower",
+            "test-other-libri_lower"
+        ]
+    },
+    "tokenizer": {
+        "type": "PretrainedTokenizer",
+        "option-init": {
+            "T_cls": "AutoTokenizer",
+            "pretrained": "data/Qwen/Qwen3-1.7B-base",
+            "use_fast": true
+        },
+        "file": "data/Qwen/Qwen3_fast.tknz",
+        "|V|": 151643
+    },
+    "train": {
+        "bin": "cat.s2p2g.train_qwen_p2g",
+        "option": {
+            "amp": false,
+            "batch_size": 28,
+            "grad_accum_fold": 3,
+            "grad_norm": 5.0,
+            "check_freq": 200,
+            "n_samples": 8,
+            "workers": 2,
+            "prompt": "<|im_start|>{p}<|im_end|><|im_start|>",
+            "gradient_checkpointing": true,
+            "resume": "p2g_exp/mono_librispeech/check/checkpoint.002e5400s.pt"
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "best",
+            "num": 4
+        },
+        "infer": {
+            "bin": "cat.s2p2g.decode_qwen_p2g",
+            "option": {
+                "beam_size": 4,
+                "batch_size": 1,
+                "gpu": true
+            }
+        },
+        "er": {}
+    },
+    "commit": "1b77bc21f7a5faac5e47f6bc4445f23ebf0e0633"
+}

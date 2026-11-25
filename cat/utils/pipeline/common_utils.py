@@ -394,6 +394,23 @@ def train_nn(working_dir: str, prompt: str = "{}\n"):
         train_options["tokenizer"] = settings["tokenizer"]["file"]
         train_options["phone_tokenizer"] = settings["tokenizer"]["phone_tokenizer"]
 
+    if settings["train"]["bin"] == "cat.ctc.train_latent_softmax":
+        # Latent Softmax needs the subclass/major-class structure of the tonal
+        # tokenizer, which is resolved from the tokenizer pickle rather than
+        # from the JSON configuration.
+        assert "tokenizer" in settings, sfmt.missing("tokenizer", "train:option")
+        checkExist("f", settings["tokenizer"]["file"])
+        import cat.shared.tokenizer as tknz
+
+        tokenizer = tknz.load(settings["tokenizer"]["file"])
+        train_options["subClassList"] = tokenizer.get_subClassList
+        train_options["sub2base"] = tokenizer.get_sub2base
+        train_options["test_vocab_size"] = tokenizer.test_vocab_size
+
+    if "qwen_p2g" in settings["train"]["bin"] and "tokenizer" not in train_options:
+        assert "tokenizer" in settings, sfmt.missing("tokenizer", "train:option")
+        train_options["tokenizer"] = settings["tokenizer"]["file"]
+
     import importlib
 
     interface = importlib.import_module(settings["train"]["bin"])

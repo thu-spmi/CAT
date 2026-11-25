@@ -406,6 +406,7 @@ class LexiconTokenizer(AbsTokenizer):
         bos_interface: str = "<s>",
         unk_interface: str = "<unk>",
         sort_units: bool = False,
+        skip_init_lexicon: bool = False,
     ) -> None:
         """
         Args:
@@ -415,13 +416,17 @@ class LexiconTokenizer(AbsTokenizer):
             add_special_token (bool) : add <s>, <unk> to the lexicon, otherwise they're assumed to be in the lexicon.
             bos_interface (str) : start of an utterance, usually '<s>' or '<bos>'
             unk_interface (str) : unknown word representation in the mapping. usually '<unk>' or '<UNK>'
+            sort_units (bool) : sort units before assigning ids, makes the ids deterministic.
+            skip_init_lexicon (bool) : do not call ``init_lexicon`` in the constructor. Subclasses that
+                            override ``init_lexicon`` use this to avoid parsing the lexicon twice.
         """
         super().__init__()
         assert os.path.isfile(lexicon), f"given w2p_map='{lexicon}' not exist."
         self._bos_token = bos_interface
         self._unk_token = unk_interface
         self.sort_units = sort_units
-        self.init_lexicon(lexicon, add_special_token)
+        if not skip_init_lexicon:
+            self.init_lexicon(lexicon, add_special_token)
 
     def init_lexicon(self, f_mapping: str, add_special_token: bool):
         p_rm_consecutive_space = re.compile(r"\s+")
@@ -732,3 +737,125 @@ def load(src: str) -> AbsTokenizer:
         tokenizer, AbsTokenizer
     ), "tokenizer.load: loaded object is not AbsTokenizer instance."
     return tokenizer
+
+
+class TonalLexiconTokenizer(LexiconTokenizer):
+    """Lexicon-based tokenizer for tonal language.
+
+    On top of :class:`LexiconTokenizer`, this tokenizer builds a two-level
+    inventory used by Latent Softmax:
+
+    * every tone-marked vowel that has a matching base vowel in the lexicon is a
+      *subclass* unit, carrying an output-neuron id in ``[0, nn_vocab_size)``;
+    * the base vowels themselves are *major classes*, appended after all
+      subclass ids, so their ids are ``>= nn_vocab_size``.
+
+    ``vocab_size`` (used to size the network output layer) therefore counts
+    subclasses only, while ``test_vocab_size`` counts subclasses plus major
+    classes and is the size of the extended vocabulary used when non-tonal
+    utterances are decoded with marginalization.
+
+    Tones are extracted with the four Mandarin tone letters in
+    ``tone_pattern``; the order of the alternatives matters because ``˥˩`` and
+    ``˧˩˧`` must be matched before the single ``˥``/``˧`` letters.
+    """
+
+    def __init__(
+        self,
+        lexicon: str,
+        add_special_token: bool = True,
+        sort_units: bool = True,
+    ) -> None:
+        super().__init__(lexicon, sort_units=sort_units, skip_init_lexicon=True)
+        self.init_lexicon(lexicon, add_special_token)
+
+    def init_lexicon(self, f_mapping: str, add_special_token: bool):
+        p_rm_consecutive_space = re.compile(r"\s+")
+
+        lexicon = {}
+        with open(f_mapping, "r") as fi:
+            for line in fi:
+                if line == "":
+                    continue
+                utt = re.sub(p_rm_consecutive_space, " ", line).strip().split()
+                if utt[0] not in lexicon:
+                    # for words with multiple pronounciations, keep the first.
+                    lexicon[utt[0]] = utt[1:]
+
+        units = {}
+        word2unitid = OrderedDict()
+        if add_special_token:
+            units[self._bos_token] = 0
+            units[self._unk_token] = 1
+            word2unitid[self._bos_token] = (0,)
+            word2unitid[self._unk_token] = (1,)
+
+        raw_units = set().union(*(lexicon.values()))
+        base_class = {}
+        tone_pattern = re.compile(r"˥˩|˧˩˧|˧˥|˥")
+        for unit in raw_units:
+            if bool(tone_pattern.search(unit)):
+                base_unit = tone_pattern.split(unit)[0]
+                if base_unit in raw_units:
+                    base_class.setdefault(base_unit, []).append(unit)
+        base_units = set(base_class.keys())
+        for base in base_class.keys():
+            raw_units.discard(base)
+        if self.sort_units:
+            raw_units = sorted(raw_units)
+            base_units = sorted(base_units)
+        lu = len(units)
+        units.update({_unit: id + lu for id, _unit in enumerate(raw_units)})
+        lu = len(units)
+        units.update({_unit: id + lu for id, _unit in enumerate(base_units)})
+        base2sub = {}
+        sub2base = {}
+        for base_unit in base_units:
+            base_unit_id = units[base_unit]
+            sub_unit_ids = [units[sub_unit] for sub_unit in base_class[base_unit]]
+            base2sub[base_unit_id] = sub_unit_ids
+            sub2base.update({sub_unit_id: base_unit_id for sub_unit_id in sub_unit_ids})
+        self._base2sub = base2sub
+        self._sub2base = sub2base
+        self.nn_vocab_size = lu
+
+        for word, utt in lexicon.items():
+            word2unitid[word] = tuple(units[x] for x in utt)
+
+        self._w2pid = word2unitid
+        if not add_special_token and (
+            self._bos_token not in self._w2pid or self._unk_token not in self._w2pid
+        ):
+            raise RuntimeError(
+                f"{self._bos_token} and(or) {self._unk_token} are not found in '{f_mapping}', "
+                "it's your duty to add these special tokens."
+            )
+
+        self._units = units
+        if self._w2pid[self._bos_token] != (0,):
+            sys.stderr.write(
+                f"WARNING: {self.__class__.__name__} bos token is set to {self._w2pid[self._bos_token]},\n"
+                "... but for most of the cases, we assume <s>=<blk>=0, so it might cause some underminted error.\n"
+            )
+
+    @property
+    def vocab_size(self) -> int:
+        # vocab size in nural network training
+        return self.nn_vocab_size
+
+    @property
+    def test_vocab_size(self) -> int:
+        # vocab size in testing for nontonal language
+        return len(self._units)
+
+    @property
+    def get_subClassList(self) -> list:
+        return list(self._base2sub.values())
+
+    @property
+    def get_baseClassList(self) -> list:
+        return list(self._base2sub.keys())
+
+    @property
+    def get_sub2base(self) -> dict:
+        return self._sub2base

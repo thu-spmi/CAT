@@ -1,0 +1,57 @@
+{
+    "data": {
+        "train": [
+            "train-clean-100-libri",
+            "train-clean-360-libri",
+            "train-other-500-libri"
+        ],
+        "dev": [
+            "dev-other-libri",
+            "dev-clean-libri"
+        ],
+        "test": [
+            "train-clean-100-libri",
+            "train-clean-360-libri",
+            "train-other-500-libri"
+        ],
+        "filter": "10:2000"
+    },
+    "tokenizer": {
+        "type": "LexiconTokenizer",
+        "option-init": {
+            "lexicon": "data/dict_librispeech_own_replace/lexicon.txt"
+        },
+        "file": "data/dict_librispeech_own_replace/tokenizer.tknz",
+        "|V|": 35
+    },
+    "train": {
+        "bin": "cat.ctc.train",
+        "option": {
+            "amp": true,
+            "eval_error_rate": true,
+            "batch_size": 300,
+            "grad_norm": 2.0,
+            "dynamic_batch_mode": 1
+        }
+    },
+    "inference": {
+        "avgmodel": {
+            "mode": "best",
+            "num": 10
+        },
+        "infer": {
+            "bin": "cat.ctc.decode",
+            "option": {
+                "beam_size": 16,
+                "thread_per_woker": 2,
+                "store_ark": false,
+                "do_normalize": true,
+                "gpu": true
+            }
+        },
+        "er": {
+            "per": true
+        }
+    },
+    "commit": "76bcdaa39f468971f23998bc973537029ecd3ac9"
+}

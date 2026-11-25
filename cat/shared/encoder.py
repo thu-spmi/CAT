@@ -357,7 +357,12 @@ class ConformerNet(AbsEncoder):
         if time_reduction_factor > 1 and time_reduction_pos == -1:
             self.cells.append(c_layers.TimeReduction(time_reduction_factor))
 
-    def impl_forward(self, x: torch.Tensor, lens: torch.Tensor):
+    def impl_forward(
+        self,
+        x: torch.Tensor,
+        lens: torch.Tensor,
+        return_last_hidden_state: bool = False,
+    ):
         if self.conv_subsampling is None:
             x_subsampled, ls = x, lens
         else:
@@ -365,6 +370,11 @@ class ConformerNet(AbsEncoder):
         out = self.linear_drop(x_subsampled)
         for cell in self.cells:
             out, ls = cell(out, ls)
+
+        if return_last_hidden_state:
+            # The projector interface consumes the Conformer states before the
+            # CTC classifier, so return them alongside the logits.
+            return out, ls, out
 
         return out, ls
 
@@ -637,3 +647,192 @@ class TransformerDecoder(AbsEncoder):
             enc_attention_mask = self.generate_attention_mask(enc_hidden_state_lens)
             out = self.decoder(x_em, attention_mask, enc_hidden_state, enc_attention_mask)
         return out[0], xlens
+
+
+# ================== S2P2G / LLM-P2G add ===================
+
+from transformers import AutoModelForCausalLM, AutoConfig
+
+
+class LLMFromPretrainedModel(nn.Module):
+    """HuggingFace causal LM wrapper used as the projector-stage text model.
+
+    The wrapper keeps the raw ``transformers`` model under ``llm_model`` so that
+    the projector pipeline can (a) call ``generate`` during decoding and (b)
+    attach LoRA layers with :mod:`cat.shared.lora` during training.
+    """
+
+    def __init__(
+        self,
+        pretrained_model_name_or_path: str,
+        from_pretrained: bool = True,
+        attention_dropout: float = None,
+        use_bnb: bool = False,
+    ) -> None:
+        super().__init__()
+
+        # import huggingface model to torch built-in model
+        if from_pretrained:
+            self.config = AutoConfig.from_pretrained(pretrained_model_name_or_path)
+            if attention_dropout is not None:
+                print(f"use attention dropout: {attention_dropout}")
+                self.config.attention_dropout = attention_dropout
+            if use_bnb:
+                from transformers import BitsAndBytesConfig
+
+                # 4-bit quantization
+                bnb_config = BitsAndBytesConfig(
+                    load_in_4bit=True,
+                    bnb_4bit_quant_type="nf4",
+                    bnb_4bit_use_double_quant=True,
+                    bnb_4bit_compute_dtype="bfloat16",
+                )
+                self.llm_model = AutoModelForCausalLM.from_pretrained(
+                    pretrained_model_name_or_path,
+                    config=self.config,
+                    quantization_config=bnb_config,
+                )
+            else:
+                self.llm_model = AutoModelForCausalLM.from_pretrained(
+                    pretrained_model_name_or_path, config=self.config
+                )
+        else:
+            self.config = AutoConfig.from_pretrained(pretrained_model_name_or_path)
+            self.llm_model = AutoModelForCausalLM.from_config(self.config)
+
+    def forward(
+        self,
+        x: torch.Tensor,
+        y: torch.Tensor = None,
+        attn_mask: torch.Tensor = None,
+        loss_reduction: str = "none",
+    ):
+        llm_model_out = self.llm_model(input_ids=x, labels=None, attention_mask=attn_mask)
+        logits = llm_model_out.logits
+        token_loss = None
+        if y is not None:
+            token_loss = self.getCausalLMLoss(
+                llm_model_out.logits,
+                y,
+                vocab_size=self.llm_model.config.vocab_size,
+                loss_reduction=loss_reduction,
+            )
+        return logits, token_loss
+
+    def getCausalLMLoss(
+        self,
+        logits,
+        labels,
+        vocab_size: int,
+        num_items_in_batch: int = None,
+        loss_reduction="none",
+        ignore_index: int = -100,
+        **kwargs,
+    ):
+        logits = logits.float()
+
+        # Shift so that tokens < n predict n
+        labels = nn.functional.pad(labels, (0, 1), value=ignore_index)
+        shift_labels = labels[..., 1:].contiguous()
+
+        batch_size, seq_len, _ = logits.shape
+
+        # Flatten the tokens
+        logits = logits.view(-1, vocab_size)
+        shift_labels = shift_labels.view(-1)
+
+        # Enable model parallelism
+        shift_labels = shift_labels.to(logits.device)
+
+        loss = nn.functional.cross_entropy(
+            logits, shift_labels, ignore_index=ignore_index, reduction=loss_reduction
+        )
+
+        return loss
+
+    # forward the HuggingFace generation interface
+    def prepare_inputs_for_generation(self, *args, **kwargs):
+        return self.llm_model.prepare_inputs_for_generation(*args, **kwargs)
+
+    def generate(self, *args, **kwargs):
+        return self.llm_model.generate(*args, **kwargs)
+
+
+class Qwen3FromPretrainedModel(nn.Module):
+    """Qwen3 causal LM with optional PEFT LoRA, used by Qwen LLM-P2G training."""
+
+    def __init__(
+        self,
+        pretrained_model_name_or_path: str,
+        from_pretrained: bool = True,
+        attention_dropout: float = None,
+        lora: bool = False,
+        lora_rank: int = 16,
+        lora_alpha: int = 32,
+        lora_dropout: float = 0.0,
+        use_qlora: bool = False,
+        lora_part_modules: str = "q_proj,k_proj,v_proj,o_proj",
+    ) -> None:
+        super().__init__()
+        from transformers import AutoModelForCausalLM, AutoConfig, BitsAndBytesConfig
+        from peft import LoraConfig, TaskType, get_peft_model, prepare_model_for_kbit_training
+
+        if from_pretrained:
+            from transformers.models.qwen3 import configuration_qwen3 as qwen3_cfg
+
+            self.config = qwen3_cfg.Qwen3Config.from_pretrained(
+                pretrained_model_name_or_path
+            )
+            if attention_dropout is not None:
+                self.config.attention_dropout = attention_dropout
+
+            quantization_config = None
+            if use_qlora:
+                quantization_config = BitsAndBytesConfig(
+                    load_in_4bit=True,
+                    bnb_4bit_compute_dtype=torch.float16,
+                    bnb_4bit_use_double_quant=True,
+                    bnb_4bit_quant_type="nf4",
+                )
+
+            from transformers.models.qwen3 import modeling_qwen3 as qwen3
+
+            self.model = qwen3.Qwen3ForCausalLM.from_pretrained(
+                pretrained_model_name_or_path,
+                config=self.config,
+                quantization_config=quantization_config,
+            )
+
+            if use_qlora:
+                self.model = prepare_model_for_kbit_training(self.model)
+
+            if lora:
+                peft_config = LoraConfig(
+                    r=lora_rank,
+                    lora_alpha=lora_alpha,
+                    lora_dropout=lora_dropout,
+                    task_type=TaskType.CAUSAL_LM,
+                    target_modules=lora_part_modules.split(","),
+                    bias="none",
+                )
+                self.model = get_peft_model(self.model, peft_config)
+                self.model.print_trainable_parameters()
+        else:
+            self.config = AutoConfig.from_pretrained(pretrained_model_name_or_path)
+            self.model = AutoModelForCausalLM(config=self.config)
+
+    def forward(
+        self,
+        x: torch.Tensor,
+        y: torch.Tensor = None,
+        attn_mask: torch.Tensor = None,
+    ):
+        if self.model is not None:
+            outputs = self.model(input_ids=x, labels=y, attention_mask=attn_mask)
+
+        logits = outputs.logits
+
+        return logits
+
+    def fuse_lora(self):
+        self.model = self.model.merge_and_unload()

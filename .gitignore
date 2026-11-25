@@ -1,6 +1,8 @@
 # settings
-src/
+src/*
+!src/latent_ctc/
 test_*
+.DS_Store
 tmp_*
 egs/**/data/
 # egs/**/exp/
@@ -152,6 +154,8 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# latent_ctc keeps its CMake description and upstream README
+!src/latent_ctc/**/*.txt
 
 
 # macOS metadata

@@ -2,7 +2,7 @@
 # Apache 2.0.
 # Author: Huahuan Zheng (maxwellzh@outlook.com)
 
-"""Compute WER/CER of setences.
+"""Compute WER/CER/MER of setences.
 """
 
 import jiwer
@@ -33,6 +33,66 @@ class Processor:
             for processing in self._process:
                 o_seq = [processing(s) for s in o_seq]
             return o_seq
+
+
+NON_TONAL_TONE_RE = re.compile(r"˥˩|˧˩˧|˧˥|˥")
+
+def strip_tones(seqs: Union[List[str], str]) -> Union[List[str], str]:
+    if isinstance(seqs, str):
+        return " ".join(NON_TONAL_TONE_RE.sub("", seqs).split())
+    return [strip_tones(s) for s in seqs]
+
+
+def _is_chinese_char(char: str) -> bool:
+    code = ord(char)
+    return (
+        0x3400 <= code <= 0x4DBF
+        or 0x4E00 <= code <= 0x9FFF
+        or 0xF900 <= code <= 0xFAFF
+        or 0x20000 <= code <= 0x2A6DF
+        or 0x2A700 <= code <= 0x2B73F
+        or 0x2B740 <= code <= 0x2B81F
+        or 0x2B820 <= code <= 0x2CEAF
+        or 0x2CEB0 <= code <= 0x2EBEF
+        or 0x30000 <= code <= 0x3134F
+    )
+
+
+def _is_english_word_char(char: str) -> bool:
+    return char.isascii() and (char.isalnum() or char in "'-_")
+
+
+def tokenize_mer(seq: str) -> str:
+    """Tokenize mixed Chinese/English text for mixed error rate.
+
+    Chinese characters are counted as character-level tokens. English spans are
+    counted as word-level tokens. Other non-space characters are kept as
+    standalone tokens so they do not get merged into adjacent words.
+    """
+    tokens = []
+    buffer = []
+
+    def flush_buffer():
+        if buffer:
+            token = "".join(buffer).strip()
+            if token:
+                tokens.extend(token.split())
+            buffer.clear()
+
+    for char in seq:
+        if char.isspace():
+            flush_buffer()
+        elif _is_chinese_char(char):
+            flush_buffer()
+            tokens.append(char)
+        elif _is_english_word_char(char):
+            buffer.append(char)
+        else:
+            flush_buffer()
+            tokens.append(char)
+
+    flush_buffer()
+    return " ".join(tokens)
 
 
 def WER(l_gt: List[str], l_hy: List[str]) -> Tuple[int, int, int, int, int]:
@@ -155,11 +215,17 @@ def main(args: argparse.Namespace = None):
     # rm the '\n' and the last space
     processor.append(lambda s: s.strip("\n "))
 
+    if sum([args.cer, args.per, args.mer, args.non_tonal_per]) > 1:
+        raise ValueError("--cer, --mer, --per and --non_tonal_per are mutually exclusive")
+    
     if args.cer:
         # rm space then split by char
         pattern = re.compile(r"\s+")
         processor.append(lambda s: pattern.sub("", s))
         processor.append(lambda s: " ".join(list(s)))
+
+    if args.mer:
+        processor.append(tokenize_mer)
 
     if args.force_cased:
         processor.append(lambda s: s.lower())
@@ -198,9 +264,12 @@ def main(args: argparse.Namespace = None):
         l_hy = [seq for _, seq in l_hy]
         l_gt = [seq for _, seq in l_gt]
 
-        if args.per:
+        if args.per or args.non_tonal_per:
             phone_tokenizer = load(args.phone_tokenizer)
             l_gt = phone_tokenizer.decode(phone_tokenizer.encode(l_gt))
+            if args.non_tonal_per:
+                l_gt = strip_tones(l_gt)
+                l_hy = strip_tones(l_hy)
 
     # multi-processing compute
     num_threads = max(min(num_lines // 10000, int(os.cpu_count())), 1)
@@ -239,6 +308,10 @@ def main(args: argparse.Namespace = None):
         prefix = "CER"
     elif args.per:
         prefix = "PER"
+    elif args.non_tonal_per:
+        prefix = "NT-PER"
+    elif args.mer:
+        prefix = "MER"
     else:
         prefix = "WER"
     pretty_str = f"%SER {_ser*100:.2f} | %{prefix} {_wer*100:.2f} [ {_err} / {_sum}, {_ins} ins, {_del} del, {_sub} sub ]"
@@ -268,7 +341,21 @@ def _parser():
         "--cer", action="store_true", default=False, help="Compute CER. Default: False"
     )
     parser.add_argument(
+        "--mer",
+        action="store_true",
+        default=False,
+        help="Compute mixed error rate: Chinese characters as CER tokens and non-Chinese spans as WER tokens. Default: False",
+    )
+    parser.add_argument(
         "--per", action="store_true", default=False, help="Compute PER. Default: False"
+    )
+    parser.add_argument(
+        "--non_tonal_per",
+        "--non-tonal-per",
+        dest="non_tonal_per",
+        action="store_true",
+        default=False,
+        help="Compute PER after stripping tone symbols from both GT and hypothesis. Default: False",
     )
     parser.add_argument(
         "--force-cased", action="store_true", help="Force text to be the same cased."
@@ -277,7 +364,7 @@ def _parser():
         "--oracle",
         action="store_true",
         default=False,
-        help="Compute Oracle WER/CER. This requires the `hy` to be N-best list instead of text. Default: False",
+        help="Compute Oracle WER/CER/MER. This requires the `hy` to be N-best list instead of text. Default: False",
     )
     parser.add_argument(
         "--phone_tokenizer",

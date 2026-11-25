@@ -1,4 +1,5 @@
 # What's New
+- 2026.11: "Latent Softmax for Data-Efficient Phoneme-Based Multilingual ASR Across Tonal and Non-Tonal Languages" is accepted by IEEE Spoken Language Technology Workshop (SLT), 2026. [Code](https://github.com/thu-spmi/CAT/tree/master/egs/latent-softmax) | [Paper](https://arxiv.org/abs/2608.01281)
 - 2025.12: "Pronunciation-Lexicon Free Training for Phoneme-based Crosslingual ASR via Joint Stochastic Approximation" is accepted by IEEE Transactions on Audio, Speech and Language Processing. [Code](https://github.com/thu-spmi/CAT/tree/master/egs/JSA-SPG) | [Paper](https://arxiv.org/abs/2507.06249)
 - 2025/11/05: We have opened a space in Hugging Face to host and release our models: https://huggingface.co/thu-spmi
 - 2025.8: Release the code for the INTERSPEECH 2025 paper "Lightweight and Robust Multi-Channel End-to-End Speech Recognition with Spherical Harmonic Transform". [Code](../egs/shtnet/README.md) | [Paper](https://arxiv.org/abs/2506.11630)
